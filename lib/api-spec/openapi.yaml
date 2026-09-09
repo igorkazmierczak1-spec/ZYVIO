@@ -3,13 +3,19 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: VYBE 2.0 global social competition platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+  - name: battles
+  - name: profile
+  - name: leaderboard
+  - name: notifications
+  - name: ai
 paths:
   /healthz:
     get:
@@ -24,7 +30,206 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get the personalized home dashboard
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /battles:
+    get:
+      operationId: listBattles
+      tags: [battles]
+      summary: List discoverable battles
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, live, completed]
+      responses:
+        "200":
+          description: Battle list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Battle"
+    post:
+      operationId: createBattle
+      tags: [battles]
+      summary: Create a new battle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BattleInput"
+      responses:
+        "201":
+          description: Created battle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Battle"
+  /battles/{battleId}:
+    get:
+      operationId: getBattle
+      tags: [battles]
+      summary: Get a battle
+      parameters:
+        - $ref: "#/components/parameters/BattleId"
+      responses:
+        "200":
+          description: Battle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Battle"
+        "404":
+          description: Battle not found
+    post:
+      operationId: joinBattle
+      tags: [battles]
+      summary: Join an open battle
+      parameters:
+        - $ref: "#/components/parameters/BattleId"
+      responses:
+        "200":
+          description: Updated battle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Battle"
+  /battles/{battleId}/vote:
+    post:
+      operationId: voteBattle
+      tags: [battles]
+      summary: Vote for a battle participant
+      parameters:
+        - $ref: "#/components/parameters/BattleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoteInput"
+      responses:
+        "200":
+          description: Updated battle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Battle"
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get the current profile
+      responses:
+        "200":
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+    patch:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Update the current profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get global or country leaderboard
+      parameters:
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [global, country]
+            default: global
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [weekly, monthly, all-time]
+            default: weekly
+      responses:
+        "200":
+          description: Leaderboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Leaderboard"
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List current notifications
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+  /ai/ideas:
+    post:
+      operationId: generateIdeas
+      tags: [ai]
+      summary: Generate creative battle ideas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdeaInput"
+      responses:
+        "200":
+          description: Generated ideas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdeaResponse"
 components:
+  parameters:
+    BattleId:
+      name: battleId
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +238,158 @@ components:
           type: string
       required:
         - status
+    UserSummary:
+      type: object
+      required: [id, username, displayName, country, avatarUrl, level]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        country: { type: string }
+        avatarUrl: { type: string }
+        level: { type: integer }
+    Profile:
+      allOf:
+        - $ref: "#/components/schemas/UserSummary"
+        - type: object
+          required: [bio, xp, wins, losses, rank, league, streak, badges]
+          properties:
+            bio: { type: string }
+            xp: { type: integer }
+            wins: { type: integer }
+            losses: { type: integer }
+            rank: { type: integer }
+            league: { type: string }
+            streak: { type: integer }
+            badges:
+              type: array
+              items: { type: string }
+    ProfileUpdate:
+      type: object
+      properties:
+        username: { type: string, minLength: 3 }
+        displayName: { type: string, minLength: 1 }
+        bio: { type: string, maxLength: 160 }
+        country: { type: string, minLength: 2, maxLength: 2 }
+        language: { type: string, minLength: 2, maxLength: 5 }
+    Participant:
+      type: object
+      required: [id, user, submissionLabel, score, votes]
+      properties:
+        id: { type: string }
+        user: { $ref: "#/components/schemas/UserSummary" }
+        submissionLabel: { type: string }
+        score: { type: integer }
+        votes: { type: integer }
+    Battle:
+      type: object
+      required: [id, title, category, status, prompt, createdAt, endsAt, participants, participantCount, maxParticipants]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        category: { type: string }
+        status:
+          type: string
+          enum: [open, live, completed]
+        prompt: { type: string }
+        createdAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        participants:
+          type: array
+          items: { $ref: "#/components/schemas/Participant" }
+        participantCount: { type: integer }
+        maxParticipants: { type: integer }
+        rewardXp: { type: integer }
+        coverTone: { type: string }
+        isJoined: { type: boolean }
+    BattleInput:
+      type: object
+      required: [title, category, prompt, endsAt]
+      properties:
+        title: { type: string, minLength: 3 }
+        category: { type: string, minLength: 2 }
+        prompt: { type: string, minLength: 5 }
+        endsAt: { type: string, format: date-time }
+        maxParticipants: { type: integer, minimum: 2, maximum: 64, default: 8 }
+    VoteInput:
+      type: object
+      required: [participantId]
+      properties:
+        participantId: { type: string }
+    LeaderboardEntry:
+      type: object
+      required: [position, user, xp, wins, streak, league]
+      properties:
+        position: { type: integer }
+        user: { $ref: "#/components/schemas/UserSummary" }
+        xp: { type: integer }
+        wins: { type: integer }
+        streak: { type: integer }
+        league: { type: string }
+    Leaderboard:
+      type: object
+      required: [scope, period, entries, currentUser]
+      properties:
+        scope: { type: string }
+        period: { type: string }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/LeaderboardEntry" }
+        currentUser: { $ref: "#/components/schemas/LeaderboardEntry" }
+    Notification:
+      type: object
+      required: [id, kind, title, body, createdAt, read]
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        title: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        read: { type: boolean }
+    Activity:
+      type: object
+      required: [id, text, time, kind]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        time: { type: string }
+        kind: { type: string }
+    Dashboard:
+      type: object
+      required: [profile, featuredBattles, trendingBattles, leaderboardPreview, activity, stats]
+      properties:
+        profile: { $ref: "#/components/schemas/Profile" }
+        featuredBattles:
+          type: array
+          items: { $ref: "#/components/schemas/Battle" }
+        trendingBattles:
+          type: array
+          items: { $ref: "#/components/schemas/Battle" }
+        leaderboardPreview:
+          type: array
+          items: { $ref: "#/components/schemas/LeaderboardEntry" }
+        activity:
+          type: array
+          items: { $ref: "#/components/schemas/Activity" }
+        stats:
+          type: object
+          required: [activeBattles, weeklyXp, winRate, globalRank]
+          properties:
+            activeBattles: { type: integer }
+            weeklyXp: { type: integer }
+            winRate: { type: integer }
+            globalRank: { type: integer }
+    IdeaInput:
+      type: object
+      required: [topic]
+      properties:
+        topic: { type: string, minLength: 2 }
+        category: { type: string }
+    IdeaResponse:
+      type: object
+      required: [ideas]
+      properties:
+        ideas:
+          type: array
+          items: { type: string }
 

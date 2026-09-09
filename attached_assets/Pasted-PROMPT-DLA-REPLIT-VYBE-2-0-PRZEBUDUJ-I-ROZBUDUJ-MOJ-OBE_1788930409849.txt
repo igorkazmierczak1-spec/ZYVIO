@@ -1,0 +1,1058 @@
+PROMPT DLA REPLIT — VYBE 2.0
+
+PRZEBUDUJ I ROZBUDUJ MOJĄ OBECNĄ APLIKACJĘ VYBE DO PROFESJONALNEJ, NOWOCZESNEJ, GLOBALNEJ PLATFORMY SOCIAL + BATTLE + AI + GAMIFICATION.
+
+WAŻNE:
+Nie twórz tylko makiety.
+Nie twórz fikcyjnych funkcji.
+Przeanalizuj istniejący projekt, zachowaj dobre elementy i profesjonalnie przebuduj wszystko, co jest niedopracowane.
+Jeżeli jakaś funkcja już istnieje, ulepsz ją zamiast tworzyć niepotrzebny duplikat.
+
+==================================================
+1. CEL VYBE
+==================================================
+
+VYBE ma być globalną aplikacją społecznościową, w której użytkownicy:
+
+- tworzą własny profil
+- publikują treści
+- tworzą Battle
+- wyzywają innych użytkowników
+- głosują
+- rywalizują
+- zdobywają XP
+- zdobywają poziomy
+- zdobywają odznaki
+- awansują w rankingach
+- uczestniczą w sezonach
+- korzystają z AI
+- obserwują innych
+- udostępniają swoje wyniki
+- rywalizują lokalnie i globalnie
+
+GŁÓWNA PĘTLA:
+
+TWÓRZ → WYZWYWAJ → RYWALIZUJ → GŁOSUJ → WYGRYWAJ → ZDOBYWAJ XP → AWANSUJ → WRACAJ
+
+Aplikacja ma być szybka, atrakcyjna, bardzo prosta w obsłudze i zaprojektowana z myślą o viralowym wzroście.
+
+==================================================
+2. DESIGN
+==================================================
+
+Stwórz nowoczesny, premium, młodzieżowy design.
+
+Interfejs:
+- mobile-first
+- responsywny
+- nowoczesne karty
+- płynne animacje
+- mikrointerakcje
+- atrakcyjne przyciski
+- czytelna typografia
+- profesjonalne ikony
+- dark mode
+- jasny mode
+- spójny system kolorów
+- profesjonalne loading states
+- skeleton loading
+- empty states
+- error states
+- success animations
+
+Inspiracja poziomem UX:
+TikTok + Instagram + Discord + nowoczesne aplikacje gamingowe.
+
+Nie kopiuj ich wyglądu 1:1.
+VYBE musi mieć własną identyfikację.
+
+==================================================
+3. STRUKTURA APLIKACJI
+==================================================
+
+Główna nawigacja:
+
+HOME
+DISCOVER
+CREATE BATTLE
+LEADERBOARD
+PROFILE
+
+Dodatkowo:
+
+NOTIFICATIONS
+MESSAGES
+SETTINGS
+PREMIUM
+AI
+
+==================================================
+4. HOME
+==================================================
+
+Home ma być spersonalizowanym ekranem głównym.
+
+Pokazuj:
+- popularne Battle
+- Battle użytkowników, których obserwuję
+- rekomendowane Battle
+- trending
+- aktywnych użytkowników
+- daily challenges
+- mój poziom
+- XP
+- streak
+- aktualną ligę
+- miejsce w rankingu
+
+Dodaj CTA:
+
+"CREATE BATTLE"
+
+oraz:
+
+"JOIN BATTLE"
+
+==================================================
+5. DISCOVER
+==================================================
+
+Discover ma pozwalać odkrywać:
+
+- popularne Battle
+- nowe Battle
+- trending
+- użytkowników
+- profile
+- kategorie
+- Battle z mojego kraju
+- Battle globalne
+- rekomendacje AI
+
+Filtry:
+
+TRENDING
+NEW
+POPULAR
+FRIENDS
+COUNTRY
+GLOBAL
+CATEGORY
+
+==================================================
+6. VYBE BATTLE
+==================================================
+
+Battle to główny mechanizm aplikacji.
+
+Kategorie:
+
+PHOTO
+MUSIC
+MEME
+CREATIVITY
+TEXT
+AI
+QUIZ
+GAMING
+FASHION
+SPORT
+FUN
+OTHER
+
+Użytkownik może:
+
+- stworzyć Battle
+- wybrać kategorię
+- dodać zdjęcie/video/tekst
+- zaprosić konkretną osobę
+- wyzwać losowego użytkownika
+- wybrać czas trwania
+- ustawić zasady
+- udostępnić Battle
+
+Battle może być:
+
+1 VS 1
+
+lub
+
+MULTIPLAYER
+
+==================================================
+7. VOTING
+==================================================
+
+Po rozpoczęciu Battle użytkownicy mogą głosować.
+
+System musi:
+- ograniczać spam
+- wykrywać podejrzane głosowanie
+- zapobiegać wielokrotnemu głosowaniu
+- zapisywać głosy
+- aktualizować wynik
+- pokazywać procenty
+- pokazywać zwycięzcę
+
+Po zakończeniu Battle:
+
+WINNER
+SCORE
+XP GAINED
+RANK CHANGE
+BADGES
+
+==================================================
+8. XP I LEVEL
+==================================================
+
+Dodaj system doświadczenia XP.
+
+XP można zdobywać za:
+- wygrane Battle
+- udział w Battle
+- głosowanie
+- tworzenie treści
+- daily challenge
+- streak
+- osiągnięcia
+- aktywność
+
+Dodaj:
+
+Level 1
+Level 2
+Level 3
+itd.
+
+Pokazuj pasek:
+
+CURRENT XP / NEXT LEVEL XP
+
+Awans na kolejny poziom powinien mieć atrakcyjną animację.
+
+==================================================
+9. LEAGUES
+==================================================
+
+Dodaj ligi:
+
+BRONZE
+SILVER
+GOLD
+PLATINUM
+DIAMOND
+MASTER
+LEGEND
+
+Użytkownik awansuje lub spada w rankingu zależnie od wyników.
+
+==================================================
+10. RANKINGI
+==================================================
+
+Dodaj:
+
+GLOBAL
+COUNTRY
+WEEKLY
+MONTHLY
+ALL TIME
+
+Pokaż:
+
+TOP 1
+TOP 2
+TOP 3
+
+oraz dalsze miejsca.
+
+Użytkownik zawsze powinien widzieć swoje miejsce.
+
+==================================================
+11. SEASONS
+==================================================
+
+Dodaj system sezonów.
+
+Każdy sezon ma:
+- nazwę
+- datę rozpoczęcia
+- datę zakończenia
+- specjalne wyzwania
+- ranking
+- nagrody
+- specjalne odznaki
+
+Po zakończeniu sezonu wyniki zostają zapisane.
+
+==================================================
+12. PROFILE
+==================================================
+
+Profil użytkownika:
+
+- avatar
+- username
+- country
+- bio
+- level
+- XP
+- league
+- global rank
+- country rank
+- wins
+- losses
+- win rate
+- followers
+- following
+- badges
+- achievements
+- Battle history
+- activity
+
+Przyciski:
+
+FOLLOW
+MESSAGE
+CHALLENGE
+SHARE
+
+Dodaj możliwość personalizacji profilu.
+
+==================================================
+13. SOCIAL
+==================================================
+
+Dodaj:
+
+- follow
+- unfollow
+- followers
+- following
+- profile views
+- likes/reactions
+- comments
+- sharing
+- messages
+
+Zaprojektuj system tak, aby można było później rozbudować go o większą sieć społecznościową.
+
+==================================================
+14. NOTIFICATIONS
+==================================================
+
+Powiadomienia:
+
+- ktoś mnie wyzwał
+- ktoś zagłosował
+- wygrałem Battle
+- przegrałem Battle
+- ktoś mnie obserwuje
+- ktoś polubił
+- ktoś skomentował
+- zdobyłem badge
+- awansowałem
+- rozpoczął się nowy sezon
+- daily challenge
+
+Dodaj oznaczenie:
+READ / UNREAD
+
+==================================================
+15. VYBE AI
+==================================================
+
+Dodaj prawdziwą integrację AI.
+
+AI ma pomagać użytkownikowi w:
+
+- generowaniu pomysłów
+- tworzeniu Battle
+- generowaniu challenge
+- analizowaniu wyników
+- rekomendacjach
+- personalizacji
+- tworzeniu treści
+- pomysłach na profil
+- pomysłach na posty
+- codziennych wyzwaniach
+
+AI musi być podłączone przez bezpieczny backend.
+
+OPENAI API KEY ma być przechowywany jako SECRET / ENVIRONMENT VARIABLE.
+
+NIGDY nie umieszczaj klucza API w frontendzie.
+
+==================================================
+16. PERSONALIZACJA AI
+==================================================
+
+System powinien analizować legalne dane dotyczące aktywności użytkownika, aby rekomendować:
+
+- Battle
+- użytkowników
+- kategorie
+- challenge
+- treści
+
+Im więcej użytkownik korzysta z VYBE, tym lepsze mają być rekomendacje.
+
+==================================================
+17. PREMIUM — CENNIK
+==================================================
+
+FREE — 0 zł
+
+Funkcje:
+- podstawowe Battle
+- głosowanie
+- profil
+- rankingi
+- XP
+- poziomy
+- podstawowe funkcje AI
+- ograniczone limity
+
+
+VYBE PRO — 19,99 zł / miesiąc
+
+VYBE PRO — 199,99 zł / rok
+
+PRO:
+- rozszerzone funkcje AI
+- większe limity Battle
+- większe limity AI
+- zaawansowane statystyki
+- dodatkowe odznaki
+- funkcje Premium
+- brak reklam
+- dodatkowe możliwości personalizacji profilu
+
+
+VYBE ELITE — 39,99 zł / miesiąc
+
+VYBE ELITE — 399,99 zł / rok
+
+ELITE:
+- wszystkie funkcje PRO
+- najwyższe limity AI
+- najwyższe limity Battle
+- zaawansowane statystyki
+- Elite Badge
+- specjalne efekty profilu
+- ekskluzywne Battle
+- dodatkowe funkcje AI
+- priorytetowe funkcje
+- brak reklam
+
+==================================================
+18. AI CREDITS
+==================================================
+
+Dodaj możliwość zakupu dodatkowych AI Credits.
+
+Ceny:
+
+AI CREDITS — od 4,99 zł
+
+System powinien pozwalać na tworzenie różnych pakietów.
+
+Przykładowo:
+
+STARTER
+STANDARD
+PRO
+MEGA
+
+Ceny i liczba kredytów muszą być konfigurowalne z poziomu backendu/admin panelu.
+
+==================================================
+19. BOOST
+==================================================
+
+BOOST PROFILE — od 2,99 zł
+
+Funkcja:
+- większa widoczność profilu
+- większa szansa pojawienia się w Discover
+- określony czas działania
+
+
+BOOST BATTLE — od 2,99 zł
+
+Funkcja:
+- większa widoczność Battle
+- możliwość dotarcia do większej liczby użytkowników
+- określony czas działania
+
+System Boost musi mieć:
+- czas rozpoczęcia
+- czas zakończenia
+- status
+- historię zakupu
+
+==================================================
+20. PŁATNOŚCI
+==================================================
+
+Zintegruj profesjonalny system płatności.
+
+Preferowany system:
+
+STRIPE
+
+Obsługuj:
+
+- płatności jednorazowe
+- subskrypcje
+- płatności miesięczne
+- płatności roczne
+- automatyczne odnowienia
+- anulowanie
+- zmianę planu
+- refundacje
+- historię płatności
+- status płatności
+- webhooki
+- różne waluty
+- płatności międzynarodowe
+
+Obsługuj:
+
+FREE → PRO
+FREE → ELITE
+PRO → ELITE
+ELITE → PRO
+
+Nie przechowuj danych kart płatniczych w bazie VYBE.
+
+Wszystkie sekrety i klucze płatności przechowuj w ENV / SECRETS.
+
+Nie twórz fikcyjnych transakcji.
+
+==================================================
+21. MONETYZACJA
+==================================================
+
+Główne źródła przychodu:
+
+1. VYBE PRO
+2. VYBE ELITE
+3. AI CREDITS
+4. BOOST PROFILE
+5. BOOST BATTLE
+6. reklamy dla użytkowników FREE
+7. w przyszłości dodatkowe cyfrowe produkty
+
+System ma być przygotowany do skalowania globalnego.
+
+==================================================
+22. ADMIN PANEL
+==================================================
+
+Stwórz profesjonalny panel administratora.
+
+Admin powinien mieć:
+
+DASHBOARD
+
+- liczba użytkowników
+- aktywni użytkownicy
+- nowe konta
+- liczba Battle
+- liczba głosów
+- przychody
+- aktywne Premium
+- AI usage
+
+USERS
+
+- lista użytkowników
+- wyszukiwanie
+- filtrowanie
+- blokowanie
+- odblokowanie
+- moderacja
+
+BATTLES
+
+- lista Battle
+- raporty
+- usuwanie
+- moderacja
+
+PAYMENTS
+
+- transakcje
+- przychody
+- PRO
+- ELITE
+- AI Credits
+- Boost Profile
+- Boost Battle
+- refundacje
+
+STATISTICS
+
+- DAU
+- MAU
+- retention
+- conversion
+- revenue
+- ARPU
+- aktywność
+
+==================================================
+23. SECURITY
+==================================================
+
+Zadbaj o:
+
+- bezpieczne logowanie
+- szyfrowanie haseł
+- sesje
+- tokeny
+- rate limiting
+- ochronę API
+- walidację danych
+- ochronę przed spamem
+- ochronę przed botami
+- ochronę przed manipulacją głosami
+- ochronę płatności
+- kontrolę dostępu
+- admin permissions
+
+Nie ufaj danym przesyłanym z frontendu.
+
+Wszystkie ważne operacje muszą być sprawdzane po stronie backendu.
+
+==================================================
+24. MODERATION
+==================================================
+
+Dodaj:
+
+REPORT
+BLOCK
+MUTE
+
+Kategorie zgłoszeń:
+
+- spam
+- harassment
+- inappropriate content
+- fake account
+- cheating
+- other
+
+Przygotuj system moderacji i panel administratora.
+
+==================================================
+25. LOGOWANIE
+==================================================
+
+Obsługuj:
+
+- Email
+- Google
+- Apple
+
+Dodaj:
+
+- rejestrację
+- logowanie
+- reset hasła
+- verification email
+- logout
+- usuwanie konta
+
+==================================================
+26. GLOBAL
+==================================================
+
+VYBE ma działać globalnie.
+
+Obsługuj:
+
+- język
+- kraj
+- timezone
+- walutę
+
+Na start:
+
+POLSKI
+ENGLISH
+
+Architektura ma umożliwiać łatwe dodawanie kolejnych języków.
+
+Rankingi:
+
+GLOBAL
+COUNTRY
+
+==================================================
+27. VIRAL SHARING
+==================================================
+
+Każdy Battle i wynik powinien mieć możliwość udostępnienia.
+
+Dodaj:
+
+SHARE
+COPY LINK
+SOCIAL SHARE
+
+Po wygraniu Battle pokaż atrakcyjny ekran:
+
+🏆 VICTORY
+
+oraz:
+
+"Challenge me on VYBE"
+
+Dodaj referral system.
+
+Użytkownik może otrzymać bonus za zaproszenie nowych użytkowników.
+
+==================================================
+28. REFERRAL
+==================================================
+
+Każdy użytkownik może mieć:
+
+REFERRAL CODE
+
+System śledzi:
+
+- zaproszenia
+- rejestracje
+- aktywacje
+- nagrody
+
+Nie pozwalaj na łatwe nadużywanie referral systemu.
+
+==================================================
+29. DAILY CHALLENGES
+==================================================
+
+Dodaj codzienne wyzwania.
+
+Przykłady:
+
+PHOTO CHALLENGE
+MEME CHALLENGE
+CREATIVITY CHALLENGE
+AI CHALLENGE
+QUIZ CHALLENGE
+
+Za wykonanie:
+
+XP
+BADGES
+STREAK
+
+==================================================
+30. STREAK
+==================================================
+
+Dodaj system aktywności:
+
+1 DAY
+3 DAYS
+7 DAYS
+14 DAYS
+30 DAYS
+100 DAYS
+
+Pokazuj aktualny streak.
+
+Przerwanie streaku powinno resetować serię zgodnie z zasadami systemu.
+
+==================================================
+31. ACHIEVEMENTS
+==================================================
+
+Dodaj osiągnięcia:
+
+FIRST BATTLE
+FIRST WIN
+10 WINS
+50 WINS
+100 WINS
+1000 VOTES
+7 DAY STREAK
+30 DAY STREAK
+TOP 100
+TOP 10
+TOP 1
+
+Dodaj możliwość dodawania kolejnych osiągnięć.
+
+==================================================
+32. DATABASE
+==================================================
+
+Zaprojektuj profesjonalną bazę danych.
+
+Przykładowe tabele:
+
+users
+profiles
+battles
+battle_entries
+votes
+followers
+messages
+notifications
+xp
+levels
+leagues
+seasons
+achievements
+badges
+daily_challenges
+streaks
+subscriptions
+payments
+ai_credits
+boosts
+referrals
+reports
+admin_logs
+
+Zadbaj o relacje, indeksy, integralność danych i możliwość skalowania.
+
+==================================================
+33. SEO
+==================================================
+
+Dodaj:
+
+- SEO metadata
+- Open Graph
+- Twitter/X cards
+- dynamiczne meta descriptions
+- sitemap
+- robots.txt
+- przyjazne URL
+- profile sharing
+- Battle sharing
+
+==================================================
+34. ANALYTICS
+==================================================
+
+Przygotuj system analityczny.
+
+Śledź między innymi:
+
+- rejestracje
+- logowania
+- Battle created
+- Battle joined
+- votes
+- wins
+- losses
+- shares
+- referrals
+- Premium conversions
+- AI usage
+- purchases
+- retention
+
+Nie zbieraj niepotrzebnych danych osobowych.
+
+==================================================
+35. MOBILE
+==================================================
+
+Aplikacja musi być idealnie responsywna.
+
+Najważniejszy jest telefon.
+
+Przetestuj:
+
+- Android
+- iPhone
+- tablet
+- desktop
+
+Przygotuj architekturę umożliwiającą późniejsze stworzenie:
+
+PWA
+Android App
+iOS App
+
+==================================================
+36. PERFORMANCE
+==================================================
+
+Aplikacja ma być szybka.
+
+Zadbaj o:
+
+- lazy loading
+- image optimization
+- caching
+- pagination
+- efficient database queries
+- API optimization
+- loading states
+- error handling
+
+Nie pobieraj całej bazy danych jednocześnie.
+
+==================================================
+37. UX
+==================================================
+
+Każda funkcja musi mieć:
+
+- loading
+- success
+- error
+- empty state
+
+Przykładowo po wygraniu Battle:
+
+🏆 YOU WON!
+
++150 XP
+
+NEW RANK:
+#124
+
+Dodaj atrakcyjną animację.
+
+==================================================
+38. RESPONSYWNOŚĆ
+==================================================
+
+Sprawdź każdy ekran na:
+
+320px
+375px
+390px
+430px
+768px
+1024px
+1440px+
+
+Nie pozwól na:
+
+- overflow
+- ucinanie tekstu
+- nachodzenie elementów
+- nieczytelne przyciski
+- problemy z nawigacją
+
+==================================================
+39. TESTY
+==================================================
+
+Przetestuj:
+
+- rejestrację
+- logowanie
+- Google login
+- Apple login
+- tworzenie Battle
+- dołączanie do Battle
+- głosowanie
+- wyniki
+- XP
+- Level
+- League
+- Ranking
+- Profile
+- Follow
+- Notifications
+- AI
+- Premium
+- AI Credits
+- Boost
+- płatności
+- webhooki
+- refundacje
+- admin
+- moderację
+- referral
+
+Napraw wszystkie błędy znalezione podczas testów.
+
+==================================================
+40. ENVIRONMENT VARIABLES
+==================================================
+
+Wrażliwe dane przechowuj wyłącznie jako Secrets / Environment Variables.
+
+Przygotuj konfigurację między innymi dla:
+
+DATABASE_URL
+OPENAI_API_KEY
+STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET
+
+oraz innych wymaganych przez projekt.
+
+Nigdy nie pokazuj sekretów użytkownikom.
+
+==================================================
+41. PRODUKCJA
+==================================================
+
+Nie chcę prototypu udającego gotową aplikację.
+
+Chcę profesjonalną podstawę produkcyjną.
+
+Każda funkcja powinna być:
+- rzeczywiście podłączona
+- zapisana w bazie
+- zabezpieczona
+- responsywna
+- przetestowana
+
+Jeżeli jakaś integracja wymaga klucza API, przygotuj ją poprawnie i pokaż mi dokładnie, jaka zmienna ENV jest potrzebna.
+
+Jeżeli płatności wymagają konfiguracji Stripe, przygotuj pełną integrację i wskaż brakujące elementy.
+
+==================================================
+42. NAJWAŻNIEJSZE
+==================================================
+
+Najpierw przeanalizuj istniejący projekt VYBE.
+
+Nie usuwaj bez potrzeby istniejących dobrych funkcji.
+
+Zidentyfikuj:
+- co już działa
+- co jest tylko makietą
+- co jest niedokończone
+- co jest błędne
+- czego brakuje
+
+Następnie wykonaj profesjonalną przebudowę.
+
+Priorytety:
+
+1. DZIAŁANIE
+2. UX/UI
+3. BATTLE
+4. SOCIAL
+5. AI
+6. GAMIFICATION
+7. PREMIUM
+8. PŁATNOŚCI
+9. SECURITY
+10. PERFORMANCE
+11. GLOBAL SCALABILITY
+
+Nie twórz fikcyjnych danych jako substytutu funkcji produkcyjnych.
+
+Jeżeli coś nie może zostać jeszcze skonfigurowane bez mojego klucza/API/sekretu, przygotuj pełną integrację i jasno oznacz, czego potrzebuję.
+
+Na końcu wykonaj pełny audyt aplikacji, napraw błędy i upewnij się, że wszystkie główne ścieżki użytkownika działają od początku do końca.
+
+VYBE MA WYGLĄDAĆ JAK PRAWDZIWY, NOWOCZESNY, GLOBALNY PRODUKT, A NIE JAK PROSTY PROJEKT DEMO.

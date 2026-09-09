@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "VYBE 2.0"
+description = "A global, mobile-first social competition platform where people discover, create, and compete in creative VYBE Battles, grow through XP and leagues, and receive AI-powered recommendations."
+version = "1.0.0"
+id = "artifacts/vybe-app"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21367
+
+[services.development]
+run = "pnpm --filter @workspace/vybe-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vybe-app", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/vybe-app/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21367"
+BASE_PATH = "/"

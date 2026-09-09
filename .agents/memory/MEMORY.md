@@ -1,0 +1,1 @@
+- [AI provider credits](ai-provider-credits.md) — a configured OpenAI key still needs usable provider credits; surface quota failures explicitly.
