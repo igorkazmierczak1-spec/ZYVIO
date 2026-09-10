@@ -195,6 +195,12 @@ export const appSettingsTable = pgTable("vybe_app_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const stripeWebhookEventsTable = pgTable("vybe_stripe_webhook_events", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertProfileSchema = createInsertSchema(profilesTable);
 export const insertBattleSchema = createInsertSchema(battlesTable);
 export const insertParticipantSchema = createInsertSchema(battleParticipantsTable);
@@ -206,6 +212,7 @@ export const insertModerationReportSchema = createInsertSchema(moderationReports
 export const insertModerationReportHistorySchema = createInsertSchema(moderationReportHistoryTable);
 export const insertAdminAuditLogSchema = createInsertSchema(adminAuditLogsTable);
 export const insertAppSettingsSchema = createInsertSchema(appSettingsTable);
+export const insertStripeWebhookEventSchema = createInsertSchema(stripeWebhookEventsTable);
 
 export type Profile = typeof profilesTable.$inferSelect;
 export type Battle = typeof battlesTable.$inferSelect;
@@ -218,5 +225,6 @@ export type ModerationReport = typeof moderationReportsTable.$inferSelect;
 export type ModerationReportHistory = typeof moderationReportHistoryTable.$inferSelect;
 export type AdminAuditLog = typeof adminAuditLogsTable.$inferSelect;
 export type AppSettings = typeof appSettingsTable.$inferSelect;
+export type StripeWebhookEvent = typeof stripeWebhookEventsTable.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type InsertBattle = z.infer<typeof insertBattleSchema>;
