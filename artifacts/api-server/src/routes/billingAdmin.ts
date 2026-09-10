@@ -45,7 +45,10 @@ router.get("/admin/billing/subscriptions", async (req, res, next): Promise<void>
     const page = Math.max(1, Number(req.query.page ?? 1)), pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize ?? 20)));
     const search = String(req.query.search ?? ""), status = String(req.query.status ?? "");
     const result = await stripeRequest<{ data: Array<Record<string, unknown>> }>("subscriptions?status=all&limit=100");
-    const filtered = (result.data ?? []).map((row) => ({ ...row, plan: planFor(row) })).filter((row) => (!status || row.status === status) && (!search || String(row.id).includes(search) || String(row.customer).includes(search) || String(row.plan).includes(search)));
+    const filtered = (result.data ?? []).map((row) => ({ ...row, plan: planFor(row) })).filter((row) => {
+      const candidate = row as Record<string, unknown>;
+      return (!status || candidate.status === status) && (!search || String(candidate.id).includes(search) || String(candidate.customer).includes(search) || String(candidate.plan).includes(search));
+    });
     const items = filtered.slice((page - 1) * pageSize, page * pageSize);
     res.json({ items, page, pageSize, total: filtered.length, totalPages: Math.ceil(filtered.length / pageSize) });
   } catch (error) { next(error); }
