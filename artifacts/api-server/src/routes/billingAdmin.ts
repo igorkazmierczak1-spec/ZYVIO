@@ -12,6 +12,12 @@ const planFor = (row: Record<string, unknown>) => {
   const plan = (price?.metadata as Record<string, string> | undefined)?.vybe_plan;
   return plan === "premium_pro" ? "PREMIUM_PRO" : plan === "premium" ? "PREMIUM" : "FREE";
 };
+const invoicePlan = (row: Record<string, unknown>) => {
+  const line = ((row.lines as Record<string, unknown> | undefined)?.data as Array<Record<string, unknown>> | undefined)?.[0];
+  const price = line?.price as Record<string, unknown> | undefined;
+  const plan = (price?.metadata as Record<string, string> | undefined)?.vybe_plan;
+  return plan === "premium_pro" ? "PREMIUM_PRO" : plan === "premium" ? "PREMIUM" : "FREE";
+};
 
 router.get("/admin/billing/config", async (_req, res) => {
   try {
@@ -27,17 +33,19 @@ router.get("/admin/billing/overview", async (req, res, next): Promise<void> => {
     const since = rangeSince(String(req.query.range ?? "30d"));
     const [subs, invoices, intents] = await Promise.all([
       stripeRequest<{ data: Array<Record<string, unknown>> }>("subscriptions?status=all&limit=100"),
-      stripeRequest<{ data: Array<Record<string, unknown>> }>("invoices?limit=100"),
+      stripeRequest<{ data: Array<Record<string, unknown>> }>("invoices?limit=100&expand[]=data.lines.data.price"),
       stripeRequest<{ data: Array<Record<string, unknown>> }>("payment_intents?limit=100"),
     ]);
     const subscriptions = subs.data ?? [], invoiceRows = invoices.data ?? [], paymentRows = intents.data ?? [];
     const inRange = (row: Record<string, unknown>) => Number(row.created ?? 0) * 1000 >= since.getTime();
     const totalRevenue = invoiceRows.filter((row) => row.paid && inRange(row)).reduce((sum, row) => sum + Number(row.amount_paid ?? 0), 0);
+    const premiumRevenue = invoiceRows.filter((row) => row.paid && inRange(row) && invoicePlan(row) === "PREMIUM").reduce((sum, row) => sum + Number(row.amount_paid ?? 0), 0);
+    const premiumProRevenue = invoiceRows.filter((row) => row.paid && inRange(row) && invoicePlan(row) === "PREMIUM_PRO").reduce((sum, row) => sum + Number(row.amount_paid ?? 0), 0);
     const active = subscriptions.filter((row) => row.status === "active" || row.status === "trialing").length;
     const monthly = invoiceRows.filter((row) => row.paid && row.billing_reason !== "subscription_create").reduce((sum, row) => sum + Number(row.amount_paid ?? 0), 0);
     const activeRows = subscriptions.filter((row) => row.status === "active" || row.status === "trialing");
     const premiumProCount = activeRows.filter((row) => planFor(row) === "PREMIUM_PRO").length;
-    res.json({ connected: true, range: String(req.query.range ?? "30d"), subscriptions: [{ status: "active", count: active }, { status: "canceled", count: subscriptions.filter((row) => row.status === "canceled").length }], revenue: totalRevenue, payments: paymentRows.filter((row) => row.status === "succeeded" && inRange(row)).length, totalRevenue, revenue30d: totalRevenue, mrr: monthly, arr: monthly * 12, activeSubscriptions: active, newSubscriptions: subscriptions.filter(inRange).length, cancelledSubscriptions: subscriptions.filter((row) => row.status === "canceled" && inRange(row)).length, successfulPayments: paymentRows.filter((row) => row.status === "succeeded" && inRange(row)).length, failedPayments: paymentRows.filter((row) => row.status === "failed" && inRange(row)).length, premiumCount: active - premiumProCount, premiumProCount, revenuePremium: totalRevenue, revenuePremiumPro: 0, conversion: null, trend: [] });
+    res.json({ connected: true, range: String(req.query.range ?? "30d"), subscriptions: [{ status: "active", count: active }, { status: "canceled", count: subscriptions.filter((row) => row.status === "canceled").length }], revenue: totalRevenue, payments: paymentRows.filter((row) => row.status === "succeeded" && inRange(row)).length, totalRevenue, revenue30d: totalRevenue, mrr: monthly, arr: monthly * 12, activeSubscriptions: active, newSubscriptions: subscriptions.filter(inRange).length, cancelledSubscriptions: subscriptions.filter((row) => row.status === "canceled" && inRange(row)).length, successfulPayments: paymentRows.filter((row) => row.status === "succeeded" && inRange(row)).length, failedPayments: paymentRows.filter((row) => row.status === "failed" && inRange(row)).length, premiumCount: active - premiumProCount, premiumProCount, revenuePremium: premiumRevenue, revenuePremiumPro: premiumProRevenue, conversion: null, trend: [] });
   } catch (_error) { res.json({ connected: false, range: String(req.query.range ?? "30d"), subscriptions: [], revenue: null, payments: null }); }
 });
 router.get("/admin/billing/subscriptions", async (req, res, next): Promise<void> => {
