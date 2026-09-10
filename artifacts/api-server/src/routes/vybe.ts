@@ -5,7 +5,6 @@ import {
   activitiesTable,
   battleParticipantsTable,
   battlesTable,
-  battleResultsTable,
   notificationsTable,
   moderationReportsTable,
   appSettingsTable,
@@ -44,7 +43,7 @@ import {
   currentUserFrom,
   requireAuthenticatedUser,
 } from "../middlewares/auth";
-import { levelForXp, settleBattleInTransaction, xpProgress } from "../viralCore";
+import { settleBattleInTransaction, xpProgress } from "../viralCore";
 
 const router: IRouter = Router();
 
@@ -118,6 +117,7 @@ async function serializeBattle(battle: Battle, currentUserId: string) {
           .where(and(inArray(profilesTable.id, entries.map((entry) => entry.profileId)), eq(profilesTable.status, "ACTIVE")))
       : [];
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
+  const [result] = await db.select().from(await import("@workspace/db").then(({ battleResultsTable }) => battleResultsTable)).where(eq((await import("@workspace/db")).battleResultsTable.battleId, battle.id));
   const participants = entries.flatMap((entry) => {
     const profile = profileMap.get(entry.profileId);
     if (!profile) return [];
@@ -143,6 +143,8 @@ async function serializeBattle(battle: Battle, currentUserId: string) {
     rewardXp: battle.rewardXp,
     coverTone: battle.coverTone,
     isJoined: entries.some((entry) => entry.profileId === currentUserId),
+    winnerParticipantId: result?.winnerParticipantId ?? null,
+    loserParticipantId: result?.loserParticipantId ?? null,
     participants,
   };
 }
@@ -251,7 +253,7 @@ router.get("/dashboard", async (_req, res, next) => {
 
     res.json(
       GetDashboardResponse.parse({
-        profile,
+        profile: profileView(profile),
         featuredBattles: battles.slice(0, 3),
         trendingBattles: battles.slice(1),
         leaderboardPreview: ranking.entries.slice(0, 5),
@@ -306,18 +308,29 @@ router.post("/battles", async (req, res, next) => {
       return;
     }
     const profile = currentUserFrom(res);
-    const [battle] = await db
-      .insert(battlesTable)
-      .values({
-        id: `battle-${crypto.randomUUID()}`,
-        title: parsed.data.title,
-        category: parsed.data.category,
-        prompt: parsed.data.prompt,
-        endsAt: new Date(parsed.data.endsAt),
-        maxParticipants: parsed.data.maxParticipants ?? 8,
-        creatorProfileId: profile.id,
-      })
-      .returning();
+    const battleId = `battle-${crypto.randomUUID()}`;
+    const battle = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(battlesTable)
+        .values({
+          id: battleId,
+          title: parsed.data.title,
+          category: parsed.data.category,
+          prompt: parsed.data.prompt,
+          endsAt: new Date(parsed.data.endsAt),
+          maxParticipants: 2,
+          creatorProfileId: profile.id,
+        })
+        .returning();
+      if (!created) return undefined;
+      await tx.insert(battleParticipantsTable).values({
+        id: `entry-${crypto.randomUUID()}`,
+        battleId,
+        profileId: profile.id,
+        submissionLabel: "Host entry",
+      });
+      return created;
+    });
     if (!battle) throw new Error("Battle creation failed");
     res.status(201).json(
       CreateBattleResponse.parse(await serializeBattle(battle, profile.id)),
@@ -359,29 +372,34 @@ router.post("/battles/:battleId", async (req, res, next) => {
       return;
     }
     const profile = currentUserFrom(res);
-    const [battle] = await db
-      .select()
-      .from(battlesTable)
-      .where(and(eq(battlesTable.id, parsed.data.battleId), eq(battlesTable.contentStatus, "ACTIVE")));
-    if (!battle) {
+    const battle = await db.transaction(async (tx) => {
+      await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${parsed.data.battleId} for update`);
+      const [lockedBattle] = await tx.select().from(battlesTable).where(and(eq(battlesTable.id, parsed.data.battleId), eq(battlesTable.contentStatus, "ACTIVE")));
+      if (!lockedBattle) return { error: "Battle not found", status: 404 as const };
+      if (lockedBattle.status !== "open" && lockedBattle.status !== "live") return { error: "Battle is closed", status: 409 as const };
+      if (lockedBattle.endsAt.getTime() <= Date.now()) return { error: "Battle has ended", status: 409 as const };
+      const currentEntries = await tx.select().from(battleParticipantsTable).where(eq(battleParticipantsTable.battleId, lockedBattle.id));
+      if (currentEntries.some((entry) => entry.profileId === profile.id)) return { battle: lockedBattle };
+      if (currentEntries.length >= lockedBattle.maxParticipants) return { error: "This 1v1 Battle already has two players", status: 409 as const };
+      await tx.insert(battleParticipantsTable).values({
+        id: `entry-${crypto.randomUUID()}`,
+        battleId: lockedBattle.id,
+        profileId: profile.id,
+        submissionLabel: "Challenger entry",
+      });
+      const [updated] = await tx.update(battlesTable).set({ status: "live", updatedAt: new Date() }).where(eq(battlesTable.id, lockedBattle.id)).returning();
+      return { battle: updated ?? lockedBattle };
+    });
+    if ("error" in battle) {
+      res.status(battle.status).json({ error: battle.error });
+      return;
+    }
+    if (!battle.battle) {
       res.status(404).json({ error: "Battle not found" });
       return;
     }
-    if (battle.status !== "open" && battle.status !== "live") {
-      res.status(409).json({ error: "Battle is closed" });
-      return;
-    }
-    await db
-      .insert(battleParticipantsTable)
-      .values({
-        id: `entry-${crypto.randomUUID()}`,
-        battleId: battle.id,
-        profileId: profile.id,
-        submissionLabel: "New entry",
-      })
-      .onConflictDoNothing();
     res.json(
-      JoinBattleResponse.parse(await serializeBattle(battle, profile.id)),
+      JoinBattleResponse.parse(await serializeBattle(battle.battle, profile.id)),
     );
   } catch (error) {
     next(error);
@@ -422,6 +440,7 @@ router.post("/battles/:battleId/vote", async (req, res, next) => {
           votes: sql`${battleParticipantsTable.votes} + 1`,
           score: sql`${battleParticipantsTable.score} + 3`,
         }).where(eq(battleParticipantsTable.id, participant.id));
+        await settleBattleInTransaction(tx, activeBattle.id, profile.id);
         return { battle: activeBattle };
       });
       if ("error" in result && result.error) {
@@ -446,7 +465,7 @@ router.post("/battles/:battleId/vote", async (req, res, next) => {
 });
 
 router.get("/profile", (_req, res) => {
-  res.json(GetProfileResponse.parse(currentUserFrom(res)));
+  res.json(GetProfileResponse.parse(profileView(currentUserFrom(res))));
 });
 
 router.patch("/profile", async (req, res, next) => {
@@ -498,6 +517,34 @@ router.get("/notifications", async (_req, res, next) => {
       .where(eq(notificationsTable.profileId, profile.id))
       .orderBy(desc(notificationsTable.createdAt));
     res.json(ListNotificationsResponse.parse(notifications));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/notifications/:notificationId/read", async (req, res, next) => {
+  try {
+    const profile = currentUserFrom(res);
+    const [notification] = await db
+      .update(notificationsTable)
+      .set({ read: true })
+      .where(and(eq(notificationsTable.id, req.params.notificationId), eq(notificationsTable.profileId, profile.id)))
+      .returning();
+    if (!notification) {
+      res.status(404).json({ error: "Notification not found" });
+      return;
+    }
+    res.json(notification);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/notifications/read-all", async (_req, res, next) => {
+  try {
+    const profile = currentUserFrom(res);
+    await db.update(notificationsTable).set({ read: true }).where(eq(notificationsTable.profileId, profile.id));
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }
