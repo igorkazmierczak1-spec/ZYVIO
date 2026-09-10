@@ -11,7 +11,6 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import { WebhookHandlers } from "./webhookHandlers";
-import { hasDirectStripeCredentials } from "./stripeClient";
 
 const app: Express = express();
 
@@ -21,7 +20,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
     res.status(400).json({ error: "Missing or invalid stripe-signature" });
     return;
   }
-  if (!hasDirectStripeCredentials() || !process.env.STRIPE_WEBHOOK_SECRET) {
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
     res.status(503).json({ error: "Stripe webhook is not configured" });
     return;
   }

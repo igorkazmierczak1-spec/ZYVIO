@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { db, profilesTable, stripeWebhookEventsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { getUncachableStripeClient } from "./stripeClient";
+import { stripeRequest } from "./stripeClient";
 
 type Plan = "FREE" | "PREMIUM" | "PREMIUM_PRO";
 
@@ -57,8 +57,7 @@ export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!secret) throw new Error("Stripe webhook is not configured");
-    const stripe = await getUncachableStripeClient();
-    const event = stripe.webhooks.constructEvent(payload, signature, secret);
+    const event = Stripe.webhooks.constructEvent(payload, signature, secret);
     const [inserted] = await db.insert(stripeWebhookEventsTable)
       .values({ id: event.id, type: event.type })
       .onConflictDoNothing()
@@ -69,7 +68,7 @@ export class WebhookHandlers {
     if (event.type === "checkout.session.completed") {
       const userId = data.metadata?.vybeUserId ?? data.subscription_details?.metadata?.vybeUserId;
       if (data.subscription) {
-        const subscription = await stripe.subscriptions.retrieve(String(data.subscription));
+        const subscription = await stripeRequest<any>(`subscriptions/${String(data.subscription)}`);
         await syncSubscription(subscription, userId);
       }
       return;
@@ -85,7 +84,7 @@ export class WebhookHandlers {
     if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
       const subscriptionId = typeof data.subscription === "string" ? data.subscription : data.subscription?.id;
       if (subscriptionId) {
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const subscription = await stripeRequest<any>(`subscriptions/${subscriptionId}`);
         await syncSubscription(subscription, undefined, event.type === "invoice.payment_failed" ? "past_due" : undefined);
       }
     }
