@@ -12,6 +12,8 @@ type Bucket = {
 };
 
 const buckets = new Map<string, Bucket>();
+let lastCleanupAt = 0;
+const CLEANUP_INTERVAL_MS = 60_000;
 
 function clientKey(req: Parameters<RequestHandler>[0], name: string) {
   const profileId = req.res?.locals.currentUser?.id ?? "anonymous";
@@ -21,6 +23,12 @@ function clientKey(req: Parameters<RequestHandler>[0], name: string) {
 export function rateLimit({ name, windowMs, max }: RateLimitOptions): RequestHandler {
   return (req, res, next) => {
     const now = Date.now();
+    if (now - lastCleanupAt >= CLEANUP_INTERVAL_MS) {
+      for (const [bucketKey, bucket] of buckets) {
+        if (bucket.resetAt <= now) buckets.delete(bucketKey);
+      }
+      lastCleanupAt = now;
+    }
     const key = clientKey(req, name);
     const current = buckets.get(key);
 
@@ -47,4 +55,5 @@ export function rateLimit({ name, windowMs, max }: RateLimitOptions): RequestHan
 
 export function clearRateLimitBucketsForTests() {
   buckets.clear();
+  lastCleanupAt = 0;
 }

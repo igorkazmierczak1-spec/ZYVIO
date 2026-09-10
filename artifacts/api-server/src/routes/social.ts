@@ -309,7 +309,11 @@ router.get("/social/posts/:postId/comments", async (req, res, next) => {
         avatarUrl: profilesTable.avatarUrl,
       },
     }).from(commentsTable).innerJoin(profilesTable, eq(profilesTable.id, commentsTable.authorProfileId))
-      .where(and(eq(commentsTable.postId, post.id), eq(commentsTable.contentStatus, "ACTIVE")))
+      .where(and(
+        eq(commentsTable.postId, post.id),
+        eq(commentsTable.contentStatus, "ACTIVE"),
+        ...(blocked.length ? [notInArray(commentsTable.authorProfileId, blocked)] : []),
+      ))
       .orderBy(asc(commentsTable.createdAt));
     res.json(rows);
   } catch (error) {

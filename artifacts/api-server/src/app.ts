@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type ErrorRequestHandler, type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
@@ -13,6 +13,27 @@ import {
 import { WebhookHandlers } from "./webhookHandlers";
 
 const app: Express = express();
+
+function originCandidates() {
+  const configured = (process.env.CORS_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const replDomains = [
+    process.env.REPLIT_DEV_DOMAIN,
+    ...(process.env.REPLIT_DOMAINS ?? "").split(","),
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => (value.startsWith("http://") || value.startsWith("https://") ? value : `https://${value}`));
+  return new Set([...configured, ...replDomains]);
+}
+
+function isAllowedOrigin(origin: string) {
+  if (originCandidates().has(origin)) return true;
+  if (process.env.NODE_ENV !== "production" && /^https?:\/\/localhost:\d+$/.test(origin)) return true;
+  return false;
+}
 
 app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   const signature = req.headers["stripe-signature"];
@@ -52,7 +73,25 @@ app.use(
   }),
 );
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-app.use(cors({ credentials: true, origin: true }));
+app.use(cors({
+  credentials: true,
+  origin(origin, callback) {
+    if (!origin || isAllowedOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Origin is not allowed"));
+  },
+}));
+app.use((req, res, next) => {
+  const stateChanging = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
+  const origin = req.headers.origin;
+  if (stateChanging && origin && !isAllowedOrigin(origin)) {
+    res.status(403).json({ error: "Request origin is not allowed" });
+    return;
+  }
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -65,5 +104,21 @@ app.use(
 );
 
 app.use("/api", router);
+
+const apiErrorHandler: ErrorRequestHandler = (error, req, res, _next) => {
+  const status =
+    typeof error?.status === "number" && error.status >= 400 && error.status < 500
+      ? error.status
+      : typeof error?.statusCode === "number" && error.statusCode >= 400 && error.statusCode < 500
+        ? error.statusCode
+        : 500;
+  logger.error({ err: error, method: req.method, url: req.url }, "Unhandled API error");
+  if (res.headersSent) return;
+  res.status(status).json({
+    error: status === 500 ? "Internal server error" : "Request could not be completed",
+  });
+};
+
+app.use(apiErrorHandler);
 
 export default app;

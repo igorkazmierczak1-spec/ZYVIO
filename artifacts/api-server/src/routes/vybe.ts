@@ -434,6 +434,12 @@ router.post("/battles/:battleId/vote", battleVoteRateLimit, async (req, res, nex
         await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${params.data.battleId} for update`);
         const [activeBattle] = await tx.select().from(battlesTable).where(and(eq(battlesTable.id, params.data.battleId), eq(battlesTable.contentStatus, "ACTIVE")));
         if (!activeBattle) return { error: "Battle not found", status: 404 as const };
+        if (activeBattle.status !== "open" && activeBattle.status !== "live") {
+          return { error: "Battle is closed", status: 409 as const };
+        }
+        if (activeBattle.endsAt.getTime() <= Date.now()) {
+          return { error: "Battle has ended", status: 409 as const };
+        }
         const [participant] = await tx
           .select()
           .from(battleParticipantsTable)

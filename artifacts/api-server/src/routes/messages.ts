@@ -5,6 +5,7 @@ import {
   conversationsTable,
   db,
   messagesTable,
+  notificationsTable,
   profilesTable,
 } from "@workspace/db";
 import { currentUserFrom, requireAuthenticatedUser } from "../middlewares/auth";
@@ -194,14 +195,28 @@ router.post("/social/conversations/:conversationId/messages", messageRateLimit, 
       res.status(400).json({ error: parsed.error });
       return;
     }
-    const [message] = await db.insert(messagesTable).values({
-      id: `message-${crypto.randomUUID()}`,
-      conversationId: conversation.id,
-      senderProfileId: profile.id,
-      body: parsed.body,
-    }).returning();
-    await db.update(conversationsTable).set({ updatedAt: new Date() })
-      .where(eq(conversationsTable.id, conversation.id));
+    const [message] = await db.transaction(async (tx) => {
+      const [created] = await tx.insert(messagesTable).values({
+        id: `message-${crypto.randomUUID()}`,
+        conversationId: conversation.id,
+        senderProfileId: profile.id,
+        body: parsed.body,
+      }).returning();
+      await tx.update(conversationsTable).set({ updatedAt: new Date() })
+        .where(eq(conversationsTable.id, conversation.id));
+      await tx.insert(notificationsTable).values({
+        id: `notification-${crypto.randomUUID()}`,
+        profileId: recipientProfileId,
+        kind: "message",
+        title: "New message",
+        body: `${profile.displayName} sent you a message.`,
+      });
+      return [created];
+    });
+    if (!message) {
+      res.status(500).json({ error: "Message could not be created" });
+      return;
+    }
     res.status(201).json(await messageView(message));
   } catch (error) {
     next(error);
