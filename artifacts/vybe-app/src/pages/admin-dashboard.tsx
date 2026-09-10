@@ -17,6 +17,9 @@ import {
   useGetAdminSettings,
   useUpdateAdminSettings,
   useGetAdminMonetization,
+  useGetAdminBillingOverview,
+  useListAdminBillingSubscriptions,
+  useGetAdminBillingConfig,
   getListAdminUsersQueryKey,
   getGetAdminUserQueryKey,
   getListAdminReportsQueryKey,
@@ -37,7 +40,7 @@ import {
   LayoutDashboard, Users, ShieldAlert, Swords, BarChart3,
   CircleDollarSign, Bell, Activity as ActivityIcon, Settings,
   Search, ChevronLeft, ChevronRight, X, AlertTriangle, 
-  Loader2, ArrowUpRight, LogOut
+  Loader2, ArrowUpRight, LogOut, CreditCard
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, 
@@ -164,7 +167,7 @@ function AdminActionModal({
 // Tabs
 // -----------------------------------------------------------------------------
 
-type Tab = "Overview" | "Users" | "Moderation" | "Battles" | "Analytics" | "Monetization" | "Notifications" | "Audit" | "Settings";
+type Tab = "Overview" | "Users" | "Moderation" | "Battles" | "Analytics" | "Revenue" | "Subscriptions" | "Notifications" | "Audit" | "Settings";
 
 export function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
@@ -176,7 +179,8 @@ export function AdminDashboardPage() {
       case "Moderation": return <AdminModerationTab />;
       case "Battles": return <AdminBattlesTab />;
       case "Analytics": return <AdminAnalyticsTab />;
-      case "Monetization": return <AdminMonetizationTab />;
+      case "Revenue": return <AdminRevenueTab />;
+      case "Subscriptions": return <AdminSubscriptionsTab />;
       case "Notifications": return <AdminNotificationsTab />;
       case "Audit": return <AdminAuditTab />;
       case "Settings": return <AdminSettingsTab />;
@@ -197,7 +201,8 @@ export function AdminDashboardPage() {
           <NavItem icon={ShieldAlert} label="Moderation" isActive={activeTab === "Moderation"} onClick={() => setActiveTab("Moderation")} />
           <NavItem icon={Swords} label="Battles" isActive={activeTab === "Battles"} onClick={() => setActiveTab("Battles")} />
           <NavItem icon={BarChart3} label="Analytics" isActive={activeTab === "Analytics"} onClick={() => setActiveTab("Analytics")} />
-          <NavItem icon={CircleDollarSign} label="Monetization" isActive={activeTab === "Monetization"} onClick={() => setActiveTab("Monetization")} />
+          <NavItem icon={CircleDollarSign} label="Revenue" isActive={activeTab === "Revenue"} onClick={() => setActiveTab("Revenue")} />
+          <NavItem icon={CreditCard} label="Subscriptions" isActive={activeTab === "Subscriptions"} onClick={() => setActiveTab("Subscriptions")} />
           <NavItem icon={Bell} label="Notifications" isActive={activeTab === "Notifications"} onClick={() => setActiveTab("Notifications")} />
           <NavItem icon={ActivityIcon} label="Audit" isActive={activeTab === "Audit"} onClick={() => setActiveTab("Audit")} />
           <NavItem icon={Settings} label="Settings" isActive={activeTab === "Settings"} onClick={() => setActiveTab("Settings")} />
@@ -372,7 +377,7 @@ function AdminUsersTab() {
   const [pageSize] = useState(20);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
@@ -462,7 +467,7 @@ function AdminUsersTab() {
 function AdminUserDetailView({ userId, onBack }: { userId: string, onBack: () => void }) {
   const queryClient = useQueryClient();
   const { data: user, isLoading, isError, refetch } = useGetAdminUser(userId, { query: { queryKey: getGetAdminUserQueryKey(userId) } });
-  
+
   const [modalState, setModalState] = useState<{
     type: typeof AdminUserUpdateAction[keyof typeof AdminUserUpdateAction] | 'DELETE';
     role?: AdminUserUpdateRole;
@@ -831,36 +836,131 @@ function AdminAnalyticsTab() {
   );
 }
 
-function AdminMonetizationTab() {
-  const { data, isLoading, isError, refetch } = useGetAdminMonetization({ query: { queryKey: getGetAdminMonetizationQueryKey() } });
+function AdminRevenueTab() {
+  const [range, setRange] = useState<AdminRangeParameter>("30d");
+  const { data, isLoading, isError, refetch } = useGetAdminBillingOverview({ range }, { query: { queryKey: ["admin-billing-overview", range] } });
+
+  if (isLoading) return <AdminLoading />;
+  if (isError || !data) return <AdminError onRetry={() => refetch()} />;
+
+  if (!data.connected) {
+    return (
+      <div className="admin-empty">
+        <AlertTriangle size={24} style={{ margin: '0 auto 8px', color: '#8c8797' }} />
+        Billing provider is not connected.
+      </div>
+    );
+  }
+
+  return (
+    <div className="admin-overview">
+      <div className="admin-toolbar justify-end mb-4">
+        <select value={range} onChange={(e) => setRange(e.target.value as AdminRangeParameter)}>
+          <option value="7d">Last 7 Days</option>
+          <option value="30d">Last 30 Days</option>
+          <option value="90d">Last 90 Days</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+
+      <div className="admin-kpi-grid">
+        <KpiCard label="Revenue" value={data.revenue != null ? `$${(data.revenue / 100).toFixed(2)}` : '$0.00'} />
+        <KpiCard label="Payments" value={data.payments != null ? data.payments : '0'} />
+      </div>
+
+      <div className="admin-card mt-4">
+        <h3>Recent Subscriptions</h3>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.subscriptions?.map((sub: any) => (
+              <tr key={sub.id}>
+                <td>{sub.id}</td>
+                <td><span className={`admin-badge status-${sub.status}`}>{sub.status}</span></td>
+              </tr>
+            ))}
+            {(!data.subscriptions || data.subscriptions.length === 0) && (
+              <tr><td colSpan={2} className="admin-empty">No recent subscriptions.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function AdminSubscriptionsTab() {
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const { data, isLoading, isError, refetch } = useListAdminBillingSubscriptions(
+    { page, pageSize: 20, status: status || undefined, search: debouncedSearch || undefined },
+    { query: { queryKey: ["admin-billing-subs", page, status, debouncedSearch] } }
+  );
 
   if (isLoading) return <AdminLoading />;
   if (isError || !data) return <AdminError onRetry={() => refetch()} />;
 
   return (
-    <div className="admin-monetization">
-      {!data.connected && (
-        <div className="admin-alert warning mb-4">
-          <AlertTriangle size={16} />
-          <span>Monetization provider ({data.provider || 'Stripe'}) is not connected or keys are missing. Data is unavailable.</span>
+    <div className="admin-panel">
+      <div className="admin-toolbar" style={{ justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div className="admin-search">
+            <Search size={14} />
+            <input type="text" placeholder="Search by customer..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+          </div>
+          <select value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}>
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="canceled">Cancelled</option>
+            <option value="past_due">Past Due</option>
+          </select>
         </div>
-      )}
-
-      <div className="admin-kpi-grid">
-        <KpiCard label="Monthly Recurring Revenue" value={data.mrr != null ? `$${data.mrr}` : <span className="admin-null">N/A</span>} />
-        <KpiCard label="Total Revenue" value={data.revenue != null ? `$${data.revenue}` : <span className="admin-null">N/A</span>} />
-        <KpiCard label="Active Subscriptions" value={data.activeSubscriptions != null ? data.activeSubscriptions : <span className="admin-null">N/A</span>} />
-        <KpiCard label="Cancelled" value={data.cancelledSubscriptions != null ? data.cancelledSubscriptions : <span className="admin-null">N/A</span>} />
+        <button className="admin-btn-outline" onClick={() => window.open('/api/admin/billing/subscriptions.csv', '_blank')}>
+          Export CSV
+        </button>
       </div>
-
-      <div className="admin-card mt-4">
-        <h3>Provider Status</h3>
-        <div className="admin-kv-list">
-          <div className="admin-kv"><span>Provider</span><strong>{data.provider || <span className="admin-null">None</span>}</strong></div>
-          <div className="admin-kv"><span>Status</span><strong className={data.connected ? 'status-active' : 'status-blocked'}>{data.connected ? 'Connected' : 'Disconnected'}</strong></div>
-          <div className="admin-kv"><span>Message</span><strong>{data.message}</strong></div>
-          <div className="admin-kv"><span>Top Plan</span><strong>{data.topPlan || <span className="admin-null">N/A</span>}</strong></div>
-        </div>
+      <div className="admin-table-container">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Plan</th>
+              <th>Status</th>
+              <th>Period End</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.items.map((sub: any) => (
+              <tr key={sub.id}>
+                <td>{sub.id}</td>
+                <td>{sub.customer_email || 'Unknown'}</td>
+                <td>{sub.plan_name || 'Standard'}</td>
+                <td><span className={`admin-badge status-${sub.status}`}>{sub.status}</span></td>
+                <td>{sub.current_period_end ? new Date(sub.current_period_end * 1000).toLocaleDateString() : 'N/A'}</td>
+              </tr>
+            ))}
+            {data.items.length === 0 && <tr><td colSpan={5} className="admin-empty">No subscriptions found.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <div className="admin-pagination">
+        <button disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft size={14} /> Prev</button>
+        <span>Page {page}</span>
+        <button disabled={data.items.length < 20} onClick={() => setPage(page + 1)}>Next <ChevronRight size={14} /></button>
       </div>
     </div>
   );
@@ -943,6 +1043,7 @@ function AdminAuditTab() {
 function AdminSettingsTab() {
   const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useGetAdminSettings({ query: { queryKey: getGetAdminSettingsQueryKey() } });
+  const { data: billingConfig, isLoading: configLoading } = useGetAdminBillingConfig({ query: { queryKey: ["admin-billing-config"] } });
   
   const [isModalOpen, setModalOpen] = useState(false);
 
@@ -1038,6 +1139,44 @@ function AdminSettingsTab() {
           </button>
         </div>
       </div>
+
+      {configLoading ? <AdminLoading /> : (
+        <div className="admin-card max-w-2xl mt-6">
+          <h3>Billing Configuration</h3>
+          <p className="admin-description">Payment gateway integration status.</p>
+
+          <div className="admin-settings-list mt-4">
+            <div className="admin-setting-row">
+              <div>
+                <strong>Connection Status</strong>
+                <p>Current billing provider integration status.</p>
+              </div>
+              <span className={`admin-badge ${billingConfig?.connected ? 'status-active' : 'status-blocked'}`}>
+                {billingConfig?.connected ? 'CONNECTED' : 'DISCONNECTED'}
+              </span>
+            </div>
+
+            {billingConfig?.connected && (
+              <>
+                <div className="admin-setting-row">
+                  <div>
+                    <strong>Provider</strong>
+                    <p>Active payment gateway.</p>
+                  </div>
+                  <strong>{billingConfig.provider.toUpperCase()}</strong>
+                </div>
+                <div className="admin-setting-row">
+                  <div>
+                    <strong>Currency</strong>
+                    <p>Default currency for all transactions.</p>
+                  </div>
+                  <strong>{billingConfig.currency.toUpperCase()}</strong>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

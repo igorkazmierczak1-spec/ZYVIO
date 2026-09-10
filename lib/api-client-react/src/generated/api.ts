@@ -26,6 +26,9 @@ import type {
   AdminBattle,
   AdminBattlePage,
   AdminBattleUpdate,
+  AdminBillingConfig,
+  AdminBillingOverview,
+  AdminBillingSubscriptions,
   AdminDeleteUserInput,
   AdminMonetization,
   AdminNotification,
@@ -41,8 +44,10 @@ import type {
   AdminUserUpdate,
   Battle,
   BattleInput,
+  CheckoutResponse,
   Dashboard,
   GetAdminAnalyticsParams,
+  GetAdminBillingOverviewParams,
   GetAdminOverviewParams,
   GetLeaderboardParams,
   HealthStatus,
@@ -51,10 +56,14 @@ import type {
   Leaderboard,
   ListAdminAuditParams,
   ListAdminBattlesParams,
+  ListAdminBillingSubscriptionsParams,
   ListAdminReportsParams,
   ListAdminUsersParams,
   ListBattlesParams,
   Notification,
+  PremiumCheckoutInput,
+  PremiumPlansResponse,
+  PremiumSubscriptionResponse,
   Profile,
   ProfileUpdate,
   ReportInput,
@@ -2150,6 +2159,505 @@ export function useGetAdminMonetization<TData = Awaited<ReturnType<typeof getAdm
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAdminMonetizationQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListPremiumPlansUrl = () => {
+
+
+
+
+  return `/api/premium/plans`
+}
+
+export const listPremiumPlans = async ( options?: Parameters<typeof customFetch>[1]): Promise<PremiumPlansResponse> => {
+
+  return customFetch<PremiumPlansResponse>(getListPremiumPlansUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPremiumPlansQueryKey = () => {
+    return [
+    `/api/premium/plans`
+    ] as const;
+    }
+
+
+export const getListPremiumPlansQueryOptions = <TData = Awaited<ReturnType<typeof listPremiumPlans>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPremiumPlans>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPremiumPlansQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPremiumPlans>>> = ({ signal }) => listPremiumPlans({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPremiumPlans>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPremiumPlansQueryResult = NonNullable<Awaited<ReturnType<typeof listPremiumPlans>>>
+export type ListPremiumPlansQueryError = ErrorType<unknown>
+
+
+
+export function useListPremiumPlans<TData = Awaited<ReturnType<typeof listPremiumPlans>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPremiumPlans>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPremiumPlansQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPremiumSubscriptionUrl = () => {
+
+
+
+
+  return `/api/premium/subscription`
+}
+
+export const getPremiumSubscription = async ( options?: Parameters<typeof customFetch>[1]): Promise<PremiumSubscriptionResponse> => {
+
+  return customFetch<PremiumSubscriptionResponse>(getGetPremiumSubscriptionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPremiumSubscriptionQueryKey = () => {
+    return [
+    `/api/premium/subscription`
+    ] as const;
+    }
+
+
+export const getGetPremiumSubscriptionQueryOptions = <TData = Awaited<ReturnType<typeof getPremiumSubscription>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPremiumSubscription>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPremiumSubscriptionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPremiumSubscription>>> = ({ signal }) => getPremiumSubscription({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPremiumSubscription>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPremiumSubscriptionQueryResult = NonNullable<Awaited<ReturnType<typeof getPremiumSubscription>>>
+export type GetPremiumSubscriptionQueryError = ErrorType<unknown>
+
+
+
+export function useGetPremiumSubscription<TData = Awaited<ReturnType<typeof getPremiumSubscription>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPremiumSubscription>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPremiumSubscriptionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreatePremiumCheckoutUrl = () => {
+
+
+
+
+  return `/api/premium/checkout`
+}
+
+export const createPremiumCheckout = async (premiumCheckoutInput: PremiumCheckoutInput, options?: Parameters<typeof customFetch>[1]): Promise<CheckoutResponse> => {
+
+  return customFetch<CheckoutResponse>(getCreatePremiumCheckoutUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(premiumCheckoutInput)
+  }
+);}
+
+
+
+
+
+export const getCreatePremiumCheckoutMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPremiumCheckout>>, TError,{data: BodyType<PremiumCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPremiumCheckout>>, TError,{data: BodyType<PremiumCheckoutInput>}, TContext> => {
+
+const mutationKey = ['createPremiumCheckout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPremiumCheckout>>, {data: BodyType<PremiumCheckoutInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPremiumCheckout(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePremiumCheckoutMutationResult = NonNullable<Awaited<ReturnType<typeof createPremiumCheckout>>>
+    export type CreatePremiumCheckoutMutationBody = BodyType<PremiumCheckoutInput>
+    export type CreatePremiumCheckoutMutationError = ErrorType<unknown>
+
+    export const useCreatePremiumCheckout = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPremiumCheckout>>, TError,{data: BodyType<PremiumCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPremiumCheckout>>,
+        TError,
+        {data: BodyType<PremiumCheckoutInput>},
+        TContext
+      > => {
+      return useMutation(getCreatePremiumCheckoutMutationOptions(options));
+    }
+
+export const getCreatePremiumPortalUrl = () => {
+
+
+
+
+  return `/api/premium/portal`
+}
+
+export const createPremiumPortal = async ( options?: Parameters<typeof customFetch>[1]): Promise<CheckoutResponse> => {
+
+  return customFetch<CheckoutResponse>(getCreatePremiumPortalUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCreatePremiumPortalMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPremiumPortal>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPremiumPortal>>, TError,void, TContext> => {
+
+const mutationKey = ['createPremiumPortal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPremiumPortal>>, void> = () => {
+
+
+          return  createPremiumPortal(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePremiumPortalMutationResult = NonNullable<Awaited<ReturnType<typeof createPremiumPortal>>>
+
+    export type CreatePremiumPortalMutationError = ErrorType<unknown>
+
+    export const useCreatePremiumPortal = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPremiumPortal>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createPremiumPortal>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCreatePremiumPortalMutationOptions(options));
+    }
+
+export const getGetAdminBillingOverviewUrl = (params?: GetAdminBillingOverviewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/billing/overview?${stringifiedParams}` : `/api/admin/billing/overview`
+}
+
+export const getAdminBillingOverview = async (params?: GetAdminBillingOverviewParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminBillingOverview> => {
+
+  return customFetch<AdminBillingOverview>(getGetAdminBillingOverviewUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminBillingOverviewQueryKey = (params?: GetAdminBillingOverviewParams,) => {
+    return [
+    `/api/admin/billing/overview`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAdminBillingOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getAdminBillingOverview>>, TError = ErrorType<unknown>>(params?: GetAdminBillingOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminBillingOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminBillingOverviewQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminBillingOverview>>> = ({ signal }) => getAdminBillingOverview(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminBillingOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminBillingOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminBillingOverview>>>
+export type GetAdminBillingOverviewQueryError = ErrorType<unknown>
+
+
+
+export function useGetAdminBillingOverview<TData = Awaited<ReturnType<typeof getAdminBillingOverview>>, TError = ErrorType<unknown>>(
+ params?: GetAdminBillingOverviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminBillingOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminBillingOverviewQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminBillingSubscriptionsUrl = (params?: ListAdminBillingSubscriptionsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/billing/subscriptions?${stringifiedParams}` : `/api/admin/billing/subscriptions`
+}
+
+export const listAdminBillingSubscriptions = async (params?: ListAdminBillingSubscriptionsParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminBillingSubscriptions> => {
+
+  return customFetch<AdminBillingSubscriptions>(getListAdminBillingSubscriptionsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminBillingSubscriptionsQueryKey = (params?: ListAdminBillingSubscriptionsParams,) => {
+    return [
+    `/api/admin/billing/subscriptions`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminBillingSubscriptionsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminBillingSubscriptions>>, TError = ErrorType<unknown>>(params?: ListAdminBillingSubscriptionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminBillingSubscriptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminBillingSubscriptionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminBillingSubscriptions>>> = ({ signal }) => listAdminBillingSubscriptions(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminBillingSubscriptions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminBillingSubscriptionsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminBillingSubscriptions>>>
+export type ListAdminBillingSubscriptionsQueryError = ErrorType<unknown>
+
+
+
+export function useListAdminBillingSubscriptions<TData = Awaited<ReturnType<typeof listAdminBillingSubscriptions>>, TError = ErrorType<unknown>>(
+ params?: ListAdminBillingSubscriptionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminBillingSubscriptions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminBillingSubscriptionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminBillingConfigUrl = () => {
+
+
+
+
+  return `/api/admin/billing/config`
+}
+
+export const getAdminBillingConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminBillingConfig> => {
+
+  return customFetch<AdminBillingConfig>(getGetAdminBillingConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminBillingConfigQueryKey = () => {
+    return [
+    `/api/admin/billing/config`
+    ] as const;
+    }
+
+
+export const getGetAdminBillingConfigQueryOptions = <TData = Awaited<ReturnType<typeof getAdminBillingConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminBillingConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminBillingConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminBillingConfig>>> = ({ signal }) => getAdminBillingConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminBillingConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminBillingConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminBillingConfig>>>
+export type GetAdminBillingConfigQueryError = ErrorType<unknown>
+
+
+
+export function useGetAdminBillingConfig<TData = Awaited<ReturnType<typeof getAdminBillingConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminBillingConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminBillingConfigQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

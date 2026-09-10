@@ -11,12 +11,17 @@ import {
   useListNotifications,
   useUpdateProfile,
   useVoteBattle,
+  useListPremiumPlans,
+  useGetPremiumSubscription,
+  useCreatePremiumCheckout,
+  useCreatePremiumPortal,
   getGetBattleQueryKey,
   getGetDashboardQueryKey,
   getGetLeaderboardQueryKey,
   getGetProfileQueryKey,
   getListBattlesQueryKey,
   getListNotificationsQueryKey,
+  getGetPremiumSubscriptionQueryKey,
 } from "@workspace/api-client-react";
 import type {
   Battle,
@@ -39,6 +44,7 @@ import {
   CircleDollarSign,
   Clock3,
   Compass,
+  CreditCard,
   Crown,
   Flame,
   Globe2,
@@ -81,6 +87,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
 import { AdminDashboardPage } from "@/pages/admin-dashboard";
+import PremiumPage from "@/pages/premium";
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -195,11 +202,11 @@ function formatTimeLeft(endsAt: string) {
   return `${Math.round(hours / 24)}d left`;
 }
 
-function Avatar({ name, size = "md", accent = "violet" }: { name: string; size?: "sm" | "md" | "lg"; accent?: string }) {
+export function Avatar({ name, size = "md", accent = "violet" }: { name: string; size?: "sm" | "md" | "lg"; accent?: string }) {
   return <div className={`avatar avatar-${size} avatar-${accent}`}>{initials(name)}</div>;
 }
 
-function Logo() {
+export function Logo() {
   return (
     <div className="brand">
       <div className="brand-mark"><span /></div>
@@ -299,19 +306,19 @@ function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function PageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
+export function PageHeader({ eyebrow, title, description, action }: { eyebrow?: string; title: string; description?: string; action?: ReactNode }) {
   return <div className="page-header"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1>{description && <p>{description}</p>}</div>{action}</div>;
 }
 
-function LoadingState() {
+export function LoadingState() {
   return <div className="loading-stack"><div className="skeleton skeleton-hero" /><div className="skeleton-grid"><div className="skeleton skeleton-card" /><div className="skeleton skeleton-card" /><div className="skeleton skeleton-card" /></div></div>;
 }
 
-function ErrorState({ onRetry }: { onRetry?: () => void }) {
+export function ErrorState({ onRetry }: { onRetry?: () => void }) {
   return <div className="empty-state error-state"><div className="empty-icon"><Zap /></div><h2>Something went off-beat</h2><p>We could not load this view. Try again in a moment.</p>{onRetry && <Button onClick={onRetry}>Try again</Button>}</div>;
 }
 
-function StatCard({ icon: Icon, label, value, detail, accent }: { icon: typeof Zap; label: string; value: string | number; detail: string; accent: string }) {
+export function StatCard({ icon: Icon, label, value, detail, accent }: { icon: typeof Zap; label: string; value: string | number; detail: string; accent: string }) {
   return <div className={`stat-card stat-${accent}`}><div className="stat-icon"><Icon /></div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>;
 }
 
@@ -396,11 +403,78 @@ function LeaderboardPage() {
 function ProfilePage() {
   const profile = useGetProfile();
   const [, navigate] = useLocation();
+  const { data: subData } = useGetPremiumSubscription();
+  const portalMut = useCreatePremiumPortal({
+    mutation: {
+      onSuccess: (res) => { if (res.url) window.location.assign(res.url); }
+    }
+  });
+
   const data = profile.data as Profile | undefined;
   if (profile.isLoading) return <LoadingState />;
   if (profile.isError || !data) return <ErrorState onRetry={() => void profile.refetch()} />;
+
+  const sub = subData?.subscription as any;
+  const hasActiveSub = sub && (sub.status === 'active' || sub.status === 'trialing');
   const winRate = Math.round(data.wins / Math.max(1, data.wins + data.losses) * 100);
-  return <div><PageHeader eyebrow="Your profile" title="Build your legend" action={<div className="profile-actions"><Button variant="secondary" onClick={() => navigate("/settings")}><Settings2 /> Edit profile</Button><LogoutButton /></div>} /><section className="profile-hero panel"><div className="profile-identity"><Avatar name={data.displayName} size="lg" /><div><span className="eyebrow">@{data.username}</span><h2>{data.displayName}</h2><p>{data.bio}</p><div className="profile-meta"><span><Globe2 /> {data.country}</span><span><Crown /> {data.league} league</span>{data.role === "ADMIN" && <span className="profile-admin-badge"><ShieldCheck /> ADMIN</span>}</div></div></div><div className="profile-rank"><span className="eyebrow">Rola konta</span><strong className={data.role === "ADMIN" ? "admin-role-text" : ""}>{data.role}</strong><small>{data.role === "ADMIN" ? "Pełny dostęp administracyjny" : "Konto użytkownika"}</small></div></section><div className="profile-stat-grid"><StatCard icon={Zap} label="Total XP" value={data.xp.toLocaleString()} detail={`Level ${data.level}`} accent="lime" /><StatCard icon={Trophy} label="Wins" value={data.wins} detail={`${winRate}% win rate`} accent="violet" /><StatCard icon={Flame} label="Streak" value={`${data.streak} days`} detail="Personal best" accent="coral" /><StatCard icon={Swords} label="Battles" value={data.wins + data.losses} detail={`${data.losses} losses`} accent="cyan" /></div><section className="panel badges-panel"><div className="panel-heading"><div><span className="eyebrow">Proof of play</span><h2>Badges & achievements</h2></div><span className="badge-count">{data.badges.length} unlocked</span></div><div className="badge-grid">{data.badges.map((badge) => <div className="achievement" key={badge}><div className="achievement-icon"><Check /></div><strong>{badge}</strong><small>Achievement unlocked</small></div>)}</div></section></div>;
+
+  return <div>
+    <PageHeader eyebrow="Your profile" title="Build your legend" action={<div className="profile-actions"><Button variant="secondary" onClick={() => navigate("/settings")}><Settings2 /> Edit profile</Button><LogoutButton /></div>} />
+
+    <section className="profile-hero panel">
+      <div className="profile-identity">
+        <Avatar name={data.displayName} size="lg" />
+        <div>
+          <span className="eyebrow">@{data.username}</span>
+          <h2>{data.displayName}</h2>
+          <p>{data.bio}</p>
+          <div className="profile-meta">
+            <span><Globe2 /> {data.country}</span>
+            <span><Crown /> {data.league} league</span>
+            {data.role === "ADMIN" && <span className="profile-admin-badge"><ShieldCheck /> ADMIN</span>}
+          </div>
+        </div>
+      </div>
+      <div className="profile-rank">
+        <span className="eyebrow">Rola konta</span>
+        <strong className={data.role === "ADMIN" ? "admin-role-text" : ""}>{data.role}</strong>
+        <small>{data.role === "ADMIN" ? "Pełny dostęp administracyjny" : "Konto użytkownika"}</small>
+      </div>
+    </section>
+
+    {hasActiveSub ? (
+      <section className="panel" style={{ padding: '24px', marginBottom: '14px', border: '1px solid var(--lime)', background: '#f1f9d4' }}>
+        <div className="panel-heading" style={{ margin: 0, marginBottom: '16px' }}>
+          <div>
+            <span className="eyebrow" style={{ color: '#537514' }}>Subskrypcja</span>
+            <h2 style={{ color: '#293b09' }}>VYBE Premium Aktywne</h2>
+            {sub.cancel_at_period_end && <p style={{ color: '#c74437', fontSize: '12px', marginTop: '4px' }}>Anulowano - wygasa: {new Date(sub.current_period_end * 1000).toLocaleDateString()}</p>}
+          </div>
+          <Button onClick={() => portalMut.mutate()} disabled={portalMut.isPending} style={{ background: '#293b09', color: 'var(--lime)' }}>
+            {portalMut.isPending ? <Loader2 className="spin" /> : <><CreditCard /> Zarządzaj</>}
+          </Button>
+        </div>
+        <div style={{ display: 'flex', gap: '20px', fontSize: '13px', color: '#537514' }}>
+          <span><strong>Okres rozliczeniowy:</strong> {(sub.plan?.interval === 'year' || sub.plan?.recurring?.interval === 'year') ? 'Roczny' : 'Miesięczny'}</span>
+          <span><strong>Odnowienie:</strong> {sub.current_period_end ? new Date(sub.current_period_end * 1000).toLocaleDateString() : 'N/A'}</span>
+        </div>
+      </section>
+    ) : (
+      <section className="panel" style={{ padding: '24px', marginBottom: '14px', border: '1px solid #e0dbf0', background: '#f6f4fa' }}>
+        <div className="panel-heading" style={{ margin: 0, marginBottom: '8px' }}>
+          <div>
+            <span className="eyebrow">Upgrade</span>
+            <h2>Dołącz do VYBE Premium</h2>
+          </div>
+          <Button onClick={() => navigate("/premium")}><Crown /> Zobacz ofertę</Button>
+        </div>
+        <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Odblokuj ekskluzywne badge, priorytetowy dostęp do nowych funkcji i zyskaj przewagę.</p>
+      </section>
+    )}
+
+    <div className="profile-stat-grid"><StatCard icon={Zap} label="Total XP" value={data.xp.toLocaleString()} detail={`Level ${data.level}`} accent="lime" /><StatCard icon={Trophy} label="Wins" value={data.wins} detail={`${winRate}% win rate`} accent="violet" /><StatCard icon={Flame} label="Streak" value={`${data.streak} days`} detail="Personal best" accent="coral" /><StatCard icon={Swords} label="Battles" value={data.wins + data.losses} detail={`${data.losses} losses`} accent="cyan" /></div>
+    <section className="panel badges-panel"><div className="panel-heading"><div><span className="eyebrow">Proof of play</span><h2>Badges & achievements</h2></div><span className="badge-count">{data.badges.length} unlocked</span></div><div className="badge-grid">{data.badges.map((badge) => <div className="achievement" key={badge}><div className="achievement-icon"><Check /></div><strong>{badge}</strong><small>Achievement unlocked</small></div>)}</div></section>
+  </div>;
 }
 
 function NotificationsPage() {
@@ -414,10 +488,6 @@ function AiPage() {
   const [category, setCategory] = useState("Creativity");
   const ideas = useGenerateIdeas();
   return <div><PageHeader eyebrow="VYBE AI" title="Turn sparks into battles" description="Give the studio a direction. VYBE AI will shape it into something people want to enter." /><section className="ai-workspace"><div className="ai-intro"><div className="ai-symbol"><Bot /></div><span className="eyebrow">Creative studio</span><h2>What are you curious about?</h2><p>Describe a mood, theme, or weird idea. Your battle concepts stay yours until you publish.</p><div className="ai-example-row"><button onClick={() => setTopic("a rainy city at midnight")}>Rainy city at midnight</button><button onClick={() => setTopic("objects with secret lives")}>Objects with secret lives</button><button onClick={() => setTopic("the future of friendship")}>Future of friendship</button></div></div><form className="ai-form" onSubmit={(event) => { event.preventDefault(); if (topic.trim()) ideas.mutate({ data: { topic, category } }); }}><label>Theme or starting point<textarea value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="Try: a battle for people who notice the small things" rows={4} /></label><label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}>{categoryFilters.slice(1).map((item) => <option key={item}>{item}</option>)}</select></label><Button type="submit" disabled={ideas.isPending || !topic.trim()}>{ideas.isPending ? <><Loader2 className="spin" /> Thinking...</> : <><Sparkles /> Generate ideas</>}</Button></form></section>{ideas.data?.ideas && <section className="panel idea-results"><div className="panel-heading"><div><span className="eyebrow">Five directions</span><h2>Pick the one that pulls you in</h2></div><IconButton label="Clear ideas" onClick={() => ideas.reset()}><X /></IconButton></div>{ideas.data.ideas.map((idea, index) => <button className="idea-row" key={idea} onClick={() => setTopic(idea)}><span>{String(index + 1).padStart(2, "0")}</span><strong>{idea}</strong><ArrowUpRight /></button>)}</section>}{ideas.isError && <div className="inline-error">VYBE AI is configured, but the provider has no remaining credits. Add provider credits to generate ideas.</div>}</div>;
-}
-
-function PremiumPage() {
-  return <div><PageHeader eyebrow="Premium" title="More room to play" description="Choose the level of momentum that fits your VYBE." /><div className="pricing-grid"><div className="price-card"><span className="eyebrow">Free</span><h2>Start moving</h2><strong>€0 <small>/ month</small></strong><p>For trying the loop and finding your people.</p><Button variant="secondary">Current plan <Check /></Button><ul><li><Check /> Core battles</li><li><Check /> Weekly rankings</li><li><Check /> Starter AI access</li></ul></div><div className="price-card price-featured"><div className="price-badge">Most momentum</div><span className="eyebrow">VYBE Pro</span><h2>Go further</h2><strong>€19.99 <small>/ month</small></strong><p>More AI, more battles, more ways to stand out.</p><Button onClick={() => toast({ title: "Payments are next", description: "Stripe checkout is ready for configuration." })}>Choose Pro <ArrowUpRight /></Button><ul><li><Check /> Expanded AI limits</li><li><Check /> Profile spotlight</li><li><Check /> Advanced stats</li></ul></div><div className="price-card"><span className="eyebrow">VYBE Elite</span><h2>Own the arena</h2><strong>€39.99 <small>/ month</small></strong><p>For the people who turn participation into a signature.</p><Button variant="secondary" onClick={() => toast({ title: "Payments are next", description: "Stripe checkout is ready for configuration." })}>Choose Elite <ArrowUpRight /></Button><ul><li><Check /> Highest AI limits</li><li><Check /> Elite profile mark</li><li><Check /> Priority features</li></ul></div></div></div>;
 }
 
 function SettingsPage() {

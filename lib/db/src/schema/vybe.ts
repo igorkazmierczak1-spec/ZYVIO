@@ -17,6 +17,7 @@ export const profilesTable = pgTable("vybe_profiles", {
   role: userRoleEnum("role").notNull().default("USER"),
   status: accountStatusEnum("status").notNull().default("ACTIVE"),
   authProvider: text("auth_provider").notNull().default("clerk"),
+  stripeCustomerId: text("stripe_customer_id"),
   language: text("language").notNull().default("en"),
   avatarUrl: text("avatar_url").notNull().default(""),
   bio: text("bio").notNull().default(""),

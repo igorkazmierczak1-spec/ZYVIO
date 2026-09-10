@@ -504,6 +504,89 @@ export interface AdminMonetization {
   message: string;
 }
 
+export type PremiumPlanRecurring = { [key: string]: unknown } | null;
+
+export type PremiumPlanMetadata = { [key: string]: unknown };
+
+export interface PremiumPlan {
+  product_id: string;
+  price_id: string;
+  name?: string | null;
+  description?: string | null;
+  unit_amount: number | null;
+  currency: string;
+  recurring?: PremiumPlanRecurring;
+  metadata?: PremiumPlanMetadata;
+}
+
+export interface PremiumPlansResponse {
+  plans: PremiumPlan[];
+}
+
+export type PremiumCheckoutInputBillingPeriod = typeof PremiumCheckoutInputBillingPeriod[keyof typeof PremiumCheckoutInputBillingPeriod];
+
+
+export const PremiumCheckoutInputBillingPeriod = {
+  MONTHLY: 'MONTHLY',
+  YEARLY: 'YEARLY',
+} as const;
+
+export interface PremiumCheckoutInput {
+  billingPeriod: PremiumCheckoutInputBillingPeriod;
+}
+
+export interface CheckoutResponse {
+  url: string | null;
+}
+
+export type PremiumSubscriptionResponseSubscription = { [key: string]: unknown } | null;
+
+export interface PremiumSubscriptionResponse {
+  subscription: PremiumSubscriptionResponseSubscription;
+}
+
+export type AdminBillingOverviewSubscriptionsItem = { [key: string]: unknown };
+
+export type AdminBillingOverviewTrendItem = { [key: string]: unknown };
+
+export interface AdminBillingOverview {
+  connected: boolean;
+  range: string;
+  subscriptions: AdminBillingOverviewSubscriptionsItem[];
+  revenue: number | null;
+  payments: number | null;
+  totalRevenue: number | null;
+  revenue30d: number | null;
+  mrr: number | null;
+  arr: number | null;
+  activeSubscriptions: number | null;
+  newSubscriptions: number | null;
+  cancelledSubscriptions: number | null;
+  successfulPayments: number | null;
+  failedPayments: number | null;
+  premiumCount: number | null;
+  conversion: number | null;
+  trend: AdminBillingOverviewTrendItem[];
+}
+
+export type AdminBillingSubscriptionsItemsItem = { [key: string]: unknown };
+
+export interface AdminBillingSubscriptions {
+  items: AdminBillingSubscriptionsItemsItem[];
+  page: number;
+  pageSize: number;
+}
+
+export interface AdminBillingConfig {
+  connected: boolean;
+  provider: string;
+  currency: string;
+  webhookConfigured: boolean;
+  monthlyPriceConfigured: boolean;
+  yearlyPriceConfigured: boolean;
+  syncMode: string;
+}
+
 export interface ActionResult {
   success: boolean;
   message: string;
@@ -668,5 +751,23 @@ pageSize?: PageSizeParameter;
 
 export type GetAdminAnalyticsParams = {
 range?: AdminRangeParameter;
+};
+
+export type GetAdminBillingOverviewParams = {
+range?: AdminRangeParameter;
+};
+
+export type ListAdminBillingSubscriptionsParams = {
+search?: string;
+status?: string;
+/**
+ * @minimum 1
+ */
+page?: PageParameter;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParameter;
 };
 

@@ -953,3 +953,95 @@ export const GetAdminMonetizationResponse = zod.object({
 })
 
 
+export const ListPremiumPlansResponse = zod.object({
+  "plans": zod.array(zod.object({
+  "product_id": zod.string(),
+  "price_id": zod.string(),
+  "name": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "unit_amount": zod.number().int().nullable(),
+  "currency": zod.string(),
+  "recurring": zod.record(zod.string(), zod.unknown()).nullish(),
+  "metadata": zod.record(zod.string(), zod.unknown()).optional()
+}))
+})
+
+
+export const GetPremiumSubscriptionResponse = zod.object({
+  "subscription": zod.record(zod.string(), zod.unknown()).nullable()
+})
+
+
+export const CreatePremiumCheckoutBody = zod.object({
+  "billingPeriod": zod.enum(['MONTHLY', 'YEARLY'])
+})
+
+export const CreatePremiumCheckoutResponse = zod.object({
+  "url": zod.string().url().nullable()
+})
+
+
+export const CreatePremiumPortalResponse = zod.object({
+  "url": zod.string().url().nullable()
+})
+
+
+export const getAdminBillingOverviewQueryRangeDefault = `30d`;
+
+export const GetAdminBillingOverviewQueryParams = zod.object({
+  "range": zod.enum(['24h', '7d', '30d', '90d', 'all']).default(getAdminBillingOverviewQueryRangeDefault)
+})
+
+export const GetAdminBillingOverviewResponse = zod.object({
+  "connected": zod.boolean(),
+  "range": zod.string(),
+  "subscriptions": zod.array(zod.record(zod.string(), zod.unknown())),
+  "revenue": zod.number().int().nullable(),
+  "payments": zod.number().int().nullable(),
+  "totalRevenue": zod.number().int().nullable(),
+  "revenue30d": zod.number().int().nullable(),
+  "mrr": zod.number().int().nullable(),
+  "arr": zod.number().int().nullable(),
+  "activeSubscriptions": zod.number().int().nullable(),
+  "newSubscriptions": zod.number().int().nullable(),
+  "cancelledSubscriptions": zod.number().int().nullable(),
+  "successfulPayments": zod.number().int().nullable(),
+  "failedPayments": zod.number().int().nullable(),
+  "premiumCount": zod.number().int().nullable(),
+  "conversion": zod.number().nullable(),
+  "trend": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+export const listAdminBillingSubscriptionsQueryPageDefault = 1;
+
+export const listAdminBillingSubscriptionsQueryPageSizeDefault = 20;
+export const listAdminBillingSubscriptionsQueryPageSizeMax = 100;
+
+
+
+export const ListAdminBillingSubscriptionsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional(),
+  "page": zod.coerce.number().int().min(1).default(listAdminBillingSubscriptionsQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(listAdminBillingSubscriptionsQueryPageSizeMax).default(listAdminBillingSubscriptionsQueryPageSizeDefault)
+})
+
+export const ListAdminBillingSubscriptionsResponse = zod.object({
+  "items": zod.array(zod.record(zod.string(), zod.unknown())),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int()
+})
+
+
+export const GetAdminBillingConfigResponse = zod.object({
+  "connected": zod.boolean(),
+  "provider": zod.string(),
+  "currency": zod.string(),
+  "webhookConfigured": zod.boolean(),
+  "monthlyPriceConfigured": zod.boolean(),
+  "yearlyPriceConfigured": zod.boolean(),
+  "syncMode": zod.string()
+})
+
+

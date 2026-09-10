@@ -451,6 +451,87 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AdminMonetization" }
+  /premium/plans:
+    get:
+      operationId: listPremiumPlans
+      tags: [premium]
+      responses:
+        "200":
+          description: Premium prices
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PremiumPlansResponse" }
+  /premium/subscription:
+    get:
+      operationId: getPremiumSubscription
+      tags: [premium]
+      responses:
+        "200":
+          description: Current subscription
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PremiumSubscriptionResponse" }
+  /premium/checkout:
+    post:
+      operationId: createPremiumCheckout
+      tags: [premium]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PremiumCheckoutInput" }
+      responses:
+        "200":
+          description: Checkout URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckoutResponse" }
+  /premium/portal:
+    post:
+      operationId: createPremiumPortal
+      tags: [premium]
+      responses:
+        "200":
+          description: Portal URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckoutResponse" }
+  /admin/billing/overview:
+    get:
+      operationId: getAdminBillingOverview
+      tags: [admin]
+      parameters: [{ $ref: "#/components/parameters/AdminRange" }]
+      responses:
+        "200":
+          description: Billing overview
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminBillingOverview" }
+  /admin/billing/subscriptions:
+    get:
+      operationId: listAdminBillingSubscriptions
+      tags: [admin]
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { $ref: "#/components/parameters/Page" }
+        - { $ref: "#/components/parameters/PageSize" }
+      responses:
+        "200":
+          description: Billing subscriptions
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminBillingSubscriptions" }
+  /admin/billing/config:
+    get:
+      operationId: getAdminBillingConfig
+      tags: [admin]
+      responses:
+        "200":
+          description: Billing configuration status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminBillingConfig" }
 components:
   parameters:
     BattleId:
@@ -885,6 +966,77 @@ components:
         mrr: { type: number, nullable: true }
         topPlan: { type: string, nullable: true }
         message: { type: string }
+    PremiumPlan:
+      type: object
+      required: [product_id, price_id, unit_amount, currency]
+      properties:
+        product_id: { type: string }
+        price_id: { type: string }
+        name: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        unit_amount: { type: integer, nullable: true }
+        currency: { type: string }
+        recurring: { type: object, nullable: true, additionalProperties: true }
+        metadata: { type: object, additionalProperties: true }
+    PremiumPlansResponse:
+      type: object
+      required: [plans]
+      properties:
+        plans: { type: array, items: { $ref: "#/components/schemas/PremiumPlan" } }
+    PremiumCheckoutInput:
+      type: object
+      required: [billingPeriod]
+      properties:
+        billingPeriod: { type: string, enum: [MONTHLY, YEARLY] }
+    CheckoutResponse:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string, format: uri, nullable: true }
+    PremiumSubscriptionResponse:
+      type: object
+      required: [subscription]
+      properties:
+        subscription: { type: object, nullable: true, additionalProperties: true }
+    AdminBillingOverview:
+      type: object
+      required: [connected, range, subscriptions, revenue, payments, totalRevenue, revenue30d, mrr, arr, activeSubscriptions, newSubscriptions, cancelledSubscriptions, successfulPayments, failedPayments, premiumCount, conversion, trend]
+      properties:
+        connected: { type: boolean }
+        range: { type: string }
+        subscriptions: { type: array, items: { type: object, additionalProperties: true } }
+        revenue: { type: integer, nullable: true }
+        payments: { type: integer, nullable: true }
+        totalRevenue: { type: integer, nullable: true }
+        revenue30d: { type: integer, nullable: true }
+        mrr: { type: integer, nullable: true }
+        arr: { type: integer, nullable: true }
+        activeSubscriptions: { type: integer, nullable: true }
+        newSubscriptions: { type: integer, nullable: true }
+        cancelledSubscriptions: { type: integer, nullable: true }
+        successfulPayments: { type: integer, nullable: true }
+        failedPayments: { type: integer, nullable: true }
+        premiumCount: { type: integer, nullable: true }
+        conversion: { type: number, nullable: true }
+        trend: { type: array, items: { type: object, additionalProperties: true } }
+    AdminBillingSubscriptions:
+      type: object
+      required: [items, page, pageSize]
+      properties:
+        items: { type: array, items: { type: object, additionalProperties: true } }
+        page: { type: integer }
+        pageSize: { type: integer }
+    AdminBillingConfig:
+      type: object
+      required: [connected, provider, currency, webhookConfigured, monthlyPriceConfigured, yearlyPriceConfigured, syncMode]
+      properties:
+        connected: { type: boolean }
+        provider: { type: string }
+        currency: { type: string }
+        webhookConfigured: { type: boolean }
+        monthlyPriceConfigured: { type: boolean }
+        yearlyPriceConfigured: { type: boolean }
+        syncMode: { type: string }
     ActionResult:
       type: object
       required: [success, message]
