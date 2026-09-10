@@ -968,8 +968,9 @@ components:
         message: { type: string }
     PremiumPlan:
       type: object
-      required: [product_id, price_id, unit_amount, currency]
+      required: [plan, product_id, price_id, unit_amount, currency]
       properties:
+        plan: { type: string, enum: [PREMIUM, PREMIUM_PRO] }
         product_id: { type: string }
         price_id: { type: string }
         name: { type: string, nullable: true }
@@ -985,8 +986,9 @@ components:
         plans: { type: array, items: { $ref: "#/components/schemas/PremiumPlan" } }
     PremiumCheckoutInput:
       type: object
-      required: [billingPeriod]
+      required: [plan, billingPeriod]
       properties:
+        plan: { type: string, enum: [PREMIUM, PREMIUM_PRO] }
         billingPeriod: { type: string, enum: [MONTHLY, YEARLY] }
     CheckoutResponse:
       type: object
@@ -995,9 +997,10 @@ components:
         url: { type: string, format: uri, nullable: true }
     PremiumSubscriptionResponse:
       type: object
-      required: [subscription]
+      required: [subscription, plan]
       properties:
         subscription: { type: object, nullable: true, additionalProperties: true }
+        plan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
     AdminBillingOverview:
       type: object
       required: [connected, range, subscriptions, revenue, payments, totalRevenue, revenue30d, mrr, arr, activeSubscriptions, newSubscriptions, cancelledSubscriptions, successfulPayments, failedPayments, premiumCount, conversion, trend]
