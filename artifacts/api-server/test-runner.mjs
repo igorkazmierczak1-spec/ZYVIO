@@ -3,14 +3,14 @@ import { mkdir, rm } from "node:fs/promises";
 import { spawn } from "node:child_process";
 
 const outputDir = ".test-build";
-const outputFile = `${outputDir}/viral-core.test.mjs`;
+const outputFile = `${outputDir}/viral-core.test.cjs`;
 
 await mkdir(outputDir, { recursive: true });
 await build({
   entryPoints: ["test/viral-core.test.ts"],
   bundle: true,
   platform: "node",
-  format: "esm",
+  format: "cjs",
   target: "node24",
   outfile: outputFile,
   sourcemap: "inline",
