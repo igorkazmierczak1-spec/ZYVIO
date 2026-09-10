@@ -1,0 +1,578 @@
+VYBE — FINAL AUDIT & LAUNCH READY 🚀
+
+Wykonaj teraz kompleksowy audyt całej istniejącej aplikacji VYBE i doprowadź ją do możliwie bezpiecznego, stabilnego i profesjonalnego stanu przed publikacją.
+
+⚠️ NAJWAŻNIEJSZE:
+NIE buduj VYBE od nowa.
+NIE usuwaj działających funkcji.
+NIE resetuj bazy danych.
+NIE usuwaj danych użytkowników.
+NIE twórz fake funkcji ani fake danych.
+NIE zmieniaj cen Premium/Pro.
+NIE usuwaj Clerk.
+NIE usuwaj Stripe.
+NIE zastępuj istniejących systemów atrapami.
+
+Najpierw przeanalizuj cały projekt, a następnie:
+
+1. znajdź problemy,
+2. sklasyfikuj je według ważności,
+3. napraw problemy możliwe do naprawienia,
+4. uruchom testy,
+5. ponownie sprawdź aplikację.
+
+━━━━━━━━━━━━━━━━━━
+
+1. AUTHENTICATION & AUTHORIZATION 🔐
+   ━━━━━━━━━━━━━━━━━━
+
+Sprawdź:
+
+- Clerk authentication,
+- Google Login,
+- logout,
+- sesje,
+- wygasanie sesji,
+- protected routes,
+- API authorization,
+- USER / ADMIN,
+- server-side role checks.
+
+Zweryfikuj, że:
+
+USER:
+
+- nie może wejść do /admin,
+- nie może wywoływać chronionych endpointów Admin,
+- nie może zmienić sobie roli,
+- nie może zmienić sobie Premium/Pro,
+- nie może manipulować własnymi statystykami.
+
+ADMIN:
+
+- ma dostęp tylko wtedy, gdy server-side role rzeczywiście to pozwala.
+
+Sprawdź również IDOR i podobne problemy z autoryzacją.
+
+━━━━━━━━━━━━━━━━━━
+2. DATABASE 🗄️
+━━━━━━━━━━━━━━━━━━
+
+Przeanalizuj PostgreSQL i istniejące migracje.
+
+Sprawdź:
+
+- foreign keys,
+- unique constraints,
+- indexes,
+- nullable fields,
+- cascade behavior,
+- race conditions,
+- duplicate records,
+- integralność danych.
+
+Nie usuwaj istniejących danych.
+
+Jeżeli potrzebna jest migracja:
+
+- wykonaj ją bezpiecznie,
+- zachowaj kompatybilność z istniejącą aplikacją.
+
+━━━━━━━━━━━━━━━━━━
+3. API SECURITY 🛡️
+━━━━━━━━━━━━━━━━━━
+
+Przejrzyj wszystkie endpointy.
+
+Sprawdź:
+
+- authentication,
+- authorization,
+- input validation,
+- output validation,
+- rate limiting,
+- request size limits,
+- abuse prevention,
+- error handling.
+
+Użytkownik nie może uzyskać dostępu do danych innego użytkownika przez zmianę ID w URL/API.
+
+Sprawdź szczególnie:
+
+- profile,
+- posts,
+- comments,
+- likes,
+- follows,
+- messages,
+- notifications,
+- Battle,
+- XP,
+- levels,
+- badges,
+- ranking,
+- reports,
+- blocks,
+- AI,
+- Premium,
+- Premium Pro,
+- Admin.
+
+━━━━━━━━━━━━━━━━━━
+4. SOCIAL PRIVACY 👥
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź dokładnie system:
+
+- followers,
+- following,
+- posts,
+- comments,
+- likes,
+- messages,
+- notifications,
+- blocks.
+
+Prywatne wiadomości mogą być dostępne wyłącznie uczestnikom rozmowy.
+
+Użytkownik nie może:
+
+- czytać cudzych rozmów,
+- usuwać cudzych wiadomości,
+- edytować cudzych postów,
+- usuwać cudzych postów,
+- manipulować cudzymi statystykami.
+
+Block powinien prawidłowo ograniczać kontakt.
+
+━━━━━━━━━━━━━━━━━━
+5. BATTLE / XP / RANKINGS 🏆
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź, czy:
+
+- nie można głosować wielokrotnie,
+- nie można głosować na siebie,
+- nie można fałszować wyników,
+- XP jest obliczane server-side,
+- level jest obliczany server-side,
+- ranking jest obliczany z prawdziwych danych,
+- streak nie może być łatwo manipulowany,
+- badges są przyznawane na podstawie prawdziwych działań.
+
+Spróbuj wykryć typowe sposoby cheatowania.
+
+━━━━━━━━━━━━━━━━━━
+6. AI 🤖
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź wszystkie funkcje AI.
+
+Zweryfikuj:
+
+- API key jest wyłącznie server-side,
+- klucz AI nie jest widoczny w frontend bundle,
+- użytkownik nie może sam ustawić kosztownych parametrów,
+- limity AI są sprawdzane server-side,
+- rate limiting działa,
+- istnieje limit wielkości promptu,
+- istnieje odpowiednia obsługa błędów,
+- timeout działa,
+- nie ma możliwości łatwego nabijania kosztów.
+
+Sprawdź pliki frontendowe i build pod kątem przypadkowego ujawnienia sekretów.
+
+━━━━━━━━━━━━━━━━━━
+7. PREMIUM / PREMIUM PRO 💎
+━━━━━━━━━━━━━━━━━━
+
+Zachowaj:
+
+PREMIUM
+19,99 zł / miesiąc
+149,99 zł / rok
+
+PREMIUM PRO
+39,99 zł / miesiąc
+299,99 zł / rok
+
+Sprawdź:
+
+- Stripe Checkout,
+- Price IDs,
+- webhook,
+- aktywację subskrypcji,
+- anulowanie,
+- odnowienie,
+- upgrade,
+- downgrade,
+- Customer Portal,
+- server-side entitlement checks.
+
+Użytkownik nie może uzyskać Premium/Pro przez zmianę wartości po stronie frontendu.
+
+Nie zmieniaj istniejących Stripe Price ID.
+
+Jeżeli jakaś zmienna Stripe jest wymagana, ale nie istnieje, wskaż jej nazwę w raporcie zamiast tworzyć fake wartość.
+
+━━━━━━━━━━━━━━━━━━
+8. STRIPE SECURITY 💳
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź:
+
+- secret key nie znajduje się w frontendzie,
+- webhook signature jest weryfikowany,
+- webhook jest odporny na duplicate events,
+- subscription state jest poprawnie synchronizowany,
+- błędne webhooki nie aktywują Premium/Pro.
+
+NIE wykonuj prawdziwych płatności podczas testów.
+
+Używaj test mode, jeśli test Stripe jest potrzebny.
+
+━━━━━━━━━━━━━━━━━━
+9. ADMIN PANEL 👑
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź wszystkie funkcje Admin:
+
+- users,
+- moderation,
+- reports,
+- Battle,
+- rankings,
+- subscriptions,
+- revenue,
+- AI analytics,
+- notifications,
+- logs,
+- settings.
+
+Admin actions muszą być logowane.
+
+Nie pokazuj fikcyjnych przychodów.
+
+Jeżeli dane finansowe nie są dostępne, pokaż poprawny empty state zamiast wymyślać liczby.
+
+━━━━━━━━━━━━━━━━━━
+10. MODERATION 🚨
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź:
+
+- reports,
+- block,
+- content removal,
+- user blocking,
+- admin actions,
+- audit logs.
+
+Zadbaj o ochronę przed spamem i abuse.
+
+━━━━━━━━━━━━━━━━━━
+11. FRONTEND / UX 🎨
+━━━━━━━━━━━━━━━━━━
+
+Przejrzyj wszystkie główne ekrany:
+
+- Landing
+- Login
+- Register
+- Home
+- Feed
+- Profile
+- Battle
+- Rankings
+- Notifications
+- Messages
+- Search
+- AI
+- Premium
+- Premium Pro
+- Admin
+
+Sprawdź:
+
+- loading states,
+- empty states,
+- error states,
+- mobile layout,
+- formularze,
+- przyciski,
+- nawigację,
+- overflow,
+- responsywność.
+
+Nie rób pełnego redesignu.
+
+Napraw tylko rzeczy, które realnie pogarszają UX.
+
+━━━━━━━━━━━━━━━━━━
+12. MOBILE 📱
+━━━━━━━━━━━━━━━━━━
+
+Przetestuj layout dla:
+
+- małego telefonu,
+- typowego telefonu,
+- większego telefonu,
+- desktopu.
+
+Sprawdź:
+
+- menu,
+- feed,
+- Battle,
+- profile,
+- AI,
+- wiadomości,
+- Premium,
+- Premium Pro.
+
+Nie może być:
+
+- poziomego scrollowania bez potrzeby,
+- uciętych przycisków,
+- tekstu wychodzącego poza ekran,
+- niedostępnych elementów.
+
+━━━━━━━━━━━━━━━━━━
+13. PERFORMANCE ⚡
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź:
+
+- duże zapytania DB,
+- brakujące indeksy,
+- N+1 queries,
+- zbyt wiele requestów,
+- brak paginacji,
+- niepotrzebne rerendery,
+- duże assety,
+- lazy loading.
+
+Feed i listy powinny mieć paginację/infinite scroll tam, gdzie ma to sens.
+
+Nie optymalizuj kosztem bezpieczeństwa.
+
+━━━━━━━━━━━━━━━━━━
+14. ERROR HANDLING
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź wszystkie krytyczne endpointy.
+
+Nie pokazuj użytkownikowi:
+
+- stack traces,
+- secretów,
+- kluczy API,
+- danych DB,
+- wewnętrznych ścieżek.
+
+Loguj szczegóły po stronie serwera, ale zwracaj bezpieczny komunikat użytkownikowi.
+
+━━━━━━━━━━━━━━━━━━
+15. SECRETS 🔑
+━━━━━━━━━━━━━━━━━━
+
+Przeszukaj projekt pod kątem:
+
+- API keys,
+- Stripe secret,
+- webhook secrets,
+- Clerk secrets,
+- database credentials,
+- innych sekretów.
+
+ŻADEN sekret nie może być hardcoded w repozytorium ani wysyłany do klienta.
+
+Jeżeli znajdziesz potencjalny sekret:
+
+- nie wypisuj jego wartości,
+- wskaż nazwę zmiennej,
+- przenieś użycie do bezpiecznej konfiguracji, jeśli jest to możliwe.
+
+━━━━━━━━━━━━━━━━━━
+16. ACCESSIBILITY
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź podstawową dostępność:
+
+- kontrast,
+- focus,
+- przyciski,
+- formularze,
+- labels,
+- keyboard navigation,
+- alt text dla obrazów.
+
+Nie przebudowuj UI bez potrzeby.
+
+━━━━━━━━━━━━━━━━━━
+17. LEGAL / LAUNCH BASICS
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź, czy aplikacja ma miejsca na:
+
+- Privacy Policy,
+- Terms of Service,
+- Community Guidelines,
+- Contact / Support.
+
+Jeżeli ich nie ma, przygotuj strukturę stron i wyraźnie oznacz brakujące treści.
+
+NIE wymyślaj fałszywych danych firmy ani adresów.
+
+━━━━━━━━━━━━━━━━━━
+18. PRODUCTION CONFIG
+━━━━━━━━━━━━━━━━━━
+
+Sprawdź:
+
+- production environment,
+- CORS,
+- cookies,
+- HTTPS assumptions,
+- secure cookies,
+- database connection,
+- error logging,
+- environment variables,
+- build configuration.
+
+Nie zmieniaj konfiguracji produkcyjnej w sposób, który może odciąć działającą aplikację.
+
+━━━━━━━━━━━━━━━━━━
+19. TEST SUITE 🧪
+━━━━━━━━━━━━━━━━━━
+
+Uruchom dostępne:
+
+- typecheck,
+- lint,
+- unit tests,
+- integration tests,
+- API tests,
+- frontend tests,
+- build.
+
+Dodaj brakujące krytyczne testy bezpieczeństwa, jeśli architektura na to pozwala.
+
+Przetestuj co najmniej:
+
+AUTH:
+
+- unauthenticated → protected endpoint = 401
+- USER → admin endpoint = 403
+- ADMIN → admin endpoint = allowed
+
+SOCIAL:
+
+- user A nie może edytować postu usera B
+- user A nie może czytać wiadomości usera B
+- user nie może zmienić własnej roli
+
+AI:
+
+- limit działa
+- rate limit działa
+- API key nie trafia do klienta
+
+PREMIUM:
+
+- Free nie dostaje Premium features
+- Premium dostaje właściwe funkcje
+- Premium Pro dostaje właściwe funkcje
+
+BATTLE:
+
+- duplicate vote blocked
+- self-vote blocked
+- XP nie może być zmienione przez klienta
+
+━━━━━━━━━━━━━━━━━━
+20. CRITICAL BUG POLICY
+━━━━━━━━━━━━━━━━━━
+
+Podziel znalezione problemy:
+
+🔴 CRITICAL
+🟠 HIGH
+🟡 MEDIUM
+🟢 LOW
+
+Automatycznie napraw:
+
+- CRITICAL,
+- HIGH,
+- oczywiste MEDIUM, jeżeli naprawa jest bezpieczna.
+
+Nie wprowadzaj ryzykownych zmian tylko po to, żeby zmniejszyć liczbę problemów.
+
+━━━━━━━━━━━━━━━━━━
+21. FINAL REGRESSION TEST
+━━━━━━━━━━━━━━━━━━
+
+Po wszystkich poprawkach ponownie sprawdź:
+
+- Clerk
+- Google Login
+- profiles
+- Social
+- Feed
+- Posts
+- Comments
+- Followers
+- Messages
+- Notifications
+- Battle
+- XP
+- Levels
+- Streaks
+- Badges
+- Rankings
+- AI
+- Premium
+- Premium Pro
+- Stripe
+- Admin
+- Moderation
+- Database
+
+━━━━━━━━━━━━━━━━━━
+22. FINAL REPORT
+━━━━━━━━━━━━━━━━━━
+
+Na końcu NIE pisz tylko „gotowe”.
+
+Przedstaw szczegółowy raport:
+
+1. Liczba znalezionych problemów.
+2. Liczba naprawionych problemów.
+3. Pozostałe problemy.
+4. Problemy CRITICAL/HIGH/MEDIUM/LOW.
+5. Zmienione pliki.
+6. Zmienione tabele/migracje.
+7. Dodane testy.
+8. Wyniki testów.
+9. Wynik typecheck.
+10. Wynik lint.
+11. Wynik production build.
+12. Status bezpieczeństwa.
+13. Status AI.
+14. Status Premium.
+15. Status Premium Pro.
+16. Status Stripe.
+17. Status Admin.
+18. Status mobile.
+19. Czy znaleziono sekrety w kodzie.
+20. Czy VYBE jest technicznie gotowe do przejścia do procesu publikacji.
+
+Jeżeli coś nadal wymaga działania z mojej strony, podaj dokładnie:
+
+- CO,
+- GDZIE,
+- DLACZEGO,
+- CO MAM ZROBIĆ.
+
+Nie oznaczaj aplikacji jako „100% production ready”, jeżeli istnieją nierozwiązane problemy CRITICAL lub HIGH.
