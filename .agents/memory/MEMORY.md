@@ -3,3 +3,4 @@
 - [API test runner](api-test-runner.md) — bundle Node tests as CommonJS because esbuild ESM bundling conflicts with pg’s dynamic built-in imports.
 - [OpenAPI codegen naming](orval-path-query-collision.md) — avoid path-plus-query operations when Orval reuses the same Params name in Zod and generated types.
 - [Stripe webhook retries](stripe-webhook-retries.md) — claiming an event before processing must release the claim when processing fails so Stripe can retry transient errors.
+- [Expo SDK alignment](expo-sdk-alignment.md) — Clerk’s Expo peer-dependency examples may target an older SDK; use Expo’s installed SDK versions for native modules.
