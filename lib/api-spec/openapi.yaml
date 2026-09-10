@@ -18,6 +18,8 @@ tags:
   - name: ai
   - name: admin
   - name: reports
+  - name: social
+    description: Posts, comments, follows and social profiles
 paths:
   /healthz:
     get:
@@ -234,6 +236,208 @@ paths:
                 required: [ok]
                 properties:
                   ok: { type: boolean }
+  /social/feed:
+    get:
+      operationId: getSocialFeed
+      tags: [social]
+      summary: Get the authenticated user's social feed
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+            enum: [for-you, following, trending, latest]
+            default: for-you
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+      responses:
+        "200":
+          description: Social feed page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialFeed" }
+  /social/posts:
+    post:
+      operationId: createSocialPost
+      tags: [social]
+      summary: Create a social post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SocialPostInput" }
+      responses:
+        "201":
+          description: Created social post
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialPost" }
+  /social/posts/{postId}:
+    get:
+      operationId: getSocialPost
+      tags: [social]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Social post
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialPost" }
+    patch:
+      operationId: updateSocialPost
+      tags: [social]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SocialPostInput" }
+      responses:
+        "200":
+          description: Updated social post
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialPost" }
+    delete:
+      operationId: deleteSocialPost
+      tags: [social]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Post removed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+  /social/posts/{postId}/like:
+    post:
+      operationId: likeSocialPost
+      tags: [social]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Updated social post
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialPost" }
+    delete:
+      operationId: unlikeSocialPost
+      tags: [social]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Updated social post
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialPost" }
+  /social/posts/{postId}/comments:
+    get:
+      operationId: listSocialComments
+      tags: [social]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Post comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SocialComment" }
+    post:
+      operationId: createSocialComment
+      tags: [social]
+      parameters:
+        - { name: postId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SocialCommentInput" }
+      responses:
+        "201":
+          description: Created comment
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialComment" }
+  /social/comments/{commentId}:
+    delete:
+      operationId: deleteSocialComment
+      tags: [social]
+      parameters:
+        - { name: commentId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Comment removed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OkResponse" }
+  /social/users/{profileId}:
+    get:
+      operationId: getSocialProfile
+      tags: [social]
+      parameters:
+        - { name: profileId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Social profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialProfile" }
+  /social/users/{profileId}/follow:
+    post:
+      operationId: followSocialProfile
+      tags: [social]
+      parameters:
+        - { name: profileId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Follow state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FollowState" }
+    delete:
+      operationId: unfollowSocialProfile
+      tags: [social]
+      parameters:
+        - { name: profileId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Follow state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FollowState" }
+  /social/users/{profileId}/block:
+    post:
+      operationId: blockSocialProfile
+      tags: [social]
+      parameters:
+        - { name: profileId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Block state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BlockState" }
+    delete:
+      operationId: unblockSocialProfile
+      tags: [social]
+      parameters:
+        - { name: profileId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Block state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BlockState" }
   /ai/ideas:
     post:
       operationId: generateIdeas
