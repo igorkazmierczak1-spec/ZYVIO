@@ -1,4 +1,4 @@
-import { useListBattles } from '@workspace/api-client-react';
+import { getListBattlesQueryKey, useListBattles } from '@workspace/api-client-react';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -10,7 +10,7 @@ export default function BattlesScreen() {
   const colors = useColors();
   const [category, setCategory] = useState('All');
   const params: { category?: string } = category === 'All' ? {} : { category };
-  const battles = useListBattles(params, { query: { staleTime: 15_000 } });
+  const battles = useListBattles(params, { query: { staleTime: 15_000, queryKey: getListBattlesQueryKey(params) } });
   const list = battles.data ?? [];
   return (
     <AppScreen refreshing={battles.isFetching} onRefresh={() => void battles.refetch()}>

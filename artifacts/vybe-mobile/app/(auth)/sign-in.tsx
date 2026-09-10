@@ -13,6 +13,7 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
+  const [needsCode, setNeedsCode] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const finish = async () => {
@@ -32,6 +33,7 @@ export default function SignInScreen() {
       else {
         const emailFactor = signIn.supportedSecondFactors?.find((factor) => factor.strategy === 'email_code');
         if (emailFactor) await signIn.prepareSecondFactor({ strategy: 'email_code' });
+        setNeedsCode(true);
         setMessage('Wpisz kod wysłany na adres e-mail.');
       }
     } catch (error) {
@@ -63,7 +65,7 @@ export default function SignInScreen() {
         <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 34 }]}>Wróć do swojego rytmu.</Text>
         <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>Zaloguj się, żeby głosować, walczyć i budować swoją pozycję.</Text>
       </View>
-      {signIn.status === 'needs_second_factor' || signIn.status === 'needs_client_trust' ? (
+      {needsCode ? (
         <View style={{ gap: 12 }}>
           <TextInput value={code} onChangeText={setCode} placeholder="Kod weryfikacyjny" placeholderTextColor={colors.mutedForeground} keyboardType="number-pad" style={[inputStyle, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]} />
           <PrimaryButton onPress={verify} disabled={!code || busy}>{busy ? 'Sprawdzanie…' : 'Potwierdź kod'}</PrimaryButton>

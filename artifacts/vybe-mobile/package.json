@@ -56,8 +56,8 @@
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.20.0",
-    "expo-auth-session": "~7.0.11",
-    "expo-crypto": "~15.0.9",
-    "expo-secure-store": "~15.0.8"
+    "expo-auth-session": "~57.0.11",
+    "expo-crypto": "~57.0.2",
+    "expo-secure-store": "~57.0.3"
   }
 }

@@ -1,4 +1,4 @@
-import { useGetDashboard } from '@workspace/api-client-react';
+import { getGetDashboardQueryKey, useGetDashboard } from '@workspace/api-client-react';
 import { router } from 'expo-router';
 import React from 'react';
 import { Text, View } from 'react-native';
@@ -7,7 +7,7 @@ import { useColors } from '@/hooks/useColors';
 
 export default function HomeScreen() {
   const colors = useColors();
-  const dashboard = useGetDashboard({ query: { staleTime: 15_000 } });
+  const dashboard = useGetDashboard({ query: { staleTime: 15_000, queryKey: getGetDashboardQueryKey() } });
   if (dashboard.isLoading) return <AppScreen scroll={false}><LoadingState /></AppScreen>;
   if (dashboard.isError || !dashboard.data) return <AppScreen scroll={false}><ErrorState onRetry={() => void dashboard.refetch()} /></AppScreen>;
   const data = dashboard.data;
