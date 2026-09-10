@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import {
   activitiesTable,
   battleParticipantsTable,
+  battleResultsTable,
   battlesTable,
   notificationsTable,
   moderationReportsTable,
@@ -117,7 +118,7 @@ async function serializeBattle(battle: Battle, currentUserId: string) {
           .where(and(inArray(profilesTable.id, entries.map((entry) => entry.profileId)), eq(profilesTable.status, "ACTIVE")))
       : [];
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
-  const [result] = await db.select().from(await import("@workspace/db").then(({ battleResultsTable }) => battleResultsTable)).where(eq((await import("@workspace/db")).battleResultsTable.battleId, battle.id));
+  const [result] = await db.select().from(battleResultsTable).where(eq(battleResultsTable.battleId, battle.id));
   const participants = entries.flatMap((entry) => {
     const profile = profileMap.get(entry.profileId);
     if (!profile) return [];
