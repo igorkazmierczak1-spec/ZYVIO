@@ -579,6 +579,317 @@ export const MarkAllNotificationsReadResponse = zod.object({
 
 
 /**
+ * @summary Get the authenticated user's social feed
+ */
+export const getSocialFeedQueryFilterDefault = `for-you`;
+export const getSocialFeedQueryPageDefault = 1;
+
+
+
+export const GetSocialFeedQueryParams = zod.object({
+  "filter": zod.enum(['for-you', 'following', 'trending', 'latest']).default(getSocialFeedQueryFilterDefault),
+  "category": zod.coerce.string().optional(),
+  "page": zod.coerce.number().int().min(1).default(getSocialFeedQueryPageDefault)
+})
+
+export const GetSocialFeedResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string(),
+  "country": zod.string().optional()
+}),
+  "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "category": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "likeCount": zod.number().int(),
+  "commentCount": zod.number().int(),
+  "liked": zod.boolean()
+})),
+  "page": zod.number().int(),
+  "hasMore": zod.boolean()
+})
+
+
+/**
+ * @summary Create a social post
+ */
+export const createSocialPostBodyBodyMax = 2000;
+
+export const createSocialPostBodyCategoryDefault = `General`;
+
+export const CreateSocialPostBody = zod.object({
+  "body": zod.string().min(1).max(createSocialPostBodyBodyMax),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.enum(['image', 'video']).nullish(),
+  "category": zod.string().default(createSocialPostBodyCategoryDefault)
+})
+
+export const CreateSocialPostResponse = zod.object({
+  "id": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string(),
+  "country": zod.string().optional()
+}),
+  "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "category": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "likeCount": zod.number().int(),
+  "commentCount": zod.number().int(),
+  "liked": zod.boolean()
+})
+
+
+export const GetSocialPostParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const GetSocialPostResponse = zod.object({
+  "id": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string(),
+  "country": zod.string().optional()
+}),
+  "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "category": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "likeCount": zod.number().int(),
+  "commentCount": zod.number().int(),
+  "liked": zod.boolean()
+})
+
+
+export const UpdateSocialPostParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const updateSocialPostBodyBodyMax = 2000;
+
+export const updateSocialPostBodyCategoryDefault = `General`;
+
+export const UpdateSocialPostBody = zod.object({
+  "body": zod.string().min(1).max(updateSocialPostBodyBodyMax),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.enum(['image', 'video']).nullish(),
+  "category": zod.string().default(updateSocialPostBodyCategoryDefault)
+})
+
+export const UpdateSocialPostResponse = zod.object({
+  "id": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string(),
+  "country": zod.string().optional()
+}),
+  "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "category": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "likeCount": zod.number().int(),
+  "commentCount": zod.number().int(),
+  "liked": zod.boolean()
+})
+
+
+export const DeleteSocialPostParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const DeleteSocialPostResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const LikeSocialPostParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const LikeSocialPostResponse = zod.object({
+  "id": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string(),
+  "country": zod.string().optional()
+}),
+  "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "category": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "likeCount": zod.number().int(),
+  "commentCount": zod.number().int(),
+  "liked": zod.boolean()
+})
+
+
+export const UnlikeSocialPostParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const UnlikeSocialPostResponse = zod.object({
+  "id": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string(),
+  "country": zod.string().optional()
+}),
+  "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "category": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "likeCount": zod.number().int(),
+  "commentCount": zod.number().int(),
+  "liked": zod.boolean()
+})
+
+
+export const ListSocialCommentsParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const ListSocialCommentsResponseItem = zod.object({
+  "id": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string(),
+  "country": zod.string().optional()
+})
+})
+export const ListSocialCommentsResponse = zod.array(ListSocialCommentsResponseItem)
+
+
+export const CreateSocialCommentParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const createSocialCommentBodyBodyMax = 500;
+
+
+
+export const CreateSocialCommentBody = zod.object({
+  "body": zod.string().min(1).max(createSocialCommentBodyBodyMax)
+})
+
+export const CreateSocialCommentResponse = zod.object({
+  "id": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "author": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string(),
+  "country": zod.string().optional()
+})
+})
+
+
+export const DeleteSocialCommentParams = zod.object({
+  "commentId": zod.coerce.string()
+})
+
+export const DeleteSocialCommentResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const GetSocialProfileParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const GetSocialProfileResponse = zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string(),
+  "bio": zod.string(),
+  "country": zod.string(),
+  "level": zod.number().int(),
+  "xp": zod.number().int(),
+  "rankingPoints": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "rank": zod.number().int(),
+  "league": zod.string(),
+  "streak": zod.number().int(),
+  "badges": zod.array(zod.string()),
+  "winRate": zod.number().int(),
+  "followerCount": zod.number().int(),
+  "followingCount": zod.number().int(),
+  "isFollowing": zod.boolean()
+})
+
+
+export const FollowSocialProfileParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const FollowSocialProfileResponse = zod.object({
+  "following": zod.boolean()
+})
+
+
+export const UnfollowSocialProfileParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const UnfollowSocialProfileResponse = zod.object({
+  "following": zod.boolean()
+})
+
+
+export const BlockSocialProfileParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const BlockSocialProfileResponse = zod.object({
+  "blocked": zod.boolean()
+})
+
+
+export const UnblockSocialProfileParams = zod.object({
+  "profileId": zod.coerce.string()
+})
+
+export const UnblockSocialProfileResponse = zod.object({
+  "blocked": zod.boolean()
+})
+
+
+/**
  * @summary Generate creative battle ideas
  */
 export const generateIdeasBodyTopicMin = 2;

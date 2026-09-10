@@ -9,6 +9,102 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface OkResponse {
+  ok: boolean;
+}
+
+export interface SocialAuthor {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string;
+  country?: string;
+}
+
+export interface SocialPost {
+  id: string;
+  author: SocialAuthor;
+  body: string;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+  likeCount: number;
+  commentCount: number;
+  liked: boolean;
+}
+
+export interface SocialFeed {
+  items: SocialPost[];
+  page: number;
+  hasMore: boolean;
+}
+
+export type SocialPostInputMediaType = typeof SocialPostInputMediaType[keyof typeof SocialPostInputMediaType] | null;
+
+
+export const SocialPostInputMediaType = {
+  image: 'image',
+  video: 'video',
+} as const;
+
+export interface SocialPostInput {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  body: string;
+  mediaUrl?: string | null;
+  mediaType?: SocialPostInputMediaType;
+  category?: string;
+}
+
+export interface SocialComment {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: SocialAuthor;
+}
+
+export interface SocialCommentInput {
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  body: string;
+}
+
+export interface SocialProfile {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string;
+  bio: string;
+  country: string;
+  level: number;
+  xp: number;
+  rankingPoints: number;
+  wins: number;
+  losses: number;
+  rank: number;
+  league: string;
+  streak: number;
+  badges: string[];
+  winRate: number;
+  followerCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+}
+
+export interface FollowState {
+  following: boolean;
+}
+
+export interface BlockState {
+  blocked: boolean;
+}
+
 export interface UserSummary {
   id: string;
   username: string;
@@ -698,6 +794,25 @@ export const GetLeaderboardPeriod = {
 export type MarkAllNotificationsRead200 = {
   ok: boolean;
 };
+
+export type GetSocialFeedParams = {
+filter?: GetSocialFeedFilter;
+category?: string;
+/**
+ * @minimum 1
+ */
+page?: number;
+};
+
+export type GetSocialFeedFilter = typeof GetSocialFeedFilter[keyof typeof GetSocialFeedFilter];
+
+
+export const GetSocialFeedFilter = {
+  'for-you': 'for-you',
+  following: 'following',
+  trending: 'trending',
+  latest: 'latest',
+} as const;
 
 export type GetAdminOverviewParams = {
 range?: AdminRangeParameter;
