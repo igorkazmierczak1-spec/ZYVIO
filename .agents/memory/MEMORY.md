@@ -1,2 +1,3 @@
 - [AI provider credits](ai-provider-credits.md) — a configured OpenAI key still needs usable provider credits; surface quota failures explicitly.
 - [Administrator provisioning](administrator-provisioning.md) — never auto-promote from VYBE_ADMIN_USER_ID; bootstrap admin access through an explicit verified operation.
+- [API test runner](api-test-runner.md) — bundle Node tests as CommonJS because esbuild ESM bundling conflicts with pg’s dynamic built-in imports.
