@@ -46,6 +46,12 @@ import {
 } from "../middlewares/auth";
 import { rateLimit } from "../middlewares/rateLimit";
 import { settleBattleInTransaction, xpProgress } from "../viralCore";
+import { getUserPlan } from "../lib/premium";
+import {
+  AiUsageLimitError,
+  completeAiUsage,
+  reserveAiUsage,
+} from "../lib/aiUsage";
 
 const router: IRouter = Router();
 
@@ -567,6 +573,7 @@ router.post("/notifications/read-all", async (_req, res, next) => {
 });
 
 router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
+  let usageId: string | undefined;
   try {
     const parsed = GenerateIdeasBody.safeParse(req.body);
     if (!parsed.success) {
@@ -578,53 +585,82 @@ router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
       res.status(503).json({ error: "AI is not configured" });
       return;
     }
+    const profile = currentUserFrom(res);
+    const plan = await getUserPlan(profile.id);
     const prompt = `Generate 5 concise, original VYBE Battle concepts as a JSON array of strings. Topic: ${parsed.data.topic}. Category: ${parsed.data.category ?? "any"}. Do not include markdown or numbering.`;
-    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-5-mini",
-        max_completion_tokens: 700,
-        messages: [
-          {
-            role: "system",
-            content: "You are VYBE AI, a creative competition producer.",
-          },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-    if (!upstream.ok) {
-      const errorText = await upstream.text();
-      req.log.error({ status: upstream.status, errorText }, "OpenAI request failed");
-      if (upstream.status === 429) {
-        res.status(503).json({ error: "AI provider has no remaining credits" });
+    try {
+      const reservation = await reserveAiUsage({
+        profileId: profile.id,
+        plan,
+        feature: "battle-ideas",
+        promptCharacters: prompt.length,
+      });
+      usageId = reservation?.id;
+    } catch (error) {
+      if (error instanceof AiUsageLimitError) {
+        res.status(429).json({
+          error: "Daily AI usage limit reached",
+          code: "AI_USAGE_LIMIT",
+          plan: error.plan,
+          used: error.used,
+          limit: error.limit,
+        });
         return;
       }
-      res.status(502).json({ error: "AI provider request failed" });
-      return;
+      throw error;
     }
-    const payload = (await upstream.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = payload.choices?.[0]?.message?.content?.trim() ?? "";
-    let ideas: string[];
     try {
-      const parsedIdeas: unknown = JSON.parse(content);
-      ideas = Array.isArray(parsedIdeas)
-        ? parsedIdeas.filter((idea): idea is string => typeof idea === "string").slice(0, 5)
-        : [];
-    } catch {
-      ideas = content
-        .split("\n")
-        .map((idea) => idea.replace(/^[-*\d.)\s]+/, "").trim())
-        .filter(Boolean)
-        .slice(0, 5);
+      const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-5-mini",
+          max_completion_tokens: 700,
+          messages: [
+            {
+              role: "system",
+              content: "You are VYBE AI, a creative competition producer.",
+            },
+            { role: "user", content: prompt },
+          ],
+        }),
+      });
+      if (!upstream.ok) {
+        const errorText = await upstream.text();
+        req.log.error({ status: upstream.status, errorText }, "OpenAI request failed");
+        if (upstream.status === 429) {
+          res.status(503).json({ error: "AI provider has no remaining credits" });
+          return;
+        }
+        res.status(502).json({ error: "AI provider request failed" });
+        return;
+      }
+      const payload = (await upstream.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const content = payload.choices?.[0]?.message?.content?.trim() ?? "";
+      let ideas: string[];
+      try {
+        const parsedIdeas: unknown = JSON.parse(content);
+        ideas = Array.isArray(parsedIdeas)
+          ? parsedIdeas.filter((idea): idea is string => typeof idea === "string").slice(0, 5)
+          : [];
+      } catch {
+        ideas = content
+          .split("\n")
+          .map((idea) => idea.replace(/^[-*\d.)\s]+/, "").trim())
+          .filter(Boolean)
+          .slice(0, 5);
+      }
+      if (usageId) await completeAiUsage(usageId, "success");
+      res.json(GenerateIdeasResponse.parse({ ideas }));
+    } catch (error) {
+      if (usageId) await completeAiUsage(usageId, "provider_error").catch(() => undefined);
+      throw error;
     }
-    res.json(GenerateIdeasResponse.parse({ ideas }));
   } catch (error) {
     next(error);
   }

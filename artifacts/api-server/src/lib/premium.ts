@@ -5,7 +5,7 @@ export type VybePlan = "FREE" | "PREMIUM" | "PREMIUM_PRO";
 
 export async function getUserPlan(userId: string): Promise<VybePlan> {
   const [profile] = await db.select({ plan: profilesTable.plan, subscriptionStatus: profilesTable.subscriptionStatus }).from(profilesTable).where(eq(profilesTable.id, userId));
-  if (!profile || !["active", "trialing"].includes(profile.subscriptionStatus)) return "FREE";
+  if (!profile || !["active", "trialing", "past_due"].includes(profile.subscriptionStatus)) return "FREE";
   return profile.plan === "PREMIUM_PRO" ? "PREMIUM_PRO" : profile.plan === "PREMIUM" ? "PREMIUM" : "FREE";
 }
 
