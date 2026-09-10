@@ -6,6 +6,12 @@ const router: IRouter = Router();
 router.use(requireAuthenticatedUser, requireAdmin);
 const rangeSince = (range: string) => range === "all" ? new Date(0) : new Date(Date.now() - ({ "24h": 864e5, "7d": 7 * 864e5, "30d": 30 * 864e5, "90d": 90 * 864e5 }[range] ?? 30 * 864e5));
 const csv = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""').replaceAll(/\r?\n/g, " ")}"`;
+const planFor = (row: Record<string, unknown>) => {
+  const item = ((row.items as Record<string, unknown> | undefined)?.data as Array<Record<string, unknown>> | undefined)?.[0];
+  const price = item?.price as Record<string, unknown> | undefined;
+  const plan = (price?.metadata as Record<string, string> | undefined)?.vybe_plan;
+  return plan === "premium_pro" ? "PREMIUM_PRO" : plan === "premium" ? "PREMIUM" : "FREE";
+};
 
 router.get("/admin/billing/config", async (_req, res) => {
   try {
@@ -29,7 +35,9 @@ router.get("/admin/billing/overview", async (req, res, next): Promise<void> => {
     const totalRevenue = invoiceRows.filter((row) => row.paid && inRange(row)).reduce((sum, row) => sum + Number(row.amount_paid ?? 0), 0);
     const active = subscriptions.filter((row) => row.status === "active" || row.status === "trialing").length;
     const monthly = invoiceRows.filter((row) => row.paid && row.billing_reason !== "subscription_create").reduce((sum, row) => sum + Number(row.amount_paid ?? 0), 0);
-    res.json({ connected: true, range: String(req.query.range ?? "30d"), subscriptions: [{ status: "active", count: active }, { status: "canceled", count: subscriptions.filter((row) => row.status === "canceled").length }], revenue: totalRevenue, payments: paymentRows.filter((row) => row.status === "succeeded" && inRange(row)).length, totalRevenue, revenue30d: totalRevenue, mrr: monthly, arr: monthly * 12, activeSubscriptions: active, newSubscriptions: subscriptions.filter(inRange).length, cancelledSubscriptions: subscriptions.filter((row) => row.status === "canceled" && inRange(row)).length, successfulPayments: paymentRows.filter((row) => row.status === "succeeded" && inRange(row)).length, failedPayments: paymentRows.filter((row) => row.status === "failed" && inRange(row)).length, premiumCount: active, conversion: null, trend: [] });
+    const activeRows = subscriptions.filter((row) => row.status === "active" || row.status === "trialing");
+    const premiumProCount = activeRows.filter((row) => planFor(row) === "PREMIUM_PRO").length;
+    res.json({ connected: true, range: String(req.query.range ?? "30d"), subscriptions: [{ status: "active", count: active }, { status: "canceled", count: subscriptions.filter((row) => row.status === "canceled").length }], revenue: totalRevenue, payments: paymentRows.filter((row) => row.status === "succeeded" && inRange(row)).length, totalRevenue, revenue30d: totalRevenue, mrr: monthly, arr: monthly * 12, activeSubscriptions: active, newSubscriptions: subscriptions.filter(inRange).length, cancelledSubscriptions: subscriptions.filter((row) => row.status === "canceled" && inRange(row)).length, successfulPayments: paymentRows.filter((row) => row.status === "succeeded" && inRange(row)).length, failedPayments: paymentRows.filter((row) => row.status === "failed" && inRange(row)).length, premiumCount: active - premiumProCount, premiumProCount, revenuePremium: totalRevenue, revenuePremiumPro: 0, conversion: null, trend: [] });
   } catch (_error) { res.json({ connected: false, range: String(req.query.range ?? "30d"), subscriptions: [], revenue: null, payments: null }); }
 });
 router.get("/admin/billing/subscriptions", async (req, res, next): Promise<void> => {
@@ -37,8 +45,9 @@ router.get("/admin/billing/subscriptions", async (req, res, next): Promise<void>
     const page = Math.max(1, Number(req.query.page ?? 1)), pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize ?? 20)));
     const search = String(req.query.search ?? ""), status = String(req.query.status ?? "");
     const result = await stripeRequest<{ data: Array<Record<string, unknown>> }>("subscriptions?status=all&limit=100");
-    const items = (result.data ?? []).filter((row) => (!status || row.status === status) && (!search || String(row.id).includes(search) || String(row.customer).includes(search))).slice((page - 1) * pageSize, page * pageSize);
-    res.json({ items, page, pageSize, total: result.data?.length ?? 0, totalPages: Math.ceil((result.data?.length ?? 0) / pageSize) });
+    const filtered = (result.data ?? []).map((row) => ({ ...row, plan: planFor(row) })).filter((row) => (!status || row.status === status) && (!search || String(row.id).includes(search) || String(row.customer).includes(search) || String(row.plan).includes(search)));
+    const items = filtered.slice((page - 1) * pageSize, page * pageSize);
+    res.json({ items, page, pageSize, total: filtered.length, totalPages: Math.ceil(filtered.length / pageSize) });
   } catch (error) { next(error); }
 });
 router.get("/admin/billing/subscriptions.csv", async (_req, res, next): Promise<void> => {

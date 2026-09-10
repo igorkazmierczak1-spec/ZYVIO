@@ -415,7 +415,8 @@ function ProfilePage() {
   if (profile.isError || !data) return <ErrorState onRetry={() => void profile.refetch()} />;
 
   const sub = subData?.subscription as any;
-  const hasActiveSub = sub && (sub.status === 'active' || sub.status === 'trialing');
+  const currentPlan = (subData as any)?.plan ?? sub?.plan ?? "FREE";
+  const hasActiveSub = sub && ['active', 'trialing', 'past_due'].includes(sub.status);
   const winRate = Math.round(data.wins / Math.max(1, data.wins + data.losses) * 100);
 
   return <div>
@@ -447,7 +448,7 @@ function ProfilePage() {
         <div className="panel-heading" style={{ margin: 0, marginBottom: '16px' }}>
           <div>
             <span className="eyebrow" style={{ color: '#537514' }}>Subskrypcja</span>
-            <h2 style={{ color: '#293b09' }}>VYBE Premium Aktywne</h2>
+            <h2 style={{ color: '#293b09' }}>{currentPlan === "PREMIUM_PRO" ? "👑 VYBE Premium Pro aktywne" : "⭐ VYBE Premium aktywne"}</h2>
             {sub.cancel_at_period_end && <p style={{ color: '#c74437', fontSize: '12px', marginTop: '4px' }}>Anulowano - wygasa: {new Date(sub.current_period_end * 1000).toLocaleDateString()}</p>}
           </div>
           <Button onClick={() => portalMut.mutate()} disabled={portalMut.isPending} style={{ background: '#293b09', color: 'var(--lime)' }}>
@@ -468,7 +469,7 @@ function ProfilePage() {
           </div>
           <Button onClick={() => navigate("/premium")}><Crown /> Zobacz ofertę</Button>
         </div>
-        <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Odblokuj ekskluzywne badge, priorytetowy dostęp do nowych funkcji i zyskaj przewagę.</p>
+        <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Wybierz Premium lub Premium Pro, aby rozpocząć prawdziwą subskrypcję przez Stripe.</p>
       </section>
     )}
 
