@@ -1,0 +1,155 @@
+Mam już provisioning Clerk i zależności. Teraz wykonuję właściwą migrację techniczną: lokalny profil będzie powiązany z identyfikatorem Clerk, rola będzie nadawana wyłącznie na serwerze, a wszystkie operacje VYBE przestaną używać stałego user-igor. Następnie zabezpieczę /api/admin/* i frontendowe /admin.
+
+Fundament jest już w kodzie i przechodzi typecheck. Teraz restartuję frontend oraz API, potem sprawdzę: publiczny landing, ekran logowania, odpowiedzi 401 bez sesji, ochronę /api/admin, schemat użytkowników i zachowanie guarda dla USER/ADMIN.
+
+Publiczny landing i ekran logowania działają, a API poprawnie odrzuca brak sesji. Zrobię jeszcze test samego mechanizmu autoryzacji ról oraz sprawdzę finalny schemat bazy; nie będę tworzył trwałych fikcyjnych kont ani nowych funkcji.
+
+Test guarda zakończył się poprawnie: brak użytkownika daje 401, rola USER daje 403, a ADMIN przechodzi dalej. Kończę bez dodawania kolejnych funkcji; pozostaje tylko zaprezentowanie zaktualizowanej aplikacji i dokładne podsumowanie konfiguracji pierwszego administratora.
+
+1. Co zostało zrobione
+Prawdziwe uwierzytelnianie
+Skonfigurowałem Replit-managed Clerk.
+Dodałem:
+rejestrację,
+logowanie,
+wylogowanie,
+reset hasła obsługiwany przez Clerk,
+bezpieczne sesje oparte na ciasteczkach Clerk,
+Google Login dostępny na ekranie logowania.
+Dodałem produkcyjny proxy Clerk wymagany po publikacji.
+Po zmianie użytkownika czyszczony jest cache React Query, aby dane jednego konta nie pojawiły się na drugim.
+Użytkownicy w bazie
+Tabela vybe_profiles zawiera teraz między innymi:
+
+id — identyfikator użytkownika Clerk,
+email,
+username,
+displayName,
+avatarUrl,
+country,
+role,
+authProvider,
+createdAt,
+updatedAt.
+Hasła nie są przechowywane w PostgreSQL. Obsługuje je Clerk, co jest bezpieczniejsze niż własna implementacja haseł.
+
+Profil lokalny tworzony jest automatycznie przy pierwszym poprawnie uwierzytelnionym żądaniu.
+
+Role i bezpieczeństwo
+Dodałem role:
+
+USER,
+ADMIN.
+Roli ADMIN:
+
+nie można przesłać przez frontend,
+nie można ustawić przez edycję profilu,
+nie można uzyskać przez zmianę danych żądania,
+jest sprawdzana po stronie backendu.
+Dodałem middleware:
+
+requireAuthenticatedUser,
+requireAdmin.
+Zabezpieczone zostały:
+
+wszystkie endpointy danych VYBE,
+/api/admin,
+frontendowa ścieżka /admin.
+Usunięty został mechanizm:
+
+CURRENT_USER_ID = "user-igor"
+Usunąłem również istniejące dane demonstracyjne z deweloperskiej bazy. Baza użytkowników jest obecnie pusta i czeka na prawdziwą rejestrację.
+
+2. Co działa
+Publiczna strona startowa.
+/sign-in — logowanie.
+/sign-up — rejestracja.
+Reset hasła przez proces Clerk.
+Google Login.
+Wylogowanie z menu VYBE.
+Sesje użytkowników.
+Automatyczne utworzenie profilu w PostgreSQL po zalogowaniu.
+Ochrona API bez sesji.
+Ochrona endpointów administracyjnych.
+Rozróżnienie USER/ADMIN.
+/admin pokazuje zawartość tylko po otrzymaniu roli ADMIN z backendu.
+Wyniki testów guarda:
+
+Stan	Wynik
+Brak sesji	401 Unauthorized
+Użytkownik USER	403 Forbidden
+Użytkownik ADMIN	dostęp dozwolony
+Dodatkowe testy:
+
+/api/healthz bez sesji: 200
+/api/profile bez sesji: 401
+/api/dashboard bez sesji: 401
+/api/admin bez sesji: 401
+Typecheck bibliotek: zaliczony
+Typecheck API: zaliczony
+Typecheck frontendu: zaliczony
+Workflow API: działa
+Workflow frontendu: działa
+Ekran logowania i publiczny landing: sprawdzone w preview
+3. Jakie błędy lub ograniczenia pozostały
+Nie wykonałem pełnego testu logowania prawdziwym adresem e-mail, ponieważ wymagałoby to utworzenia rzeczywistego konta i odebrania kodu weryfikacyjnego. Ekrany Clerk i backendowa ochrona sesji działają.
+
+Nie ustawiono jeszcze pierwszego administratora, ponieważ najpierw musisz utworzyć swoje prawdziwe konto Clerk.
+
+Długość oraz wygasanie sesji są obsługiwane przez Clerk. Żądanie z brakującą lub wygasłą sesją otrzyma 401.
+
+Płatności nie zostały jeszcze podłączone. Nie wykonywałem kolejnego etapu zgodnie z poleceniem. Aby opłaty trafiały do Ciebie, później trzeba połączyć VYBE z Twoim kontem Stripe.
+
+4. Jak utworzyć pierwsze konto ADMIN
+Otwórz aplikację i wybierz Create account.
+Zarejestruj swoje prawdziwe konto.
+Zaloguj się przynajmniej raz — wtedy profil zostanie zapisany w PostgreSQL.
+Otwórz panel Auth w Replit i znajdź identyfikator użytkownika Clerk zaczynający się od user_.
+Dodaj w Replit Secrets:
+VYBE_ADMIN_USER_ID
+Jako wartość ustaw swój identyfikator user_....
+
+Uruchom ponownie API.
+Przy następnym żądaniu backend automatycznie zmieni Twoją rolę z USER na ADMIN.
+Wejdź na:
+/admin
+Development i opublikowana aplikacja Clerk mają oddzielnych użytkowników. Po publikacji konto produkcyjne może mieć inny identyfikator user_..., więc wartość administratora trzeba ustawić również dla środowiska produkcyjnego.
+
+ENV/Secrets
+Automatycznie skonfigurowane — nie musisz ich dodawać:
+
+CLERK_PUBLISHABLE_KEY
+CLERK_SECRET_KEY
+VITE_CLERK_PUBLISHABLE_KEY
+DATABASE_URL
+Do ustawienia przez Ciebie:
+
+VYBE_ADMIN_USER_ID — identyfikator Twojego konta Clerk.
+SESSION_SECRET nie jest potrzebny do nowych sesji Clerk.
+
+5. Zmienione pliki
+Najważniejsze:
+
+artifacts/api-server/src/app.ts
+artifacts/api-server/src/middlewares/auth.ts
+artifacts/api-server/src/middlewares/clerkProxyMiddleware.ts
+artifacts/api-server/src/routes/admin.ts
+artifacts/api-server/src/routes/index.ts
+artifacts/api-server/src/routes/vybe.ts
+artifacts/api-server/package.json
+artifacts/vybe-app/src/App.tsx
+artifacts/vybe-app/src/index.css
+artifacts/vybe-app/vite.config.ts
+artifacts/vybe-app/public/logo.svg
+artifacts/vybe-app/package.json
+lib/db/src/schema/vybe.ts
+lib/api-spec/openapi.yaml
+wygenerowane pliki klienta API i walidatorów Zod
+pnpm-lock.yaml
+Używana baza danych: Replit PostgreSQL.
+
+Następny najmniejszy krok
+Utwórz swoje konto, ustaw VYBE_ADMIN_USER_ID i sprawdź /admin.
+
+Dopiero po Twoim potwierdzeniu kolejnym etapem powinno być podłączenie Twojego konta Stripe, aby płatności za Premium trafiały bezpośrednio do Ciebie.
+

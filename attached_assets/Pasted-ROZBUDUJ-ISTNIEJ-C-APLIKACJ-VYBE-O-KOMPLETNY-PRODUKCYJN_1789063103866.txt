@@ -1,0 +1,473 @@
+ROZBUDUJ ISTNIEJĄCĄ APLIKACJĘ VYBE O KOMPLETNY, PRODUKCYJNY SYSTEM MONETYZACJI: VYBE PREMIUM + STRIPE + SUBSKRYPCJE + PANEL PRZYCHODÓW ADMINA.
+
+WAŻNE:
+Najpierw przeanalizuj istniejący projekt, architekturę, Clerk, PostgreSQL, role USER/ADMIN, API oraz obecny panel ADMIN. NIE usuwaj ani nie psuj istniejących funkcji. Zachowaj obecne uwierzytelnianie Clerk i istniejące zabezpieczenia.
+
+Nie twórz fikcyjnych płatności, przychodów, subskrypcji ani danych. Wszystko, co pokazuje panel, musi pochodzić z rzeczywistych danych Stripe lub lokalnej bazy.
+
+==================================================
+
+1. VYBE PREMIUM
+   ==================================================
+
+Dodaj płatny plan:
+
+VYBE PREMIUM
+
+Cena miesięczna:
+19,99 zł / miesiąc
+
+Cena roczna:
+149,99 zł / rok
+
+Dodaj możliwość późniejszej zmiany cen bez przebudowy całej aplikacji.
+
+Na stronie Premium pokaż:
+
+- cenę,
+- okres rozliczeniowy,
+- najważniejsze korzyści,
+- przycisk „Kup Premium”,
+- możliwość przejścia z miesięcznego na roczny plan,
+- FAQ,
+- informację o automatycznym odnawianiu,
+- jasne informacje dotyczące anulowania.
+
+Nie obiecuj funkcji, których VYBE faktycznie nie posiada.
+
+==================================================
+2. STRIPE
+
+Zintegruj VYBE ze Stripe w sposób produkcyjny.
+
+Użyj Stripe Checkout oraz Stripe Billing/Subscriptions zgodnie z najlepszym rozwiązaniem dla obecnej architektury.
+
+NIE umieszczaj kluczy Stripe w frontendzie.
+
+Sekrety Stripe mają być przechowywane wyłącznie jako Replit Secrets/environment variables.
+
+Przygotuj konfigurację:
+
+STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET
+STRIPE_PREMIUM_MONTHLY_PRICE_ID
+STRIPE_PREMIUM_YEARLY_PRICE_ID
+
+Jeżeli Stripe nie jest jeszcze skonfigurowany, przygotuj integrację tak, aby po dodaniu tych sekretów można było ją uruchomić bez przepisywania systemu.
+
+==================================================
+3. CHECKOUT
+
+Po kliknięciu „Kup Premium”:
+
+1. Sprawdź zalogowanie przez Clerk.
+2. Pobierz prawdziwy identyfikator użytkownika Clerk.
+3. Znajdź lub utwórz powiązany profil VYBE.
+4. Utwórz/pobierz Customer w Stripe.
+5. Utwórz Stripe Checkout Session.
+6. Przekieruj użytkownika do bezpiecznego Checkout Stripe.
+7. Po udanej płatności wróć do VYBE.
+
+Nigdy nie ufaj frontendowi w kwestii:
+
+- ceny,
+- statusu Premium,
+- identyfikatora użytkownika,
+- uprawnień.
+
+Wszystko musi być potwierdzane po stronie serwera.
+
+==================================================
+4. WEBHOOK STRIPE
+
+Dodaj bezpieczny endpoint webhook Stripe.
+
+Obsłuż odpowiednie zdarzenia związane z subskrypcją, w szczególności:
+
+- checkout.session.completed,
+- customer.subscription.created,
+- customer.subscription.updated,
+- customer.subscription.deleted,
+- invoice.paid,
+- invoice.payment_failed.
+
+Weryfikuj podpis webhooka Stripe.
+
+Webhook musi być odporny na wielokrotne otrzymanie tego samego eventu.
+
+Nie aktywuj Premium wyłącznie na podstawie powrotu użytkownika z Checkout.
+
+Premium ma być aktywowane na podstawie zweryfikowanych danych Stripe.
+
+==================================================
+5. BAZA DANYCH
+
+Rozbuduj istniejącą bazę w sposób kompatybilny z aktualnym schematem.
+
+Dodaj tabelę/strukturę subskrypcji powiązaną z użytkownikiem Clerk.
+
+Przechowuj między innymi:
+
+- userId,
+- stripeCustomerId,
+- stripeSubscriptionId,
+- stripePriceId,
+- plan,
+- billingPeriod,
+- status,
+- currentPeriodStart,
+- currentPeriodEnd,
+- cancelAtPeriodEnd,
+- createdAt,
+- updatedAt.
+
+Nie przechowuj danych kart płatniczych.
+
+Stripe ma być źródłem prawdy dla statusu płatności/subskrypcji, a baza VYBE ma przechowywać potrzebny stan zsynchronizowany webhookami.
+
+==================================================
+6. STATUS PREMIUM
+
+Utwórz centralną funkcję backendową:
+
+hasPremiumAccess(userId)
+
+Ma ona zwracać prawdziwy status użytkownika.
+
+Uwzględnij:
+
+- active,
+- trialing, jeśli zostanie użyty,
+- canceled,
+- past_due,
+- unpaid,
+- incomplete,
+- expired.
+
+Nie pozwalaj użytkownikowi samodzielnie ustawić Premium przez frontend, request body, DevTools ani zmianę localStorage.
+
+==================================================
+7. PREMIUM W APLIKACJI
+
+Dodaj oznaczenie:
+
+⭐ PREMIUM
+
+przy użytkowniku posiadającym aktywną subskrypcję.
+
+Dodaj blokady funkcji Premium w backendzie.
+
+Jeżeli istnieją funkcje VYBE, które mają być Premium, przygotuj system feature gating:
+
+requirePremium
+
+Tak, aby dostęp był sprawdzany na serwerze.
+
+Frontend ma tylko pokazywać użytkownikowi odpowiedni interfejs — nie może być źródłem bezpieczeństwa.
+
+==================================================
+8. KONTO UŻYTKOWNIKA
+
+Dodaj w profilu:
+
+VYBE PREMIUM
+Status: Aktywne / Nieaktywne
+
+Dla aktywnego Premium pokaż:
+
+- plan,
+- okres rozliczeniowy,
+- następne rozliczenie,
+- datę końca okresu,
+- status automatycznego odnowienia.
+
+Dodaj przycisk:
+
+„Zarządzaj subskrypcją”
+
+który prowadzi do Stripe Customer Portal.
+
+Nie twórz własnego systemu przechowywania danych kart.
+
+==================================================
+9. ANULOWANIE
+
+Użytkownik może zarządzać subskrypcją przez Stripe Customer Portal.
+
+Obsłuż poprawnie:
+
+- anulowanie na koniec okresu,
+- wznowienie,
+- zmianę planu,
+- nieudaną płatność,
+- zakończenie subskrypcji.
+
+Nie usuwaj danych użytkownika tylko dlatego, że anulował Premium.
+
+==================================================
+10. STRONA PREMIUM
+
+Stwórz profesjonalną stronę:
+
+/premium
+
+Design:
+
+- nowoczesny,
+- premium,
+- responsywny,
+- dopasowany do VYBE,
+- bardzo dobry na telefonie,
+- czytelne CTA.
+
+Pokaż porównanie:
+
+FREE
+vs
+PREMIUM
+
+Nie dodawaj sztucznych korzyści. Wykorzystaj istniejące funkcje VYBE i oznacz tylko te funkcje, które rzeczywiście zostały wdrożone jako Premium.
+
+==================================================
+11. PANEL ADMINA — MONETYZACJA
+
+Rozbuduj istniejący panel ADMIN o sekcję:
+
+💰 MONETYZACJA
+
+Dashboard ma pokazywać rzeczywiste dane:
+
+- całkowity przychód,
+- przychód z ostatnich 30 dni,
+- MRR,
+- ARR, jeśli można go prawidłowo obliczyć,
+- liczba aktywnych subskrypcji,
+- nowe subskrypcje,
+- anulowane subskrypcje,
+- płatności zakończone sukcesem,
+- płatności nieudane,
+- liczba Premium,
+- konwersja FREE → PREMIUM, jeśli dane pozwalają ją obliczyć.
+
+Dodaj zakres:
+24h / 7 dni / 30 dni / 90 dni / rok / cały okres.
+
+==================================================
+12. WYKRESY
+
+Dodaj profesjonalne wykresy:
+
+- przychód w czasie,
+- aktywne subskrypcje,
+- nowe subskrypcje,
+- anulowania,
+- płatności nieudane.
+
+Wszystkie dane muszą pochodzić z rzeczywistych danych.
+
+Jeżeli Stripe nie jest jeszcze podłączony, pokaż pusty stan:
+
+„Stripe nie jest jeszcze skonfigurowany”
+
+zamiast zer udających prawdziwe dane.
+
+==================================================
+13. LISTA SUBSKRYPCJI
+
+W panelu ADMIN dodaj tabelę:
+
+- użytkownik,
+- e-mail,
+- plan,
+- cena,
+- status,
+- Stripe Customer ID,
+- Stripe Subscription ID,
+- data rozpoczęcia,
+- następne rozliczenie,
+- anulowanie,
+- ostatnia synchronizacja.
+
+Dodaj:
+
+- wyszukiwanie,
+- filtrowanie,
+- sortowanie,
+- paginację.
+
+Nie pokazuj pełnych danych płatniczych.
+
+==================================================
+14. SZCZEGÓŁY UŻYTKOWNIKA
+
+W profilu użytkownika ADMIN pokaż sekcję:
+
+MONETYZACJA
+
+z:
+
+- statusem Premium,
+- planem,
+- historią subskrypcji,
+- historią płatności, jeśli dostępna,
+- Stripe Customer ID,
+- datami subskrypcji.
+
+Nie pozwalaj ADMINOWI ręcznie udawać płatności.
+
+Jeżeli potrzebna jest funkcja ręcznego przyznania dostępu promocyjnego, stwórz osobny system „ADMIN GRANT” z:
+
+- powodem,
+- datą rozpoczęcia,
+- datą zakończenia,
+- administratorem,
+- pełnym logiem.
+
+Nie mieszaj tego z prawdziwą subskrypcją Stripe.
+
+==================================================
+15. PANEL PRZYCHODÓW
+
+Dodaj:
+
+„Revenue”
+
+oraz:
+
+„Subscriptions”
+
+w sidebarze ADMIN.
+
+Dodaj możliwość eksportu danych do CSV, jeżeli obecna architektura na to pozwala.
+
+Eksport nie może zawierać wrażliwych danych kart.
+
+==================================================
+16. BEZPIECZEŃSTWO
+
+Szczególnie dopilnuj:
+
+- Stripe secret key tylko backend,
+- webhook signature verification,
+- brak możliwości zmiany Premium przez frontend,
+- brak możliwości zmiany ceny przez frontend,
+- brak zaufania do userId przesłanego przez klienta,
+- używanie Clerk session jako źródła tożsamości,
+- ADMIN endpoints zabezpieczone istniejącym requireAdmin,
+- Premium endpoints zabezpieczone requirePremium,
+- walidacja danych wejściowych,
+- ochrona przed replay/double webhook events,
+- bezpieczne logowanie błędów,
+- brak sekretów w logach.
+
+==================================================
+17. PANEL ADMINA — KONFIGURACJA STRIPE
+
+Dodaj stronę:
+
+/admin/settings/billing
+
+Pokaż:
+
+- status połączenia Stripe,
+- czy webhook jest skonfigurowany,
+- czy ceny Premium są skonfigurowane,
+- ID produktów/cen w bezpiecznej formie,
+- status synchronizacji.
+
+Nigdy nie pokazuj STRIPE_SECRET_KEY.
+
+Dodaj wyraźny status:
+
+CONNECTED
+lub
+NOT CONFIGURED
+
+==================================================
+18. TESTY
+
+Po implementacji wykonaj testy:
+
+1. USER bez Premium nie może korzystać z funkcji Premium.
+2. USER z aktywnym Premium ma dostęp.
+3. Wylogowany użytkownik nie może rozpocząć chronionego procesu.
+4. USER nie może nadać sobie Premium requestem.
+5. USER nie może zmienić ceny.
+6. USER nie może podszyć się pod innego użytkownika.
+7. ADMIN ma dostęp do panelu monetyzacji.
+8. Zwykły USER nie ma dostępu do /api/admin/billing.
+9. Webhook Stripe odrzuca nieprawidłowy podpis.
+10. Ten sam webhook przetworzony drugi raz nie powoduje podwójnego efektu.
+11. Anulowanie subskrypcji poprawnie aktualizuje status.
+12. Nieudana płatność poprawnie aktualizuje status.
+13. Stripe Customer Portal działa.
+14. Brak konfiguracji Stripe nie powoduje crashu całej aplikacji.
+15. Typecheck frontend/backend.
+16. Test produkcyjnego buildu.
+
+==================================================
+19. UX
+
+Dodaj komunikaty:
+
+„Płatność zakończona pomyślnie”
+„Subskrypcja jest aktywna”
+„Płatność nie powiodła się”
+„Subskrypcja została anulowana”
+„Stripe nie jest jeszcze skonfigurowany”
+
+Dodaj loading states i error states.
+
+Nie pokazuj użytkownikowi technicznych błędów typu stack trace.
+
+==================================================
+20. WAŻNE — NIE TWÓRZ ATRAP
+
+Jeżeli Stripe nie jest jeszcze połączony:
+
+NIE twórz fikcyjnego checkoutu.
+NIE pokazuj fikcyjnego przychodu.
+NIE twórz fikcyjnych subskrypcji.
+NIE udawaj, że płatność została wykonana.
+
+Przygotuj prawdziwą integrację i jasno wskaż, jakie Stripe Secrets/Price IDs muszę później dodać.
+
+==================================================
+21. FINALNA WERYFIKACJA
+
+Po zakończeniu:
+
+- uruchom frontend,
+- uruchom API,
+- wykonaj typecheck,
+- wykonaj build,
+- sprawdź istniejący login Clerk,
+- sprawdź role USER/ADMIN,
+- sprawdź /admin,
+- sprawdź Premium,
+- sprawdź endpointy Stripe,
+- sprawdź webhook,
+- sprawdź Customer Portal,
+- sprawdź zabezpieczenia.
+
+NIE USUWAJ istniejących funkcji VYBE.
+NIE ZMIENIAJ istniejącego systemu Clerk bez konieczności.
+NIE TWÓRZ fikcyjnych danych.
+NIE przechowuj danych kart.
+NIE umieszczaj sekretów w frontendzie.
+
+Na końcu przedstaw dokładne podsumowanie:
+
+1. Co zostało wdrożone.
+2. Jakie endpointy zostały dodane.
+3. Jakie tabele/kolumny zostały dodane.
+4. Jakie Stripe Secrets muszę ustawić.
+5. Jak utworzyć produkty i ceny w Stripe.
+6. Jak skonfigurować webhook.
+7. Jak przetestować płatność w Stripe Test Mode.
+8. Jak przełączyć system na Live Mode.
+9. Które elementy są już w 100% działające.
+10. Które elementy wymagają jeszcze konfiguracji po mojej stronie.
+
+NAJWAŻNIEJSZE:
+Nie kończ na samym interfejsie. System ma być przygotowany jako prawdziwa integracja backend + baza danych + Stripe + webhooki + uprawnienia + panel ADMIN.
