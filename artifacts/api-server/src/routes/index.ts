@@ -4,6 +4,7 @@ import vybeRouter from "./vybe";
 import adminRouter from "./admin";
 import premiumRouter from "./premium";
 import billingAdminRouter from "./billingAdmin";
+import socialRouter from "./social";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use("/admin", adminRouter);
 router.use(premiumRouter);
 router.use(billingAdminRouter);
 router.use(vybeRouter);
+router.use(socialRouter);
 
 export default router;
