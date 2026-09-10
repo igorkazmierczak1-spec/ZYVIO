@@ -960,14 +960,6 @@ export const ListSocialMessagesParams = zod.object({
   "conversationId": zod.coerce.string()
 })
 
-export const listSocialMessagesQueryPageDefault = 1;
-
-
-
-export const ListSocialMessagesQueryParams = zod.object({
-  "page": zod.coerce.number().int().min(1).default(listSocialMessagesQueryPageDefault)
-})
-
 export const ListSocialMessagesResponse = zod.object({
   "items": zod.array(zod.object({
   "id": zod.string(),

@@ -856,13 +856,6 @@ export const GetSocialFeedFilter = {
   latest: 'latest',
 } as const;
 
-export type ListSocialMessagesParams = {
-/**
- * @minimum 1
- */
-page?: number;
-};
-
 export type GetAdminOverviewParams = {
 range?: AdminRangeParameter;
 };

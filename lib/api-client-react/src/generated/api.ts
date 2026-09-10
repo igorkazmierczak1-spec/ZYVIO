@@ -63,7 +63,6 @@ import type {
   ListAdminReportsParams,
   ListAdminUsersParams,
   ListBattlesParams,
-  ListSocialMessagesParams,
   MarkAllNotificationsRead200,
   Notification,
   OkResponse,
@@ -2263,29 +2262,20 @@ export const useCreateSocialConversation = <TError = ErrorType<unknown>,
       return useMutation(getCreateSocialConversationMutationOptions(options));
     }
 
-export const getListSocialMessagesUrl = (conversationId: string,
-    params?: ListSocialMessagesParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getListSocialMessagesUrl = (conversationId: string,) => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/social/conversations/${conversationId}/messages?${stringifiedParams}` : `/api/social/conversations/${conversationId}/messages`
+  return `/api/social/conversations/${conversationId}/messages`
 }
 
 /**
  * @summary List messages for a conversation the user belongs to
  */
-export const listSocialMessages = async (conversationId: string,
-    params?: ListSocialMessagesParams, options?: Parameters<typeof customFetch>[1]): Promise<SocialMessagePage> => {
+export const listSocialMessages = async (conversationId: string, options?: Parameters<typeof customFetch>[1]): Promise<SocialMessagePage> => {
 
-  return customFetch<SocialMessagePage>(getListSocialMessagesUrl(conversationId,params),
+  return customFetch<SocialMessagePage>(getListSocialMessagesUrl(conversationId),
   {
     ...options,
     method: 'GET'
@@ -2298,25 +2288,23 @@ export const listSocialMessages = async (conversationId: string,
 
 
 
-export const getListSocialMessagesQueryKey = (conversationId: string,
-    params?: ListSocialMessagesParams,) => {
+export const getListSocialMessagesQueryKey = (conversationId: string,) => {
     return [
-    `/api/social/conversations/${conversationId}/messages`, ...(params ? [params] : [])
+    `/api/social/conversations/${conversationId}/messages`
     ] as const;
     }
 
 
-export const getListSocialMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listSocialMessages>>, TError = ErrorType<unknown>>(conversationId: string,
-    params?: ListSocialMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListSocialMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listSocialMessages>>, TError = ErrorType<unknown>>(conversationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListSocialMessagesQueryKey(conversationId,params);
+  const queryKey =  queryOptions?.queryKey ?? getListSocialMessagesQueryKey(conversationId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSocialMessages>>> = ({ signal }) => listSocialMessages(conversationId,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSocialMessages>>> = ({ signal }) => listSocialMessages(conversationId, { signal, ...requestOptions });
 
 
 
@@ -2334,12 +2322,11 @@ export type ListSocialMessagesQueryError = ErrorType<unknown>
  */
 
 export function useListSocialMessages<TData = Awaited<ReturnType<typeof listSocialMessages>>, TError = ErrorType<unknown>>(
- conversationId: string,
-    params?: ListSocialMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ conversationId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListSocialMessagesQueryOptions(conversationId,params,options)
+  const queryOptions = getListSocialMessagesQueryOptions(conversationId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

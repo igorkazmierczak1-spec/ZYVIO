@@ -80,7 +80,6 @@ export * from './listAdminUsersSort';
 export * from './listAdminUsersStatus';
 export * from './listBattlesParams';
 export * from './listBattlesStatus';
-export * from './listSocialMessagesParams';
 export * from './markAllNotificationsRead200';
 export * from './notification';
 export * from './okResponse';
