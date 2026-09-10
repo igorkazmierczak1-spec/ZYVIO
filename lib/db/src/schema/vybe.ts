@@ -213,6 +213,115 @@ export const stripeWebhookEventsTable = pgTable("vybe_stripe_webhook_events", {
   processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const postsTable = pgTable(
+  "vybe_posts",
+  {
+    id: text("id").primaryKey(),
+    authorProfileId: text("author_profile_id").notNull(),
+    body: text("body").notNull(),
+    mediaUrl: text("media_url"),
+    mediaType: text("media_type"),
+    category: text("category").notNull().default("General"),
+    contentStatus: contentStatusEnum("content_status").notNull().default("ACTIVE"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    authorCreatedIndex: index("vybe_posts_author_created_idx").on(table.authorProfileId, table.createdAt),
+    categoryCreatedIndex: index("vybe_posts_category_created_idx").on(table.category, table.createdAt),
+  }),
+);
+
+export const postLikesTable = pgTable(
+  "vybe_post_likes",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id").notNull(),
+    profileId: text("profile_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    postProfileUnique: uniqueIndex("vybe_post_likes_post_profile_unique").on(table.postId, table.profileId),
+    postIndex: index("vybe_post_likes_post_idx").on(table.postId),
+  }),
+);
+
+export const commentsTable = pgTable(
+  "vybe_comments",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id").notNull(),
+    authorProfileId: text("author_profile_id").notNull(),
+    body: text("body").notNull(),
+    contentStatus: contentStatusEnum("content_status").notNull().default("ACTIVE"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    postCreatedIndex: index("vybe_comments_post_created_idx").on(table.postId, table.createdAt),
+  }),
+);
+
+export const commentLikesTable = pgTable(
+  "vybe_comment_likes",
+  {
+    id: text("id").primaryKey(),
+    commentId: text("comment_id").notNull(),
+    profileId: text("profile_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    commentProfileUnique: uniqueIndex("vybe_comment_likes_comment_profile_unique").on(table.commentId, table.profileId),
+  }),
+);
+
+export const followsTable = pgTable(
+  "vybe_follows",
+  {
+    id: text("id").primaryKey(),
+    followerProfileId: text("follower_profile_id").notNull(),
+    followingProfileId: text("following_profile_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    followerFollowingUnique: uniqueIndex("vybe_follows_follower_following_unique").on(table.followerProfileId, table.followingProfileId),
+    followerIndex: index("vybe_follows_follower_idx").on(table.followerProfileId),
+    followingIndex: index("vybe_follows_following_idx").on(table.followingProfileId),
+  }),
+);
+
+export const blocksTable = pgTable(
+  "vybe_blocks",
+  {
+    id: text("id").primaryKey(),
+    blockerProfileId: text("blocker_profile_id").notNull(),
+    blockedProfileId: text("blocked_profile_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    blockerBlockedUnique: uniqueIndex("vybe_blocks_blocker_blocked_unique").on(table.blockerProfileId, table.blockedProfileId),
+    blockerIndex: index("vybe_blocks_blocker_idx").on(table.blockerProfileId),
+    blockedIndex: index("vybe_blocks_blocked_idx").on(table.blockedProfileId),
+  }),
+);
+
+export const aiUsageTable = pgTable(
+  "vybe_ai_usage",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id").notNull(),
+    feature: text("feature").notNull(),
+    plan: text("plan").notNull(),
+    status: text("status").notNull().default("success"),
+    promptCharacters: integer("prompt_characters").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    profileCreatedIndex: index("vybe_ai_usage_profile_created_idx").on(table.profileId, table.createdAt),
+    featureCreatedIndex: index("vybe_ai_usage_feature_created_idx").on(table.feature, table.createdAt),
+  }),
+);
+
 export const battleResultsTable = pgTable(
   "vybe_battle_results",
   {
@@ -256,6 +365,13 @@ export const insertModerationReportHistorySchema = createInsertSchema(moderation
 export const insertAdminAuditLogSchema = createInsertSchema(adminAuditLogsTable);
 export const insertAppSettingsSchema = createInsertSchema(appSettingsTable);
 export const insertStripeWebhookEventSchema = createInsertSchema(stripeWebhookEventsTable);
+export const insertPostSchema = createInsertSchema(postsTable);
+export const insertPostLikeSchema = createInsertSchema(postLikesTable);
+export const insertCommentSchema = createInsertSchema(commentsTable);
+export const insertCommentLikeSchema = createInsertSchema(commentLikesTable);
+export const insertFollowSchema = createInsertSchema(followsTable);
+export const insertBlockSchema = createInsertSchema(blocksTable);
+export const insertAiUsageSchema = createInsertSchema(aiUsageTable);
 export const insertBattleResultSchema = createInsertSchema(battleResultsTable);
 export const insertViralRewardEventSchema = createInsertSchema(viralRewardEventsTable);
 
@@ -271,6 +387,13 @@ export type ModerationReportHistory = typeof moderationReportHistoryTable.$infer
 export type AdminAuditLog = typeof adminAuditLogsTable.$inferSelect;
 export type AppSettings = typeof appSettingsTable.$inferSelect;
 export type StripeWebhookEvent = typeof stripeWebhookEventsTable.$inferSelect;
+export type Post = typeof postsTable.$inferSelect;
+export type PostLike = typeof postLikesTable.$inferSelect;
+export type Comment = typeof commentsTable.$inferSelect;
+export type CommentLike = typeof commentLikesTable.$inferSelect;
+export type Follow = typeof followsTable.$inferSelect;
+export type Block = typeof blocksTable.$inferSelect;
+export type AiUsage = typeof aiUsageTable.$inferSelect;
 export type BattleResult = typeof battleResultsTable.$inferSelect;
 export type ViralRewardEvent = typeof viralRewardEventsTable.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;

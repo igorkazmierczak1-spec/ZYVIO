@@ -1,0 +1,712 @@
+VYBE — SOCIAL + AI UPGRADE 🚀🤖
+
+Rozbuduj istniejącą aplikację VYBE o profesjonalny system SOCIAL + AI.
+
+⚠️ KRYTYCZNE:
+Najpierw przeanalizuj CAŁY obecny projekt, jego frontend, backend, PostgreSQL, API, routing, Clerk, role USER/ADMIN, Battle, XP, levels, streaks, badges, rankingi, Premium, Premium Pro i Stripe.
+
+NIE twórz aplikacji od zera.
+NIE usuwaj istniejących funkcji.
+NIE resetuj bazy danych.
+NIE zastępuj działających systemów nowymi wersjami.
+Wykorzystaj istniejącą architekturę.
+
+Zachowaj bez zmian:
+
+- Clerk authentication
+- Google Login
+- USER / ADMIN
+- panel Admin
+- PostgreSQL
+- Battle
+- XP
+- Levels
+- Streaks
+- Badges
+- Rankingi
+- Premium
+- Premium Pro
+- istniejące Stripe integration
+- obecne API
+- obecny system bezpieczeństwa.
+
+━━━━━━━━━━━━━━━━━━
+
+1. VYBE SOCIAL FEED
+   ━━━━━━━━━━━━━━━━━━
+
+Stwórz główny Social Feed.
+
+Użytkownik powinien widzieć:
+
+- posty osób, które obserwuje,
+- popularne posty,
+- najnowsze posty,
+- trending content.
+
+Dodaj filtry:
+
+- For You
+- Following
+- Trending
+- Latest
+
+Post może zawierać:
+
+- tekst,
+- zdjęcie,
+- krótki materiał/klip, jeśli obecna architektura pozwala na bezpieczne przechowywanie multimediów,
+- kategorię.
+
+Nie używaj fake postów.
+
+Jeżeli użytkownicy nie mają jeszcze treści, pokaż profesjonalny Empty State.
+
+━━━━━━━━━━━━━━━━━━
+2. POSTS
+━━━━━━━━━━━━━━━━━━
+
+Dodaj możliwość:
+
+- tworzenia posta,
+- edycji własnego posta,
+- usuwania własnego posta,
+- zgłoszenia posta,
+- polubienia,
+- cofnięcia polubienia.
+
+Każdy post powinien mieć:
+
+- autora,
+- avatar,
+- username,
+- czas publikacji,
+- treść,
+- liczbę lajków,
+- liczbę komentarzy,
+- przycisk Share,
+- menu More.
+
+Użytkownik nie może edytować ani usuwać posta innej osoby.
+
+━━━━━━━━━━━━━━━━━━
+3. COMMENTS
+━━━━━━━━━━━━━━━━━━
+
+Dodaj komentarze.
+
+Funkcje:
+
+- dodawanie komentarza,
+- usuwanie własnego komentarza,
+- lajki komentarzy,
+- zgłaszanie komentarzy.
+
+Dodaj zabezpieczenia przeciwko spamowi.
+
+Nie pozwalaj na nieskończone automatyczne wysyłanie komentarzy.
+
+━━━━━━━━━━━━━━━━━━
+4. FOLLOW SYSTEM
+━━━━━━━━━━━━━━━━━━
+
+Dodaj:
+
+- Follow
+- Unfollow
+- Followers
+- Following
+
+Na profilu pokaż:
+
+- followers,
+- following.
+
+Nie można obserwować samego siebie.
+
+Zabezpiecz endpointy przed manipulacją.
+
+━━━━━━━━━━━━━━━━━━
+5. USER PROFILE
+━━━━━━━━━━━━━━━━━━
+
+Rozbuduj profil bez usuwania obecnych statystyk.
+
+Profil powinien zawierać:
+
+- avatar,
+- username,
+- display name,
+- bio,
+- country,
+- followers,
+- following,
+- level,
+- XP,
+- streak,
+- Battle wins,
+- Battle losses,
+- win rate,
+- ranking,
+- badges,
+- posty.
+
+Dodaj przyciski:
+
+- Follow / Unfollow,
+- Message,
+- Battle,
+- Share Profile.
+
+Użytkownik może edytować tylko swój profil.
+
+━━━━━━━━━━━━━━━━━━
+6. NOTIFICATIONS
+━━━━━━━━━━━━━━━━━━
+
+Rozbuduj istniejący system powiadomień.
+
+Powiadomienia dla:
+
+- nowego followera,
+- lajka,
+- komentarza,
+- odpowiedzi,
+- wiadomości,
+- Battle,
+- zwycięstwa,
+- zdobycia badge,
+- awansu levelu,
+- awansu w rankingu.
+
+Dodaj:
+
+- unread count,
+- mark as read,
+- mark all as read.
+
+━━━━━━━━━━━━━━━━━━
+7. DIRECT MESSAGES 💬
+━━━━━━━━━━━━━━━━━━
+
+Dodaj bezpieczny system prywatnych wiadomości.
+
+Funkcje:
+
+- lista rozmów,
+- wysyłanie wiadomości,
+- odbieranie wiadomości,
+- unread messages,
+- timestamp.
+
+Zabezpiecz prywatność.
+
+Użytkownik może odczytać tylko rozmowy, w których uczestniczy.
+
+Dodaj:
+
+- Block User,
+- Report User.
+
+Jeżeli wiadomości wymagają dodatkowej infrastruktury, wykorzystaj istniejącą architekturę zamiast tworzyć niepotrzebne zewnętrzne systemy.
+
+━━━━━━━━━━━━━━━━━━
+8. SEARCH 🔎
+━━━━━━━━━━━━━━━━━━
+
+Dodaj globalne wyszukiwanie VYBE.
+
+Szukaj:
+
+- username,
+- display name,
+- postów,
+- kategorii.
+
+Dodaj:
+
+- Users
+- Posts
+- Trending
+
+Wyniki powinny być rzeczywiste.
+
+━━━━━━━━━━━━━━━━━━
+9. SHARE
+━━━━━━━━━━━━━━━━━━
+
+Dodaj Share dla:
+
+- postów,
+- profili,
+- Battle,
+- osiągnięć.
+
+Na urządzeniach mobilnych wykorzystaj systemowy Share API.
+
+Jeżeli Share API jest niedostępne, zastosuj sensowny fallback.
+
+━━━━━━━━━━━━━━━━━━
+10. AI — VYBE AI 🤖
+━━━━━━━━━━━━━━━━━━
+
+Dodaj centralną funkcję „VYBE AI”.
+
+AI ma być realnie użyteczne, a nie dekoracyjne.
+
+Dodaj moduły:
+
+AI Profile
+
+Pomaga użytkownikowi:
+
+- stworzyć bio,
+- ulepszyć bio,
+- wygenerować opis profilu.
+
+AI Post Assistant
+
+Pomaga:
+
+- wymyślić post,
+- poprawić tekst,
+- stworzyć caption,
+- zaproponować hashtagi.
+
+AI Battle Ideas
+
+AI może proponować:
+
+- tematy Battle,
+- pytania,
+- wyzwania,
+- kategorie.
+
+AI Personal Recommendations
+
+Na podstawie rzeczywistych aktywności użytkownika może proponować:
+
+- osoby do obserwowania,
+- Battle,
+- kategorie,
+- treści.
+
+Nie wykorzystuj danych, do których AI nie powinno mieć dostępu.
+
+━━━━━━━━━━━━━━━━━━
+11. AI SAFETY
+━━━━━━━━━━━━━━━━━━
+
+AI musi mieć zabezpieczenia.
+
+Nie pozwalaj na generowanie:
+
+- treści seksualnych dla nieletnich,
+- instrukcji przemocy,
+- niebezpiecznych instrukcji,
+- treści promujących samookaleczenie,
+- oszustw,
+- phishingu,
+- złośliwego kodu.
+
+Dodaj odpowiednią obsługę błędów i bezpieczne komunikaty.
+
+Nie wysyłaj do modelu niepotrzebnych danych osobowych użytkownika.
+
+━━━━━━━━━━━━━━━━━━
+12. AI LIMITS
+━━━━━━━━━━━━━━━━━━
+
+Nie pozwalaj użytkownikom generować nieograniczonej liczby zapytań AI za darmo.
+
+Przygotuj system limitów:
+
+FREE:
+ograniczona liczba użyć AI.
+
+PREMIUM:
+większy limit.
+
+PREMIUM PRO:
+największy limit.
+
+Limity muszą być sprawdzane SERVER-SIDE.
+
+Nie można ich ominąć przez frontend/API.
+
+Jeżeli istnieje już system Premium/Pro, zintegruj go z nim zamiast tworzyć drugi system subskrypcji.
+
+━━━━━━━━━━━━━━━━━━
+13. AI COST CONTROL
+━━━━━━━━━━━━━━━━━━
+
+Bardzo ważne:
+
+Nie pozwól, aby jeden użytkownik mógł wygenerować ogromnych kosztów API.
+
+Dodaj:
+
+- rate limiting,
+- limity dzienne,
+- limity miesięczne,
+- maksymalny rozmiar promptu,
+- timeout,
+- obsługę błędów,
+- bezpieczny fallback.
+
+Zapisuj użycie AI w bazie.
+
+Admin powinien móc zobaczyć:
+
+- liczbę zapytań,
+- użytkowników korzystających z AI,
+- zużycie,
+- błędy.
+
+Nie pokazuj fake danych.
+
+━━━━━━━━━━━━━━━━━━
+14. AI + PREMIUM
+━━━━━━━━━━━━━━━━━━
+
+Zintegruj AI z istniejącymi planami:
+
+FREE
+→ podstawowe AI
+
+PREMIUM
+→ większe limity + dodatkowe funkcje
+
+PREMIUM PRO
+→ najwyższe limity + najbardziej zaawansowane funkcje
+
+Nie zmieniaj cen:
+
+PREMIUM:
+19,99 zł / miesiąc
+149,99 zł / rok
+
+PREMIUM PRO:
+39,99 zł / miesiąc
+299,99 zł / rok
+
+━━━━━━━━━━━━━━━━━━
+15. MODERATION
+━━━━━━━━━━━━━━━━━━
+
+Rozbuduj system moderacji.
+
+Użytkownik może zgłosić:
+
+- post,
+- komentarz,
+- profil,
+- wiadomość.
+
+Kategorie:
+
+- spam,
+- harassment,
+- hate,
+- sexual content,
+- scam,
+- violence,
+- other.
+
+Zgłoszenia mają trafiać do istniejącego panelu Admin.
+
+Admin może:
+
+- zobaczyć zgłoszenie,
+- zobaczyć kontekst,
+- zamknąć zgłoszenie,
+- usunąć treść,
+- zablokować użytkownika.
+
+Każda akcja admina musi być logowana.
+
+━━━━━━━━━━━━━━━━━━
+16. BLOCK SYSTEM
+━━━━━━━━━━━━━━━━━━
+
+Dodaj Block User.
+
+Po zablokowaniu:
+
+- użytkownicy nie mogą się wzajemnie kontaktować,
+- odpowiednie treści są ukrywane,
+- nie można wysyłać wiadomości.
+
+Zabezpiecz to również po stronie backendu.
+
+━━━━━━━━━━━━━━━━━━
+17. ANTI-SPAM / ANTI-ABUSE
+━━━━━━━━━━━━━━━━━━
+
+Dodaj ochronę przed:
+
+- spamem,
+- botami,
+- masowym follow/unfollow,
+- masowym lajkiem,
+- masowymi komentarzami,
+- abuse AI,
+- fałszowaniem statystyk.
+
+Rate limits muszą być po stronie serwera.
+
+━━━━━━━━━━━━━━━━━━
+18. ADMIN
+━━━━━━━━━━━━━━━━━━
+
+Rozbuduj istniejący panel Admin o:
+
+Social Analytics:
+
+- liczba postów,
+- komentarze,
+- lajki,
+- aktywni użytkownicy,
+- nowe konta,
+- followers,
+- wiadomości.
+
+AI Analytics:
+
+- AI requests,
+- usage per user,
+- usage per plan,
+- errors,
+- limit hits.
+
+Moderation:
+
+- reports,
+- blocked users,
+- removed content.
+
+Wszystkie dane rzeczywiste.
+
+━━━━━━━━━━━━━━━━━━
+19. DATABASE
+━━━━━━━━━━━━━━━━━━
+
+Dodaj tylko konieczne tabele/kolumny.
+
+Możliwe modele:
+
+- posts
+- post_likes
+- comments
+- comment_likes
+- follows
+- conversations
+- messages
+- notifications
+- blocks
+- reports
+- ai_usage
+
+Dopasuj nazwy i strukturę do istniejącego schematu.
+
+Dodaj:
+
+- foreign keys,
+- unique constraints,
+- indexes,
+- timestamps,
+- odpowiednie cascade behavior.
+
+Wykonaj bezpieczne migracje.
+
+NIE usuwaj istniejących danych.
+
+━━━━━━━━━━━━━━━━━━
+20. SECURITY
+━━━━━━━━━━━━━━━━━━
+
+Każda ważna operacja musi być sprawdzana server-side.
+
+Nigdy nie ufaj frontendowi w przypadku:
+
+- roli,
+- Premium,
+- Premium Pro,
+- AI limits,
+- własności posta,
+- własności komentarza,
+- wiadomości,
+- statystyk.
+
+Sprawdź:
+
+- authentication,
+- authorization,
+- validation,
+- rate limiting,
+- IDOR,
+- privacy,
+- API permissions.
+
+USER nadal nie może dostać dostępu do ADMIN.
+
+━━━━━━━━━━━━━━━━━━
+21. MOBILE-FIRST
+━━━━━━━━━━━━━━━━━━
+
+VYBE jest aplikacją skierowaną mocno na urządzenia mobilne.
+
+Dopracuj:
+
+- feed,
+- profile,
+- Battle,
+- AI,
+- messages,
+- notifications,
+- search.
+
+Wszystko musi działać dobrze na małych ekranach.
+
+Nie twórz ciężkich animacji pogarszających wydajność.
+
+━━━━━━━━━━━━━━━━━━
+22. UX
+━━━━━━━━━━━━━━━━━━
+
+Dodaj:
+
+- loading states,
+- skeletons,
+- empty states,
+- error states,
+- success feedback,
+- optimistic UI tam, gdzie jest bezpieczne.
+
+Interfejs ma być szybki i intuicyjny.
+
+Nie przeładowuj aplikacji niepotrzebnymi elementami.
+
+━━━━━━━━━━━━━━━━━━
+23. PERFORMANCE
+━━━━━━━━━━━━━━━━━━
+
+Zadbaj o:
+
+- paginację feedu,
+- lazy loading,
+- odpowiednie indeksy DB,
+- ograniczenie liczby requestów,
+- cache tam, gdzie ma sens,
+- optymalizację zapytań.
+
+Nie pobieraj całej historii feedu naraz.
+
+━━━━━━━━━━━━━━━━━━
+24. TESTY
+━━━━━━━━━━━━━━━━━━
+
+Po implementacji wykonaj pełne testy:
+
+AUTH:
+
+- login,
+- logout,
+- Google Login.
+
+SOCIAL:
+
+- create post,
+- edit post,
+- delete post,
+- like,
+- unlike,
+- comment,
+- follow,
+- unfollow,
+- block,
+- report.
+
+PRIVACY:
+
+- USER nie może czytać cudzych prywatnych wiadomości,
+- USER nie może edytować cudzych postów,
+- USER nie może usuwać cudzych komentarzy,
+- USER nie może zmienić swojej roli.
+
+AI:
+
+- działa dla FREE,
+- działa dla PREMIUM,
+- działa dla PREMIUM_PRO,
+- limity działają,
+- rate limiting działa,
+- użytkownik nie może ominąć limitów przez API.
+
+PREMIUM:
+
+- istniejące Premium nadal działa.
+
+PREMIUM PRO:
+
+- istniejące Premium Pro nadal działa.
+
+ADMIN:
+
+- USER → 403,
+- ADMIN → dostęp,
+- admin actions są logowane.
+
+Uruchom:
+
+- typecheck,
+- lint,
+- testy backend,
+- testy frontend,
+- dostępne integration tests.
+
+Napraw znalezione błędy.
+
+━━━━━━━━━━━━━━━━━━
+25. FINAL AUDIT
+━━━━━━━━━━━━━━━━━━
+
+Na samym końcu wykonaj audyt całej aplikacji.
+
+Sprawdź, czy nowe funkcje nie zepsuły:
+
+- Clerk,
+- Google Login,
+- profili,
+- Battle,
+- XP,
+- levels,
+- streaks,
+- badges,
+- rankingów,
+- Premium,
+- Premium Pro,
+- Stripe,
+- Admin,
+- PostgreSQL.
+
+NIE używaj fake danych.
+
+NIE oznaczaj funkcji jako gotowych, jeżeli backend faktycznie ich nie obsługuje.
+
+Jeżeli jakaś funkcja nie może zostać bezpiecznie ukończona w obecnej architekturze, NIE twórz atrap — opisz problem w raporcie.
+
+Na końcu przedstaw raport:
+
+1. Co zostało dodane.
+2. Jakie pliki zmieniono.
+3. Jakie tabele/migracje dodano.
+4. Jakie endpointy dodano.
+5. Jakie testy wykonano.
+6. Które testy przeszły.
+7. Czy znaleziono błędy.
+8. Czy istniejące funkcje VYBE nadal działają.
+9. Czy AI działa realnie.
+10. Czy limity AI działają server-side.
+11. Czy Premium i Premium Pro nadal działają.
+12. Czy aplikacja jest gotowa do kolejnego etapu przygotowania do publikacji.
