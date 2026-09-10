@@ -13,6 +13,7 @@ import {
   votesTable,
 } from "@workspace/db";
 import { levelForXp, settleBattleInTransaction, xpProgress } from "../src/viralCore.ts";
+import { clearRateLimitBucketsForTests, rateLimit } from "../src/middlewares/rateLimit.ts";
 
 const prefix = `viral-test-${crypto.randomUUID()}`;
 const ids = {
@@ -63,6 +64,41 @@ describe("Viral Core calculations", () => {
       xpForNextLevel: 960,
       progress: 50,
     });
+  });
+
+  test("rate limits repeated requests and exposes retry timing", () => {
+    clearRateLimitBucketsForTests();
+    const limiter = rateLimit({ name: prefix, windowMs: 60_000, max: 2 });
+    const nextCalls: number[] = [];
+    const makeRequest = () => ({
+      ip: "127.0.0.1",
+      res: { locals: { currentUser: { id: `${prefix}-profile` } } },
+    });
+    const makeResponse = () => ({
+      headers: new Map<string, number>(),
+      setHeader(name: string, value: number) {
+        this.headers.set(name, value);
+      },
+      statusCode: 200,
+      status(code: number) {
+        this.statusCode = code;
+        return this;
+      },
+      json() {
+        return this;
+      },
+    });
+
+    const firstResponse = makeResponse();
+    limiter(makeRequest() as never, firstResponse as never, () => nextCalls.push(1));
+    const secondResponse = makeResponse();
+    limiter(makeRequest() as never, secondResponse as never, () => nextCalls.push(1));
+    const blockedResponse = makeResponse();
+    limiter(makeRequest() as never, blockedResponse as never, () => nextCalls.push(1));
+
+    assert.equal(nextCalls.length, 2);
+    assert.equal(blockedResponse.statusCode, 429);
+    assert.equal(blockedResponse.headers.has("Retry-After"), true);
   });
 });
 

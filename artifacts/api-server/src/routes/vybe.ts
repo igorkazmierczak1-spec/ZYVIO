@@ -44,13 +44,20 @@ import {
   currentUserFrom,
   requireAuthenticatedUser,
 } from "../middlewares/auth";
+import { rateLimit } from "../middlewares/rateLimit";
 import { settleBattleInTransaction, xpProgress } from "../viralCore";
 
 const router: IRouter = Router();
 
 router.use(requireAuthenticatedUser);
 
-router.post("/reports", async (req, res, next) => {
+const reportRateLimit = rateLimit({ name: "reports", windowMs: 10 * 60_000, max: 5 });
+const battleCreateRateLimit = rateLimit({ name: "battle-create", windowMs: 10 * 60_000, max: 5 });
+const battleJoinRateLimit = rateLimit({ name: "battle-join", windowMs: 5 * 60_000, max: 10 });
+const battleVoteRateLimit = rateLimit({ name: "battle-vote", windowMs: 60_000, max: 10 });
+const aiRateLimit = rateLimit({ name: "ai-ideas", windowMs: 10 * 60_000, max: 5 });
+
+router.post("/reports", reportRateLimit, async (req, res, next) => {
   try {
     const parsed = CreateReportBody.safeParse(req.body);
     if (!parsed.success) {
@@ -303,7 +310,7 @@ router.get("/battles", async (req, res, next) => {
   }
 });
 
-router.post("/battles", async (req, res, next) => {
+router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
   try {
     const parsed = CreateBattleBody.safeParse(req.body);
     if (!parsed.success) {
@@ -367,7 +374,7 @@ router.get("/battles/:battleId", async (req, res, next) => {
   }
 });
 
-router.post("/battles/:battleId", async (req, res, next) => {
+router.post("/battles/:battleId", battleJoinRateLimit, async (req, res, next) => {
   try {
     const parsed = JoinBattleParams.safeParse(req.params);
     if (!parsed.success) {
@@ -409,7 +416,7 @@ router.post("/battles/:battleId", async (req, res, next) => {
   }
 });
 
-router.post("/battles/:battleId/vote", async (req, res, next) => {
+router.post("/battles/:battleId/vote", battleVoteRateLimit, async (req, res, next) => {
   try {
     const params = VoteBattleParams.safeParse(req.params);
     const body = VoteBattleBody.safeParse(req.body);
@@ -553,7 +560,7 @@ router.post("/notifications/read-all", async (_req, res, next) => {
   }
 });
 
-router.post("/ai/ideas", async (req, res, next) => {
+router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
   try {
     const parsed = GenerateIdeasBody.safeParse(req.body);
     if (!parsed.success) {
