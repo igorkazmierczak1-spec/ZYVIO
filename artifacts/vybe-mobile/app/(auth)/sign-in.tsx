@@ -3,6 +3,7 @@ import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
+import { GoogleAuthButton } from '@/components/GoogleAuthButton';
 import { BrandMark, PrimaryButton, uiStyles } from '@/components/ui';
 import { useColors } from '@/hooks/useColors';
 
@@ -65,6 +66,7 @@ export default function SignInScreen() {
         <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 34 }]}>Wróć do swojego rytmu.</Text>
         <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>Zaloguj się, żeby głosować, walczyć i budować swoją pozycję.</Text>
       </View>
+      <GoogleAuthButton />
       {needsCode ? (
         <View style={{ gap: 12 }}>
           <TextInput value={code} onChangeText={setCode} placeholder="Kod weryfikacyjny" placeholderTextColor={colors.mutedForeground} keyboardType="number-pad" style={[inputStyle, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]} />

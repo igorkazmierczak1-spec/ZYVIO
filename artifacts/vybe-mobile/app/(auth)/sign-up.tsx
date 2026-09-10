@@ -3,6 +3,7 @@ import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
+import { GoogleAuthButton } from '@/components/GoogleAuthButton';
 import { BrandMark, PrimaryButton, uiStyles } from '@/components/ui';
 import { useColors } from '@/hooks/useColors';
 
@@ -60,6 +61,7 @@ export default function SignUpScreen() {
         <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 34 }]}>Zbuduj swoją pozycję.</Text>
         <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>Jedno konto do Battle, profilu, rankingu i społeczności VYBE.</Text>
       </View>
+      <GoogleAuthButton />
       <View style={{ gap: 13 }}>
         {verificationStep ? <TextInput value={code} onChangeText={setCode} placeholder="Kod z e-maila" placeholderTextColor={colors.mutedForeground} keyboardType="number-pad" style={[inputStyle, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]} /> : <>
           <TextInput testID="sign-up-email" value={email} onChangeText={setEmail} placeholder="Adres e-mail" placeholderTextColor={colors.mutedForeground} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" style={[inputStyle, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]} />
