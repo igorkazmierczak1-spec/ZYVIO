@@ -1,6 +1,5 @@
 import { Router, type IRouter } from "express";
 import { and, asc, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
-import { z } from "zod";
 import {
   blocksTable,
   commentsTable,
@@ -18,18 +17,65 @@ import { rateLimit } from "../middlewares/rateLimit";
 const router: IRouter = Router();
 router.use(requireAuthenticatedUser);
 
-const feedQuery = z.object({
-  filter: z.enum(["for-you", "following", "trending", "latest"]).default("for-you"),
-  category: z.string().trim().min(1).max(40).optional(),
-  page: z.coerce.number().int().min(1).max(1000).default(1),
-});
-const postBody = z.object({
-  body: z.string().trim().min(1).max(2000),
-  mediaUrl: z.string().url().max(2000).optional().nullable(),
-  mediaType: z.enum(["image", "video"]).optional().nullable(),
-  category: z.string().trim().min(1).max(40).default("General"),
-});
-const commentBody = z.object({ body: z.string().trim().min(1).max(500) });
+type FeedQuery = {
+  filter: "for-you" | "following" | "trending" | "latest";
+  category?: string;
+  page: number;
+};
+type PostInput = {
+  body: string;
+  mediaUrl?: string | null;
+  mediaType?: "image" | "video" | null;
+  category: string;
+};
+
+function routeParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
+
+function parseFeedQuery(input: Record<string, unknown>): { data?: FeedQuery; error?: string } {
+  const rawFilter = typeof input.filter === "string" ? input.filter : "for-you";
+  const filter = ["for-you", "following", "trending", "latest"].includes(rawFilter)
+    ? rawFilter as FeedQuery["filter"]
+    : null;
+  const rawPage = typeof input.page === "string" ? Number(input.page) : 1;
+  const category = typeof input.category === "string" ? input.category.trim() : undefined;
+  if (!filter || !Number.isInteger(rawPage) || rawPage < 1 || rawPage > 1000) {
+    return { error: "Invalid feed query" };
+  }
+  if (category !== undefined && (category.length < 1 || category.length > 40)) {
+    return { error: "Invalid category" };
+  }
+  return { data: { filter, page: rawPage, category } };
+}
+
+function parsePostBody(input: unknown): { data?: PostInput; error?: string } {
+  if (!input || typeof input !== "object") return { error: "Post body is required" };
+  const value = input as Record<string, unknown>;
+  const body = typeof value.body === "string" ? value.body.trim() : "";
+  const category = typeof value.category === "string" && value.category.trim()
+    ? value.category.trim()
+    : "General";
+  const mediaUrl = value.mediaUrl === null || value.mediaUrl === undefined
+    ? null
+    : typeof value.mediaUrl === "string" && /^https?:\/\//.test(value.mediaUrl) ? value.mediaUrl : undefined;
+  const mediaType = value.mediaType === null || value.mediaType === undefined
+    ? null
+    : value.mediaType === "image" || value.mediaType === "video" ? value.mediaType : undefined;
+  if (body.length < 1 || body.length > 2000 || category.length > 40 || mediaUrl === undefined || mediaType === undefined) {
+    return { error: "Invalid post body" };
+  }
+  return { data: { body, category, mediaUrl, mediaType } };
+}
+
+function parseCommentBody(input: unknown): { data?: { body: string }; error?: string } {
+  const body = input && typeof input === "object" && typeof (input as Record<string, unknown>).body === "string"
+    ? ((input as Record<string, unknown>).body as string).trim()
+    : "";
+  return body.length >= 1 && body.length <= 500
+    ? { data: { body } }
+    : { error: "Invalid comment body" };
+}
 
 const createPostRateLimit = rateLimit({ name: "social-post-create", windowMs: 10 * 60_000, max: 10 });
 const commentRateLimit = rateLimit({ name: "social-comment-create", windowMs: 5 * 60_000, max: 20 });
@@ -102,7 +148,12 @@ async function getPostForUser(postId: string, profileId: string) {
 router.get("/social/feed", async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    const query = feedQuery.parse(req.query);
+    const parsedQuery = parseFeedQuery(req.query as Record<string, unknown>);
+    if (!parsedQuery.data) {
+      res.status(400).json({ error: parsedQuery.error });
+      return;
+    }
+    const query = parsedQuery.data;
     const blocked = await blockedProfileIds(profile.id);
     const filters = [
       eq(postsTable.contentStatus, "ACTIVE"),
@@ -135,7 +186,7 @@ router.get("/social/feed", async (req, res, next) => {
 router.get("/social/posts/:postId", async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    const post = await getPostForUser(req.params.postId, profile.id);
+    const post = await getPostForUser(routeParam(req.params.postId), profile.id);
     if (!post) {
       res.status(404).json({ error: "Post not found" });
       return;
@@ -149,9 +200,9 @@ router.get("/social/posts/:postId", async (req, res, next) => {
 router.post("/social/posts", createPostRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    const parsed = postBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
+    const parsed = parsePostBody(req.body);
+    if (!parsed.data) {
+      res.status(400).json({ error: parsed.error });
       return;
     }
     const [post] = await db.insert(postsTable).values({
@@ -168,15 +219,15 @@ router.post("/social/posts", createPostRateLimit, async (req, res, next) => {
 router.patch("/social/posts/:postId", createPostRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    const parsed = postBody.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
+    const parsed = parsePostBody(req.body);
+    if (!parsed.data) {
+      res.status(400).json({ error: parsed.error });
       return;
     }
     const [post] = await db.update(postsTable).set({
       ...parsed.data,
       updatedAt: new Date(),
-    }).where(and(eq(postsTable.id, req.params.postId), eq(postsTable.authorProfileId, profile.id), eq(postsTable.contentStatus, "ACTIVE"))).returning();
+    }).where(and(eq(postsTable.id, routeParam(req.params.postId)), eq(postsTable.authorProfileId, profile.id), eq(postsTable.contentStatus, "ACTIVE"))).returning();
     if (!post) {
       res.status(404).json({ error: "Post not found or not owned by you" });
       return;
@@ -191,7 +242,7 @@ router.delete("/social/posts/:postId", async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
     const [post] = await db.update(postsTable).set({ contentStatus: "REMOVED", updatedAt: new Date() })
-      .where(and(eq(postsTable.id, req.params.postId), eq(postsTable.authorProfileId, profile.id), eq(postsTable.contentStatus, "ACTIVE"))).returning();
+      .where(and(eq(postsTable.id, routeParam(req.params.postId)), eq(postsTable.authorProfileId, profile.id), eq(postsTable.contentStatus, "ACTIVE"))).returning();
     if (!post) {
       res.status(404).json({ error: "Post not found or not owned by you" });
       return;
@@ -205,7 +256,7 @@ router.delete("/social/posts/:postId", async (req, res, next) => {
 router.post("/social/posts/:postId/like", likeRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    const post = await getPostForUser(req.params.postId, profile.id);
+    const post = await getPostForUser(routeParam(req.params.postId), profile.id);
     if (!post) {
       res.status(404).json({ error: "Post not found" });
       return;
@@ -227,7 +278,7 @@ router.post("/social/posts/:postId/like", likeRateLimit, async (req, res, next) 
 router.delete("/social/posts/:postId/like", likeRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    const post = await getPostForUser(req.params.postId, profile.id);
+    const post = await getPostForUser(routeParam(req.params.postId), profile.id);
     if (!post) {
       res.status(404).json({ error: "Post not found" });
       return;
@@ -242,7 +293,7 @@ router.delete("/social/posts/:postId/like", likeRateLimit, async (req, res, next
 router.get("/social/posts/:postId/comments", async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    const post = await getPostForUser(req.params.postId, profile.id);
+    const post = await getPostForUser(routeParam(req.params.postId), profile.id);
     if (!post) {
       res.status(404).json({ error: "Post not found" });
       return;
@@ -269,14 +320,14 @@ router.get("/social/posts/:postId/comments", async (req, res, next) => {
 router.post("/social/posts/:postId/comments", commentRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    const post = await getPostForUser(req.params.postId, profile.id);
-    const parsed = commentBody.safeParse(req.body);
+    const post = await getPostForUser(routeParam(req.params.postId), profile.id);
+    const parsed = parseCommentBody(req.body);
     if (!post) {
       res.status(404).json({ error: "Post not found" });
       return;
     }
-    if (!parsed.success) {
-      res.status(400).json({ error: parsed.error.message });
+    if (!parsed.data) {
+      res.status(400).json({ error: parsed.error });
       return;
     }
     const [comment] = await db.insert(commentsTable).values({
@@ -298,7 +349,7 @@ router.delete("/social/comments/:commentId", async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
     const [comment] = await db.update(commentsTable).set({ contentStatus: "REMOVED", updatedAt: new Date() })
-      .where(and(eq(commentsTable.id, req.params.commentId), eq(commentsTable.authorProfileId, profile.id), eq(commentsTable.contentStatus, "ACTIVE"))).returning();
+      .where(and(eq(commentsTable.id, routeParam(req.params.commentId)), eq(commentsTable.authorProfileId, profile.id), eq(commentsTable.contentStatus, "ACTIVE"))).returning();
     if (!comment) {
       res.status(404).json({ error: "Comment not found or not owned by you" });
       return;
@@ -312,11 +363,12 @@ router.delete("/social/comments/:commentId", async (req, res, next) => {
 router.post("/social/users/:profileId/follow", followRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    if (profile.id === req.params.profileId) {
+    const targetProfileId = routeParam(req.params.profileId);
+    if (profile.id === targetProfileId) {
       res.status(400).json({ error: "You cannot follow yourself" });
       return;
     }
-    const [target] = await db.select().from(profilesTable).where(and(eq(profilesTable.id, req.params.profileId), eq(profilesTable.status, "ACTIVE"))).limit(1);
+    const [target] = await db.select().from(profilesTable).where(and(eq(profilesTable.id, targetProfileId), eq(profilesTable.status, "ACTIVE"))).limit(1);
     if (!target) {
       res.status(404).json({ error: "Profile not found" });
       return;
@@ -343,11 +395,12 @@ router.post("/social/users/:profileId/follow", followRateLimit, async (req, res,
 router.delete("/social/users/:profileId/follow", followRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    if (profile.id === req.params.profileId) {
+    const targetProfileId = routeParam(req.params.profileId);
+    if (profile.id === targetProfileId) {
       res.status(400).json({ error: "You cannot unfollow yourself" });
       return;
     }
-    await db.delete(followsTable).where(and(eq(followsTable.followerProfileId, profile.id), eq(followsTable.followingProfileId, req.params.profileId)));
+    await db.delete(followsTable).where(and(eq(followsTable.followerProfileId, profile.id), eq(followsTable.followingProfileId, targetProfileId)));
     res.json({ following: false });
   } catch (error) {
     next(error);
@@ -358,7 +411,8 @@ router.get("/social/users/:profileId", async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
     const blocked = await blockedProfileIds(profile.id);
-    if (blocked.includes(req.params.profileId)) {
+    const targetProfileId = routeParam(req.params.profileId);
+    if (blocked.includes(targetProfileId)) {
       res.status(404).json({ error: "Profile not found" });
       return;
     }
@@ -378,7 +432,7 @@ router.get("/social/users/:profileId", async (req, res, next) => {
       league: profilesTable.league,
       streak: profilesTable.streak,
       badges: profilesTable.badges,
-    }).from(profilesTable).where(and(eq(profilesTable.id, req.params.profileId), eq(profilesTable.status, "ACTIVE"))).limit(1);
+    }).from(profilesTable).where(and(eq(profilesTable.id, targetProfileId), eq(profilesTable.status, "ACTIVE"))).limit(1);
     if (!target) {
       res.status(404).json({ error: "Profile not found" });
       return;
@@ -403,11 +457,12 @@ router.get("/social/users/:profileId", async (req, res, next) => {
 router.post("/social/users/:profileId/block", followRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    if (profile.id === req.params.profileId) {
+    const targetProfileId = routeParam(req.params.profileId);
+    if (profile.id === targetProfileId) {
       res.status(400).json({ error: "You cannot block yourself" });
       return;
     }
-    const [target] = await db.select({ id: profilesTable.id }).from(profilesTable).where(and(eq(profilesTable.id, req.params.profileId), eq(profilesTable.status, "ACTIVE"))).limit(1);
+    const [target] = await db.select({ id: profilesTable.id }).from(profilesTable).where(and(eq(profilesTable.id, targetProfileId), eq(profilesTable.status, "ACTIVE"))).limit(1);
     if (!target) {
       res.status(404).json({ error: "Profile not found" });
       return;
@@ -432,7 +487,7 @@ router.post("/social/users/:profileId/block", followRateLimit, async (req, res, 
 router.delete("/social/users/:profileId/block", followRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
-    await db.delete(blocksTable).where(and(eq(blocksTable.blockerProfileId, profile.id), eq(blocksTable.blockedProfileId, req.params.profileId)));
+    await db.delete(blocksTable).where(and(eq(blocksTable.blockerProfileId, profile.id), eq(blocksTable.blockedProfileId, routeParam(req.params.profileId))));
     res.json({ blocked: false });
   } catch (error) {
     next(error);
