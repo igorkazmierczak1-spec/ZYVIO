@@ -21,6 +21,7 @@ function originCandidates() {
     .filter(Boolean);
   const replDomains = [
     process.env.REPLIT_DEV_DOMAIN,
+    process.env.REPLIT_EXPO_DEV_DOMAIN,
     ...(process.env.REPLIT_DOMAINS ?? "").split(","),
   ]
     .filter((value): value is string => Boolean(value))
