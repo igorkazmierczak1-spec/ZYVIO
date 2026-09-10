@@ -4,15 +4,26 @@
     "slug": "vybe-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "vybe-mobile",
+    "icon": "./assets/images/icon_2.png",
+    "scheme": "vybe",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "package": "com.vybe.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon_2.png",
+        "backgroundColor": "#16131f"
+      }
+    },
+    "splash": {
+      "image": "./assets/images/icon_2.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f6f5f8"
+    },
     "web": {
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon_2.png"
     },
     "plugins": ["expo-router"],
     "experiments": {
