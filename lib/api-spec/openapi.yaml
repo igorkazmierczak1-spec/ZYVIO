@@ -805,6 +805,100 @@ components:
           type: string
       required:
         - status
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean }
+    SocialAuthor:
+      type: object
+      required: [id, username, displayName, avatarUrl]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string }
+        country: { type: string }
+    SocialPost:
+      type: object
+      required: [id, author, body, category, createdAt, updatedAt, likeCount, commentCount, liked]
+      properties:
+        id: { type: string }
+        author: { $ref: "#/components/schemas/SocialAuthor" }
+        body: { type: string }
+        mediaUrl: { type: string, nullable: true }
+        mediaType: { type: string, nullable: true }
+        category: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        likeCount: { type: integer }
+        commentCount: { type: integer }
+        liked: { type: boolean }
+    SocialFeed:
+      type: object
+      required: [items, page, hasMore]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SocialPost" }
+        page: { type: integer }
+        hasMore: { type: boolean }
+    SocialPostInput:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 2000 }
+        mediaUrl: { type: string, nullable: true }
+        mediaType: { type: string, enum: [image, video], nullable: true }
+        category: { type: string, default: General }
+    SocialComment:
+      type: object
+      required: [id, body, createdAt, author]
+      properties:
+        id: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        author: { $ref: "#/components/schemas/SocialAuthor" }
+    SocialCommentInput:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 500 }
+    SocialProfile:
+      type: object
+      required: [id, username, displayName, avatarUrl, bio, country, level, xp, rankingPoints, wins, losses, rank, league, streak, badges, winRate, followerCount, followingCount, isFollowing]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string }
+        bio: { type: string }
+        country: { type: string }
+        level: { type: integer }
+        xp: { type: integer }
+        rankingPoints: { type: integer }
+        wins: { type: integer }
+        losses: { type: integer }
+        rank: { type: integer }
+        league: { type: string }
+        streak: { type: integer }
+        badges:
+          type: array
+          items: { type: string }
+        winRate: { type: integer }
+        followerCount: { type: integer }
+        followingCount: { type: integer }
+        isFollowing: { type: boolean }
+    FollowState:
+      type: object
+      required: [following]
+      properties:
+        following: { type: boolean }
+    BlockState:
+      type: object
+      required: [blocked]
+      properties:
+        blocked: { type: boolean }
     UserSummary:
       type: object
       required: [id, username, displayName, country, avatarUrl, level, wins, losses, winRate, rankingPoints]
