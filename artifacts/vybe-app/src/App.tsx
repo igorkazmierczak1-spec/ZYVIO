@@ -208,13 +208,15 @@ export function Avatar({ name, size = "md", accent = "violet" }: { name: string;
   return <div className={`avatar avatar-${size} avatar-${accent}`}>{initials(name)}</div>;
 }
 
-export function Logo() {
-  return (
+export function Logo({ onClick }: { onClick?: () => void }) {
+  const content = (
     <div className="brand">
       <div className="brand-mark"><span /></div>
       <span>VYBE</span>
     </div>
   );
+  if (!onClick) return content;
+  return <button type="button" className="brand-button" aria-label="Go to VYBE home" onClick={onClick}>{content}</button>;
 }
 
 function IconButton({ label, children, onClick, active = false }: { label: string; children: ReactNode; onClick?: () => void; active?: boolean }) {
@@ -261,7 +263,7 @@ function AppShell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-top">
-          <Logo />
+          <Logo onClick={() => navigate("/")} />
           <IconButton label="Close menu" onClick={() => setSidebarOpen(false)}><X /></IconButton>
         </div>
         <div className="sidebar-label">Workspace</div>
@@ -298,7 +300,7 @@ function AppShell({ children }: { children: ReactNode }) {
       {sidebarOpen && <button className="sidebar-backdrop" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
       <main className="main-content">
         <header className="topbar">
-          <div className="mobile-brand"><IconButton label="Open menu" onClick={() => setSidebarOpen(true)}><Menu /></IconButton><Logo /></div>
+          <div className="mobile-brand"><IconButton label="Open menu" onClick={() => setSidebarOpen(true)}><Menu /></IconButton><Logo onClick={() => navigate("/")} /></div>
           <div className="topbar-search"><Search /><input placeholder="Search battles, creators, ideas..." aria-label="Search" /></div>
           <div className="topbar-actions">
             <IconButton label="Toggle theme" onClick={() => document.documentElement.classList.toggle("dark")}><Moon /></IconButton>
