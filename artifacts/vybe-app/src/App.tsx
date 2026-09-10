@@ -90,6 +90,7 @@ import { toast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
 import { AdminDashboardPage } from "@/pages/admin-dashboard";
 import PremiumPage from "@/pages/premium";
+import { SocialFeedPage, SocialPostPage, SocialProfilePage } from "@/pages/social";
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -242,7 +243,8 @@ function AppShell({ children }: { children: ReactNode }) {
   });
   const hasUnreadNotifications = notifications?.some((notification) => !notification.read) ?? false;
   const navItems = [
-    { href: "/", label: "Home", icon: LayoutDashboard },
+    { href: "/feed", label: "Feed", icon: MessageCircle },
+    { href: "/", label: "Dashboard", icon: LayoutDashboard },
     { href: "/battles", label: "Discover", icon: Compass },
     { href: "/battles/new", label: "Create battle", icon: Plus },
     { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
@@ -311,7 +313,7 @@ function AppShell({ children }: { children: ReactNode }) {
         <div className="page-wrap">{children}</div>
       </main>
       <nav className="mobile-nav">
-        {navItems.slice(0, 5).map(({ href, label, icon: Icon }) => <button key={href} className={isCurrent(href) ? "is-current" : ""} onClick={() => navigate(href)}><Icon /><span>{label}</span></button>)}
+        {navItems.filter(({ href }) => href !== "/battles/new").slice(0, 5).map(({ href, label, icon: Icon }) => <button key={href} className={isCurrent(href) ? "is-current" : ""} onClick={() => navigate(href)}><Icon /><span>{label}</span></button>)}
       </nav>
     </div>
   );
@@ -571,7 +573,7 @@ function ProtectedApplication() {
     <Show when="signed-in">
       {location === "/admin"
         ? <ErrorBoundary><AdminRoute /></ErrorBoundary>
-        : <AppShell><ErrorBoundary><Switch><Route path="/" component={DashboardPage} /><Route path="/battles" component={DiscoverPage} /><Route path="/battles/new" component={CreateBattlePage} /><Route path="/battles/:id" component={BattleDetailPage} /><Route path="/leaderboard" component={LeaderboardPage} /><Route path="/profile" component={ProfilePage} /><Route path="/notifications" component={NotificationsPage} /><Route path="/ai" component={AiPage} /><Route path="/premium" component={PremiumPage} /><Route path="/settings" component={SettingsPage} /><Route component={NotFound} /></Switch></ErrorBoundary></AppShell>}
+        : <AppShell><ErrorBoundary><Switch><Route path="/feed/:id" component={SocialPostPage} /><Route path="/feed" component={SocialFeedPage} /><Route path="/profile/:id" component={SocialProfilePage} /><Route path="/" component={DashboardPage} /><Route path="/battles" component={DiscoverPage} /><Route path="/battles/new" component={CreateBattlePage} /><Route path="/battles/:id" component={BattleDetailPage} /><Route path="/leaderboard" component={LeaderboardPage} /><Route path="/profile" component={ProfilePage} /><Route path="/notifications" component={NotificationsPage} /><Route path="/ai" component={AiPage} /><Route path="/premium" component={PremiumPage} /><Route path="/settings" component={SettingsPage} /><Route component={NotFound} /></Switch></ErrorBoundary></AppShell>}
     </Show>
     <Show when="signed-out"><Redirect to="/sign-in" /></Show>
   </>;
