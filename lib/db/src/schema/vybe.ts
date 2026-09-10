@@ -55,6 +55,7 @@ export const battlesTable = pgTable("vybe_battles", {
   status: text("status").notNull().default("open"),
   prompt: text("prompt").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
   maxParticipants: integer("max_participants").notNull().default(8),
   rewardXp: integer("reward_xp").notNull().default(250),
