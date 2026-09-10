@@ -13,10 +13,15 @@ export type Profile = UserSummary & {
   role: ProfileRole;
   bio: string;
   xp: number;
+  rankingPoints: number;
   wins: number;
   losses: number;
   rank: number;
   league: string;
   streak: number;
+  bestStreak: number;
+  activeDays: number;
+  xpForNextLevel: number;
+  progress: number;
   badges: string[];
 };

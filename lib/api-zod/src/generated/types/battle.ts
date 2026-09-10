@@ -22,4 +22,6 @@ export interface Battle {
   rewardXp?: number;
   coverTone?: string;
   isJoined?: boolean;
+  winnerParticipantId: string | null;
+  loserParticipantId: string | null;
 }

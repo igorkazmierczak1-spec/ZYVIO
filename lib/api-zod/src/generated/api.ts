@@ -27,17 +27,26 @@ export const GetDashboardResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }).and(zod.object({
   "email": zod.string().email(),
   "role": zod.enum(['USER', 'ADMIN']),
   "bio": zod.string(),
   "xp": zod.number().int(),
+  "rankingPoints": zod.number().int(),
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "rank": zod.number().int(),
   "league": zod.string(),
   "streak": zod.number().int(),
+  "bestStreak": zod.number().int(),
+  "activeDays": zod.number().int(),
+  "xpForNextLevel": zod.number().int(),
+  "progress": zod.number().int(),
   "badges": zod.array(zod.string())
 })),
   "featuredBattles": zod.array(zod.object({
@@ -56,7 +65,11 @@ export const GetDashboardResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -66,7 +79,9 @@ export const GetDashboardResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
-  "isJoined": zod.boolean().optional()
+  "isJoined": zod.boolean().optional(),
+  "winnerParticipantId": zod.string().nullable(),
+  "loserParticipantId": zod.string().nullable()
 })),
   "trendingBattles": zod.array(zod.object({
   "id": zod.string(),
@@ -84,7 +99,11 @@ export const GetDashboardResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -94,7 +113,9 @@ export const GetDashboardResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
-  "isJoined": zod.boolean().optional()
+  "isJoined": zod.boolean().optional(),
+  "winnerParticipantId": zod.string().nullable(),
+  "loserParticipantId": zod.string().nullable()
 })),
   "leaderboardPreview": zod.array(zod.object({
   "position": zod.number().int(),
@@ -104,10 +125,17 @@ export const GetDashboardResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "xp": zod.number().int(),
   "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int(),
   "streak": zod.number().int(),
   "league": zod.string()
 })),
@@ -150,7 +178,11 @@ export const ListBattlesResponseItem = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -160,7 +192,9 @@ export const ListBattlesResponseItem = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
-  "isJoined": zod.boolean().optional()
+  "isJoined": zod.boolean().optional(),
+  "winnerParticipantId": zod.string().nullable(),
+  "loserParticipantId": zod.string().nullable()
 })
 export const ListBattlesResponse = zod.array(ListBattlesResponseItem)
 
@@ -204,7 +238,11 @@ export const CreateBattleResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -214,7 +252,9 @@ export const CreateBattleResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
-  "isJoined": zod.boolean().optional()
+  "isJoined": zod.boolean().optional(),
+  "winnerParticipantId": zod.string().nullable(),
+  "loserParticipantId": zod.string().nullable()
 })
 
 
@@ -241,7 +281,11 @@ export const GetBattleResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -251,7 +295,9 @@ export const GetBattleResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
-  "isJoined": zod.boolean().optional()
+  "isJoined": zod.boolean().optional(),
+  "winnerParticipantId": zod.string().nullable(),
+  "loserParticipantId": zod.string().nullable()
 })
 
 
@@ -278,7 +324,11 @@ export const JoinBattleResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -288,7 +338,9 @@ export const JoinBattleResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
-  "isJoined": zod.boolean().optional()
+  "isJoined": zod.boolean().optional(),
+  "winnerParticipantId": zod.string().nullable(),
+  "loserParticipantId": zod.string().nullable()
 })
 
 
@@ -319,7 +371,11 @@ export const VoteBattleResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -329,7 +385,9 @@ export const VoteBattleResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
-  "isJoined": zod.boolean().optional()
+  "isJoined": zod.boolean().optional(),
+  "winnerParticipantId": zod.string().nullable(),
+  "loserParticipantId": zod.string().nullable()
 })
 
 
@@ -342,17 +400,26 @@ export const GetProfileResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }).and(zod.object({
   "email": zod.string().email(),
   "role": zod.enum(['USER', 'ADMIN']),
   "bio": zod.string(),
   "xp": zod.number().int(),
+  "rankingPoints": zod.number().int(),
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "rank": zod.number().int(),
   "league": zod.string(),
   "streak": zod.number().int(),
+  "bestStreak": zod.number().int(),
+  "activeDays": zod.number().int(),
+  "xpForNextLevel": zod.number().int(),
+  "progress": zod.number().int(),
   "badges": zod.array(zod.string())
 }))
 
@@ -387,17 +454,26 @@ export const UpdateProfileResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }).and(zod.object({
   "email": zod.string().email(),
   "role": zod.enum(['USER', 'ADMIN']),
   "bio": zod.string(),
   "xp": zod.number().int(),
+  "rankingPoints": zod.number().int(),
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "rank": zod.number().int(),
   "league": zod.string(),
   "streak": zod.number().int(),
+  "bestStreak": zod.number().int(),
+  "activeDays": zod.number().int(),
+  "xpForNextLevel": zod.number().int(),
+  "progress": zod.number().int(),
   "badges": zod.array(zod.string())
 }))
 
@@ -424,10 +500,17 @@ export const GetLeaderboardResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "xp": zod.number().int(),
   "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int(),
   "streak": zod.number().int(),
   "league": zod.string()
 })),
@@ -439,10 +522,17 @@ export const GetLeaderboardResponse = zod.object({
   "displayName": zod.string(),
   "country": zod.string(),
   "avatarUrl": zod.string(),
-  "level": zod.number().int()
+  "level": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int()
 }),
   "xp": zod.number().int(),
   "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "winRate": zod.number().int(),
+  "rankingPoints": zod.number().int(),
   "streak": zod.number().int(),
   "league": zod.string()
 })
@@ -461,6 +551,31 @@ export const ListNotificationsResponseItem = zod.object({
   "read": zod.boolean()
 })
 export const ListNotificationsResponse = zod.array(ListNotificationsResponseItem)
+
+
+/**
+ * @summary Mark one notification as read
+ */
+export const MarkNotificationReadParams = zod.object({
+  "notificationId": zod.coerce.string()
+})
+
+export const MarkNotificationReadResponse = zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "read": zod.boolean()
+})
+
+
+/**
+ * @summary Mark all current notifications as read
+ */
+export const MarkAllNotificationsReadResponse = zod.object({
+  "ok": zod.boolean()
+})
 
 
 /**

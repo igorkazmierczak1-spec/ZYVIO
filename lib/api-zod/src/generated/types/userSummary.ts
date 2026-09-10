@@ -13,4 +13,8 @@ export interface UserSummary {
   country: string;
   avatarUrl: string;
   level: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  rankingPoints: number;
 }

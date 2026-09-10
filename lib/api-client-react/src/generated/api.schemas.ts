@@ -16,6 +16,10 @@ export interface UserSummary {
   country: string;
   avatarUrl: string;
   level: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  rankingPoints: number;
 }
 
 export type ProfileRole = typeof ProfileRole[keyof typeof ProfileRole];
@@ -31,11 +35,16 @@ export type Profile = UserSummary & {
   role: ProfileRole;
   bio: string;
   xp: number;
+  rankingPoints: number;
   wins: number;
   losses: number;
   rank: number;
   league: string;
   streak: number;
+  bestStreak: number;
+  activeDays: number;
+  xpForNextLevel: number;
+  progress: number;
   badges: string[];
 };
 
@@ -89,6 +98,8 @@ export interface Battle {
   rewardXp?: number;
   coverTone?: string;
   isJoined?: boolean;
+  winnerParticipantId: string | null;
+  loserParticipantId: string | null;
 }
 
 export interface BattleInput {
@@ -115,6 +126,9 @@ export interface LeaderboardEntry {
   user: UserSummary;
   xp: number;
   wins: number;
+  losses: number;
+  winRate: number;
+  rankingPoints: number;
   streak: number;
   league: string;
 }
@@ -680,6 +694,10 @@ export const GetLeaderboardPeriod = {
   monthly: 'monthly',
   'all-time': 'all-time',
 } as const;
+
+export type MarkAllNotificationsRead200 = {
+  ok: boolean;
+};
 
 export type GetAdminOverviewParams = {
 range?: AdminRangeParameter;

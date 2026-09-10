@@ -12,6 +12,9 @@ export interface LeaderboardEntry {
   user: UserSummary;
   xp: number;
   wins: number;
+  losses: number;
+  winRate: number;
+  rankingPoints: number;
   streak: number;
   league: string;
 }
