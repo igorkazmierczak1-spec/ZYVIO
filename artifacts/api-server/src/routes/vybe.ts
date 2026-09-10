@@ -1,16 +1,18 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
   activitiesTable,
   battleParticipantsTable,
   battlesTable,
+  battleResultsTable,
   notificationsTable,
   moderationReportsTable,
   appSettingsTable,
   profilesTable,
   votesTable,
   userActivityEventsTable,
+  viralRewardEventsTable,
   type Activity,
   type Battle,
   type Profile,
@@ -42,6 +44,7 @@ import {
   currentUserFrom,
   requireAuthenticatedUser,
 } from "../middlewares/auth";
+import { levelForXp, settleBattleInTransaction, xpProgress } from "../viralCore";
 
 const router: IRouter = Router();
 
@@ -79,6 +82,7 @@ router.post("/reports", async (req, res, next) => {
 });
 
 function summary(profile: Profile) {
+  const totalMatches = profile.wins + profile.losses;
   return {
     id: profile.id,
     username: profile.username,
@@ -86,6 +90,17 @@ function summary(profile: Profile) {
     country: profile.country,
     avatarUrl: profile.avatarUrl,
     level: profile.level,
+    wins: profile.wins,
+    losses: profile.losses,
+    winRate: totalMatches ? Math.round((profile.wins / totalMatches) * 100) : 0,
+    rankingPoints: profile.rankingPoints,
+  };
+}
+
+function profileView(profile: Profile) {
+  return {
+    ...profile,
+    ...xpProgress(profile.xp),
   };
 }
 
@@ -162,21 +177,56 @@ async function buildLeaderboard(
     .where(scope === "country"
       ? and(eq(profilesTable.country, profile.country), eq(profilesTable.status, "ACTIVE"))
       : eq(profilesTable.status, "ACTIVE"))
-    .orderBy(desc(profilesTable.xp))
+    .orderBy(desc(profilesTable.rankingPoints), desc(profilesTable.xp))
     .limit(100);
-  const entries = rows.map((row, index) => ({
+  const since = period === "weekly"
+    ? new Date(Date.now() - 7 * 86_400_000)
+    : period === "monthly"
+      ? new Date(Date.now() - 30 * 86_400_000)
+      : null;
+  const rewards = since
+    ? await db.select().from(viralRewardEventsTable).where(gte(viralRewardEventsTable.createdAt, since))
+    : [];
+  const periodStats = new Map<string, { xp: number; rankingPoints: number; wins: number; losses: number }>();
+  for (const reward of rewards) {
+    const current = periodStats.get(reward.profileId) ?? { xp: 0, rankingPoints: 0, wins: 0, losses: 0 };
+    current.xp += reward.xp;
+    current.rankingPoints += reward.rankingPoints;
+    if (reward.kind === "battle-win") current.wins += 1;
+    if (reward.kind === "battle-loss") current.losses += 1;
+    periodStats.set(reward.profileId, current);
+  }
+  const rankedRows = [...rows].sort((a, b) => {
+    const aStats = periodStats.get(a.id);
+    const bStats = periodStats.get(b.id);
+    return (bStats?.rankingPoints ?? b.rankingPoints) - (aStats?.rankingPoints ?? a.rankingPoints)
+      || (bStats?.xp ?? b.xp) - (aStats?.xp ?? a.xp);
+  });
+  const entries = rankedRows.map((row, index) => {
+    const stats = periodStats.get(row.id);
+    const xp = stats?.xp ?? row.xp;
+    const wins = stats?.wins ?? row.wins;
+    const losses = stats?.losses ?? row.losses;
+    return {
     position: index + 1,
     user: summary(row),
-    xp: row.xp,
-    wins: row.wins,
+    xp,
+    wins,
+    losses,
+    winRate: wins + losses ? Math.round((wins / (wins + losses)) * 100) : 0,
+    rankingPoints: stats?.rankingPoints ?? row.rankingPoints,
     streak: row.streak,
     league: row.league,
-  }));
+    };
+  });
   const currentUser = entries.find((entry) => entry.user.id === profile.id) ?? {
-    position: profile.rank,
+    position: profile.rank || entries.length + 1,
     user: summary(profile),
-    xp: profile.xp,
-    wins: profile.wins,
+    xp: periodStats.get(profile.id)?.xp ?? profile.xp,
+    wins: periodStats.get(profile.id)?.wins ?? profile.wins,
+    losses: periodStats.get(profile.id)?.losses ?? profile.losses,
+    winRate: profile.wins + profile.losses ? Math.round((profile.wins / (profile.wins + profile.losses)) * 100) : 0,
+    rankingPoints: periodStats.get(profile.id)?.rankingPoints ?? profile.rankingPoints,
     streak: profile.streak,
     league: profile.league,
   };

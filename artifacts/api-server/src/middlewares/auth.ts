@@ -13,6 +13,25 @@ function usernameFromEmail(email: string, userId: string): string {
   return `${base}-${userId.slice(-6).toLowerCase()}`;
 }
 
+function utcDay(value: Date) {
+  return Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate());
+}
+
+function activityProgress(profile: Profile, now: Date) {
+  const daysSinceLastActivity = Math.floor((utcDay(now) - utcDay(profile.lastActiveAt)) / 86_400_000);
+  const nextStreak = daysSinceLastActivity === 1
+    ? profile.streak + 1
+    : daysSinceLastActivity > 1
+      ? 1
+      : profile.streak;
+  const addedDay = daysSinceLastActivity > 0 ? 1 : 0;
+  return {
+    streak: nextStreak,
+    bestStreak: Math.max(profile.bestStreak, nextStreak),
+    activeDays: profile.activeDays + addedDay,
+  };
+}
+
 export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
   const auth = getAuth(req);
   const userId = auth.userId;
@@ -31,7 +50,13 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
     }
     if (Date.now() - existing.lastActiveAt.getTime() >= 5 * 60 * 1000) {
       const active = await db.transaction(async (tx) => {
-        const [row] = await tx.update(profilesTable).set({ lastActiveAt: new Date() }).where(eq(profilesTable.id, userId)).returning();
+        const now = new Date();
+        const progress = activityProgress(existing, now);
+        const [row] = await tx.update(profilesTable).set({
+          lastActiveAt: now,
+          ...progress,
+          updatedAt: now,
+        }).where(eq(profilesTable.id, userId)).returning();
         await tx.insert(userActivityEventsTable).values({ id: `activity-${crypto.randomUUID()}`, profileId: userId });
         return row;
       });
@@ -66,6 +91,9 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
       avatarUrl: clerkUser.imageUrl ?? "",
       role: "USER",
       authProvider: "clerk",
+      streak: 1,
+      bestStreak: 1,
+      activeDays: 1,
     }).onConflictDoNothing();
     await tx.insert(userActivityEventsTable).values({ id: `activity-${crypto.randomUUID()}`, profileId: userId });
   });
