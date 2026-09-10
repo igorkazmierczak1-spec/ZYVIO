@@ -305,6 +305,42 @@ export const blocksTable = pgTable(
   }),
 );
 
+export const conversationsTable = pgTable(
+  "vybe_conversations",
+  {
+    id: text("id").primaryKey(),
+    participantOneProfileId: text("participant_one_profile_id").notNull(),
+    participantTwoProfileId: text("participant_two_profile_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    participantPairUnique: uniqueIndex("vybe_conversations_participant_pair_unique").on(
+      table.participantOneProfileId,
+      table.participantTwoProfileId,
+    ),
+    participantOneIndex: index("vybe_conversations_participant_one_idx").on(table.participantOneProfileId),
+    participantTwoIndex: index("vybe_conversations_participant_two_idx").on(table.participantTwoProfileId),
+  }),
+);
+
+export const messagesTable = pgTable(
+  "vybe_messages",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id").notNull(),
+    senderProfileId: text("sender_profile_id").notNull(),
+    body: text("body").notNull(),
+    contentStatus: contentStatusEnum("content_status").notNull().default("ACTIVE"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    conversationCreatedIndex: index("vybe_messages_conversation_created_idx").on(table.conversationId, table.createdAt),
+    senderCreatedIndex: index("vybe_messages_sender_created_idx").on(table.senderProfileId, table.createdAt),
+  }),
+);
+
 export const aiUsageTable = pgTable(
   "vybe_ai_usage",
   {
@@ -371,6 +407,8 @@ export const insertCommentSchema = createInsertSchema(commentsTable);
 export const insertCommentLikeSchema = createInsertSchema(commentLikesTable);
 export const insertFollowSchema = createInsertSchema(followsTable);
 export const insertBlockSchema = createInsertSchema(blocksTable);
+export const insertConversationSchema = createInsertSchema(conversationsTable);
+export const insertMessageSchema = createInsertSchema(messagesTable);
 export const insertAiUsageSchema = createInsertSchema(aiUsageTable);
 export const insertBattleResultSchema = createInsertSchema(battleResultsTable);
 export const insertViralRewardEventSchema = createInsertSchema(viralRewardEventsTable);
@@ -388,6 +426,8 @@ export type AdminAuditLog = typeof adminAuditLogsTable.$inferSelect;
 export type AppSettings = typeof appSettingsTable.$inferSelect;
 export type StripeWebhookEvent = typeof stripeWebhookEventsTable.$inferSelect;
 export type Post = typeof postsTable.$inferSelect;
+export type Conversation = typeof conversationsTable.$inferSelect;
+export type Message = typeof messagesTable.$inferSelect;
 export type PostLike = typeof postLikesTable.$inferSelect;
 export type Comment = typeof commentsTable.$inferSelect;
 export type CommentLike = typeof commentLikesTable.$inferSelect;

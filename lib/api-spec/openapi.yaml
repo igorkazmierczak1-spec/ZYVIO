@@ -438,6 +438,65 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/BlockState" }
+  /social/conversations:
+    get:
+      operationId: listSocialConversations
+      tags: [social]
+      summary: List the authenticated user's private conversations
+      responses:
+        "200":
+          description: Private conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SocialConversation" }
+    post:
+      operationId: createSocialConversation
+      tags: [social]
+      summary: Start or reopen a private conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SocialConversationInput" }
+      responses:
+        "201":
+          description: Private conversation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialConversation" }
+  /social/conversations/{conversationId}/messages:
+    get:
+      operationId: listSocialMessages
+      tags: [social]
+      summary: List messages for a conversation the user belongs to
+      parameters:
+        - { name: conversationId, in: path, required: true, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        "200":
+          description: Conversation messages
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialMessagePage" }
+    post:
+      operationId: createSocialMessage
+      tags: [social]
+      summary: Send a private message to a conversation participant
+      parameters:
+        - { name: conversationId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SocialMessageInput" }
+      responses:
+        "201":
+          description: Created private message
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SocialMessage" }
   /ai/ideas:
     post:
       operationId: generateIdeas
@@ -899,6 +958,54 @@ components:
       required: [blocked]
       properties:
         blocked: { type: boolean }
+    SocialParticipant:
+      type: object
+      required: [id, username, displayName, avatarUrl]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string }
+    SocialMessage:
+      type: object
+      required: [id, conversationId, sender, body, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        conversationId: { type: string }
+        sender: { $ref: "#/components/schemas/SocialParticipant" }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    SocialConversation:
+      type: object
+      required: [id, otherParticipant, lastMessage, updatedAt]
+      properties:
+        id: { type: string }
+        otherParticipant: { $ref: "#/components/schemas/SocialParticipant" }
+        lastMessage:
+          anyOf:
+            - $ref: "#/components/schemas/SocialMessage"
+            - type: "null"
+        updatedAt: { type: string, format: date-time }
+    SocialConversationInput:
+      type: object
+      required: [profileId]
+      properties:
+        profileId: { type: string, minLength: 1 }
+    SocialMessageInput:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 2000 }
+    SocialMessagePage:
+      type: object
+      required: [items, page, hasMore]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SocialMessage" }
+        page: { type: integer }
+        hasMore: { type: boolean }
     UserSummary:
       type: object
       required: [id, username, displayName, country, avatarUrl, level, wins, losses, winRate, rankingPoints]
