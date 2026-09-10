@@ -24,7 +24,7 @@ function originCandidates() {
     ...(process.env.REPLIT_DOMAINS ?? "").split(","),
   ]
     .map((value) => value.trim())
-    .filter(Boolean)
+    .filter((value): value is string => Boolean(value))
     .map((value) => (value.startsWith("http://") || value.startsWith("https://") ? value : `https://${value}`));
   return new Set([...configured, ...replDomains]);
 }

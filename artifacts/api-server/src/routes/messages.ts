@@ -195,12 +195,13 @@ router.post("/social/conversations/:conversationId/messages", messageRateLimit, 
       res.status(400).json({ error: parsed.error });
       return;
     }
+    const body = parsed.body;
     const [message] = await db.transaction(async (tx) => {
       const [created] = await tx.insert(messagesTable).values({
         id: `message-${crypto.randomUUID()}`,
         conversationId: conversation.id,
         senderProfileId: profile.id,
-        body: parsed.body,
+        body,
       }).returning();
       await tx.update(conversationsTable).set({ updatedAt: new Date() })
         .where(eq(conversationsTable.id, conversation.id));

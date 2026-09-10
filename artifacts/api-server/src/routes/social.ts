@@ -298,6 +298,7 @@ router.get("/social/posts/:postId/comments", async (req, res, next) => {
       res.status(404).json({ error: "Post not found" });
       return;
     }
+    const blocked = await blockedProfileIds(profile.id);
     const rows = await db.select({
       id: commentsTable.id,
       body: commentsTable.body,
