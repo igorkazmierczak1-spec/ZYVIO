@@ -19,11 +19,6 @@ function routeParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
 
-function parsePage(value: unknown) {
-  const page = typeof value === "string" ? Number(value) : 1;
-  return Number.isInteger(page) && page >= 1 && page <= 1000 ? page : null;
-}
-
 function parseMessageBody(input: unknown): { body?: string; error?: string } {
   const body = input && typeof input === "object" && typeof (input as Record<string, unknown>).body === "string"
     ? ((input as Record<string, unknown>).body as string).trim()
@@ -161,24 +156,19 @@ router.get("/social/conversations/:conversationId/messages", async (req, res, ne
   try {
     const profile = currentUserFrom(res);
     const conversationId = routeParam(req.params.conversationId);
-    const page = parsePage(req.query.page);
-    if (!page) {
-      res.status(400).json({ error: "Invalid page" });
-      return;
-    }
     const conversation = await conversationForMember(conversationId, profile.id);
     if (!conversation) {
       res.status(404).json({ error: "Conversation not found" });
       return;
     }
-    const pageSize = 50;
+    const pageSize = 100;
     const rows = await db.select().from(messagesTable).where(and(
       eq(messagesTable.conversationId, conversation.id),
       eq(messagesTable.contentStatus, "ACTIVE"),
-    )).orderBy(desc(messagesTable.createdAt)).limit(pageSize + 1).offset((page - 1) * pageSize);
+    )).orderBy(desc(messagesTable.createdAt)).limit(pageSize + 1);
     const hasMore = rows.length > pageSize;
     const items = await Promise.all(rows.slice(0, pageSize).reverse().map(messageView));
-    res.json({ items, page, hasMore });
+    res.json({ items, page: 1, hasMore });
   } catch (error) {
     next(error);
   }

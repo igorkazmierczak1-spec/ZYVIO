@@ -473,7 +473,6 @@ paths:
       summary: List messages for a conversation the user belongs to
       parameters:
         - { name: conversationId, in: path, required: true, schema: { type: string } }
-        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
       responses:
         "200":
           description: Conversation messages
