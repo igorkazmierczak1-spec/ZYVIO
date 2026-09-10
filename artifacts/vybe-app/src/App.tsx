@@ -214,7 +214,14 @@ function IconButton({ label, children, onClick, active = false }: { label: strin
 function AppShell({ children }: { children: ReactNode }) {
   const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { data: profile } = useGetProfile();
+  const { data: profile } = useGetProfile({
+    query: {
+      queryKey: getGetProfileQueryKey(),
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: true,
+    },
+  });
   const navItems = [
     { href: "/", label: "Home", icon: LayoutDashboard },
     { href: "/battles", label: "Discover", icon: Compass },
@@ -266,7 +273,7 @@ function AppShell({ children }: { children: ReactNode }) {
         </div>
         <button className="sidebar-profile" onClick={() => navigate("/profile")}>
           <Avatar name={profile?.displayName ?? "VYBE User"} size="sm" />
-          <span><strong>{profile?.displayName ?? "VYBE User"}</strong><small>@{profile?.username ?? "account"}</small></span>
+          <span><strong>{profile?.displayName ?? "VYBE User"}{profile?.role === "ADMIN" && <span className="sidebar-admin-badge">ADMIN</span>}</strong><small>@{profile?.username ?? "account"}</small></span>
           <ChevronRight />
         </button>
         <LogoutButton compact />
@@ -392,7 +399,7 @@ function ProfilePage() {
   if (profile.isLoading) return <LoadingState />;
   if (profile.isError || !data) return <ErrorState onRetry={() => void profile.refetch()} />;
   const winRate = Math.round(data.wins / Math.max(1, data.wins + data.losses) * 100);
-  return <div><PageHeader eyebrow="Your profile" title="Build your legend" action={<div className="profile-actions"><Button variant="secondary" onClick={() => navigate("/settings")}><Settings2 /> Edit profile</Button><LogoutButton /></div>} /><section className="profile-hero panel"><div className="profile-identity"><Avatar name={data.displayName} size="lg" /><div><span className="eyebrow">@{data.username}</span><h2>{data.displayName}</h2><p>{data.bio}</p><div className="profile-meta"><span><Globe2 /> {data.country}</span><span><Crown /> {data.league} league</span></div></div></div><div className="profile-rank"><span className="eyebrow">Global rank</span><strong>#{data.rank}</strong><small>Up 12 this week</small></div></section><div className="profile-stat-grid"><StatCard icon={Zap} label="Total XP" value={data.xp.toLocaleString()} detail={`Level ${data.level}`} accent="lime" /><StatCard icon={Trophy} label="Wins" value={data.wins} detail={`${winRate}% win rate`} accent="violet" /><StatCard icon={Flame} label="Streak" value={`${data.streak} days`} detail="Personal best" accent="coral" /><StatCard icon={Swords} label="Battles" value={data.wins + data.losses} detail={`${data.losses} losses`} accent="cyan" /></div><section className="panel badges-panel"><div className="panel-heading"><div><span className="eyebrow">Proof of play</span><h2>Badges & achievements</h2></div><span className="badge-count">{data.badges.length} unlocked</span></div><div className="badge-grid">{data.badges.map((badge) => <div className="achievement" key={badge}><div className="achievement-icon"><Check /></div><strong>{badge}</strong><small>Achievement unlocked</small></div>)}</div></section></div>;
+  return <div><PageHeader eyebrow="Your profile" title="Build your legend" action={<div className="profile-actions"><Button variant="secondary" onClick={() => navigate("/settings")}><Settings2 /> Edit profile</Button><LogoutButton /></div>} /><section className="profile-hero panel"><div className="profile-identity"><Avatar name={data.displayName} size="lg" /><div><span className="eyebrow">@{data.username}</span><h2>{data.displayName}</h2><p>{data.bio}</p><div className="profile-meta"><span><Globe2 /> {data.country}</span><span><Crown /> {data.league} league</span>{data.role === "ADMIN" && <span className="profile-admin-badge"><ShieldCheck /> ADMIN</span>}</div></div></div><div className="profile-rank"><span className="eyebrow">Rola konta</span><strong className={data.role === "ADMIN" ? "admin-role-text" : ""}>{data.role}</strong><small>{data.role === "ADMIN" ? "Pełny dostęp administracyjny" : "Konto użytkownika"}</small></div></section><div className="profile-stat-grid"><StatCard icon={Zap} label="Total XP" value={data.xp.toLocaleString()} detail={`Level ${data.level}`} accent="lime" /><StatCard icon={Trophy} label="Wins" value={data.wins} detail={`${winRate}% win rate`} accent="violet" /><StatCard icon={Flame} label="Streak" value={`${data.streak} days`} detail="Personal best" accent="coral" /><StatCard icon={Swords} label="Battles" value={data.wins + data.losses} detail={`${data.losses} losses`} accent="cyan" /></div><section className="panel badges-panel"><div className="panel-heading"><div><span className="eyebrow">Proof of play</span><h2>Badges & achievements</h2></div><span className="badge-count">{data.badges.length} unlocked</span></div><div className="badge-grid">{data.badges.map((badge) => <div className="achievement" key={badge}><div className="achievement-icon"><Check /></div><strong>{badge}</strong><small>Achievement unlocked</small></div>)}</div></section></div>;
 }
 
 function NotificationsPage() {
