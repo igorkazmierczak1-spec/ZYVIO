@@ -16,6 +16,8 @@ tags:
   - name: leaderboard
   - name: notifications
   - name: ai
+  - name: admin
+  - name: reports
 paths:
   /healthz:
     get:
@@ -222,6 +224,233 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IdeaResponse"
+  /reports:
+    post:
+      operationId: createReport
+      tags: [reports]
+      summary: Submit a moderation report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReportInput" }
+      responses:
+        "201":
+          description: Report created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminReport" }
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [admin]
+      summary: Get owner dashboard metrics
+      parameters:
+        - $ref: "#/components/parameters/AdminRange"
+      responses:
+        "200":
+          description: Owner dashboard
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminOverview" }
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags: [admin]
+      summary: Paginated users for administrators
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - { name: search, in: query, schema: { type: string } }
+        - { name: role, in: query, schema: { type: string, enum: [USER, ADMIN] } }
+        - { name: status, in: query, schema: { type: string, enum: [ACTIVE, BLOCKED, DELETED] } }
+        - { name: sort, in: query, schema: { type: string, enum: [createdAt, lastActiveAt, xp, username] } }
+        - { name: order, in: query, schema: { type: string, enum: [asc, desc] } }
+      responses:
+        "200":
+          description: Users page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUserPage" }
+  /admin/users/{userId}:
+    get:
+      operationId: getAdminUser
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUserDetail" }
+    patch:
+      operationId: updateAdminUser
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUserUpdate" }
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminUser" }
+    delete:
+      operationId: deleteAdminUser
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminDeleteUserInput" }
+      responses:
+        "200":
+          description: Deleted user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActionResult" }
+  /admin/battles:
+    get:
+      operationId: listAdminBattles
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - { name: search, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Battles page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminBattlePage" }
+  /admin/battles/{battleId}:
+    patch:
+      operationId: updateAdminBattle
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/BattleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminBattleUpdate" }
+      responses:
+        "200":
+          description: Updated battle
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminBattle" }
+  /admin/reports:
+    get:
+      operationId: listAdminReports
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - { name: status, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Reports page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminReportPage" }
+  /admin/reports/{reportId}:
+    patch:
+      operationId: updateAdminReport
+      tags: [admin]
+      parameters:
+        - { name: reportId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminReportUpdate" }
+      responses:
+        "200":
+          description: Updated report
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminReport" }
+  /admin/audit:
+    get:
+      operationId: listAdminAudit
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Audit page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminAuditPage" }
+  /admin/analytics:
+    get:
+      operationId: getAdminAnalytics
+      tags: [admin]
+      parameters:
+        - $ref: "#/components/parameters/AdminRange"
+      responses:
+        "200":
+          description: Analytics
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminAnalytics" }
+  /admin/notifications:
+    get:
+      operationId: listAdminNotifications
+      tags: [admin]
+      responses:
+        "200":
+          description: Admin notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/AdminNotification" }
+  /admin/settings:
+    get:
+      operationId: getAdminSettings
+      tags: [admin]
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminSettings" }
+    patch:
+      operationId: updateAdminSettings
+      tags: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminSettingsUpdate" }
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminSettings" }
+  /admin/monetization:
+    get:
+      operationId: getAdminMonetization
+      tags: [admin]
+      responses:
+        "200":
+          description: Monetization status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminMonetization" }
 components:
   parameters:
     BattleId:
@@ -230,6 +459,26 @@ components:
       required: true
       schema:
         type: string
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema: { type: string }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    AdminRange:
+      name: range
+      in: query
+      schema:
+        type: string
+        enum: [24h, 7d, 30d, 90d, all]
+        default: 30d
   schemas:
     HealthStatus:
       type: object
@@ -383,6 +632,265 @@ components:
             weeklyXp: { type: integer }
             winRate: { type: integer }
             globalRank: { type: integer }
+    TimeSeriesPoint:
+      type: object
+      required: [date, users, registrations, battles, submissions]
+      properties:
+        date: { type: string }
+        users: { type: integer }
+        registrations: { type: integer }
+        battles: { type: integer }
+        submissions: { type: integer }
+    AdminOverview:
+      type: object
+      required: [range, generatedAt, kpis, trend, topBattles, topUsers, dataAvailability]
+      properties:
+        range: { type: string }
+        generatedAt: { type: string, format: date-time }
+        kpis:
+          type: object
+          required: [totalUsers, activeUsers, newRegistrations, onlineUsers, totalBattles, activeBattles, submissions, openReports]
+          properties:
+            totalUsers: { type: integer }
+            activeUsers: { type: integer }
+            newRegistrations: { type: integer }
+            onlineUsers: { type: integer, nullable: true }
+            totalBattles: { type: integer }
+            activeBattles: { type: integer }
+            submissions: { type: integer }
+            openReports: { type: integer }
+        trend:
+          type: array
+          items: { $ref: "#/components/schemas/TimeSeriesPoint" }
+        topBattles:
+          type: array
+          items: { $ref: "#/components/schemas/AdminBattle" }
+        topUsers:
+          type: array
+          items: { $ref: "#/components/schemas/AdminUser" }
+        dataAvailability:
+          type: object
+          required: [onlineUsers, subscriptions, revenue, retention]
+          properties:
+            onlineUsers: { type: boolean }
+            subscriptions: { type: boolean }
+            revenue: { type: boolean }
+            retention: { type: boolean }
+    AdminUser:
+      type: object
+      required: [id, username, displayName, country, avatarUrl, role, status, createdAt, updatedAt, lastActiveAt, xp, wins, losses, league, subscriptionStatus]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        country: { type: string }
+        avatarUrl: { type: string }
+        role: { type: string, enum: [USER, ADMIN] }
+        status: { type: string, enum: [ACTIVE, BLOCKED, DELETED] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        lastActiveAt: { type: string, format: date-time }
+        xp: { type: integer }
+        wins: { type: integer }
+        losses: { type: integer }
+        league: { type: string }
+        subscriptionStatus: { type: string, enum: [NOT_CONNECTED] }
+    AdminUserDetail:
+      allOf:
+        - $ref: "#/components/schemas/AdminUser"
+        - type: object
+          required: [email, activity, audit]
+          properties:
+            email: { type: string, format: email }
+            activity:
+              type: array
+              items: { $ref: "#/components/schemas/Activity" }
+            audit:
+              type: array
+              items: { $ref: "#/components/schemas/AdminAuditLog" }
+    AdminUserPage:
+      type: object
+      required: [items, page, pageSize, total, totalPages]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminUser" }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+    AdminUserUpdate:
+      type: object
+      required: [action, reason, confirmation]
+      properties:
+        action: { type: string, enum: [BLOCK, UNBLOCK, CHANGE_ROLE, RESET_STATS] }
+        role: { type: string, enum: [USER, ADMIN] }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+        confirmation: { type: string }
+    AdminDeleteUserInput:
+      type: object
+      required: [confirmation, reason]
+      properties:
+        confirmation: { type: string }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+    AdminBattle:
+      type: object
+      required: [id, title, category, status, contentStatus, createdAt, endsAt, participantCount, totalVotes]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        category: { type: string }
+        status: { type: string }
+        contentStatus: { type: string, enum: [ACTIVE, HIDDEN, REMOVED] }
+        createdAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        participantCount: { type: integer }
+        totalVotes: { type: integer }
+    AdminBattlePage:
+      type: object
+      required: [items, page, pageSize, total, totalPages]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminBattle" }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+    AdminBattleUpdate:
+      type: object
+      required: [contentStatus, reason, confirmation]
+      properties:
+        contentStatus: { type: string, enum: [ACTIVE, HIDDEN, REMOVED] }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+        confirmation: { type: string }
+    ReportInput:
+      type: object
+      required: [targetType, targetId, reason]
+      properties:
+        targetType: { type: string, enum: [USER, BATTLE, CONTENT] }
+        targetId: { type: string }
+        reason: { type: string, minLength: 3, maxLength: 120 }
+        description: { type: string, maxLength: 1000 }
+    AdminReport:
+      type: object
+      required: [id, reporterProfileId, targetType, targetId, reason, description, status, priority, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        reporterProfileId: { type: string }
+        targetType: { type: string }
+        targetId: { type: string }
+        reason: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [NEW, IN_PROGRESS, RESOLVED, REJECTED] }
+        priority: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        assignedAdminId: { type: string, nullable: true }
+        resolutionNote: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    AdminReportPage:
+      type: object
+      required: [items, page, pageSize, total, totalPages]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminReport" }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+    AdminReportUpdate:
+      type: object
+      required: [status, priority]
+      properties:
+        status: { type: string, enum: [NEW, IN_PROGRESS, RESOLVED, REJECTED] }
+        priority: { type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL] }
+        assignToSelf: { type: boolean }
+        resolutionNote: { type: string, maxLength: 1000 }
+    AdminAuditLog:
+      type: object
+      required: [id, actorProfileId, action, targetType, result, createdAt]
+      properties:
+        id: { type: string }
+        actorProfileId: { type: string }
+        action: { type: string }
+        targetType: { type: string }
+        targetId: { type: string, nullable: true }
+        result: { type: string }
+        reason: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+    AdminAuditPage:
+      type: object
+      required: [items, page, pageSize, total, totalPages]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/AdminAuditLog" }
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+    AdminAnalytics:
+      type: object
+      required: [range, dau, mau, registrations, battles, submissions, retention, trend]
+      properties:
+        range: { type: string }
+        dau: { type: integer }
+        mau: { type: integer }
+        registrations: { type: integer }
+        battles: { type: integer }
+        submissions: { type: integer }
+        retention: { type: number, nullable: true }
+        trend:
+          type: array
+          items: { $ref: "#/components/schemas/TimeSeriesPoint" }
+    AdminNotification:
+      type: object
+      required: [id, kind, title, body, createdAt, severity]
+      properties:
+        id: { type: string }
+        kind: { type: string }
+        title: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        severity: { type: string, enum: [INFO, WARNING, CRITICAL] }
+    AdminSettings:
+      type: object
+      required: [maintenanceMode, registrationsEnabled, moderationAutoAssign, adminNotificationsEnabled, updatedAt]
+      properties:
+        maintenanceMode: { type: boolean }
+        registrationsEnabled: { type: boolean }
+        moderationAutoAssign: { type: boolean }
+        adminNotificationsEnabled: { type: boolean }
+        updatedBy: { type: string, nullable: true }
+        updatedAt: { type: string, format: date-time }
+    AdminSettingsUpdate:
+      type: object
+      required: [confirmation]
+      properties:
+        maintenanceMode: { type: boolean }
+        registrationsEnabled: { type: boolean }
+        moderationAutoAssign: { type: boolean }
+        adminNotificationsEnabled: { type: boolean }
+        confirmation: { type: string }
+    AdminMonetization:
+      type: object
+      required: [connected, provider, activeSubscriptions, cancelledSubscriptions, revenue, mrr, topPlan, message]
+      properties:
+        connected: { type: boolean }
+        provider: { type: string, nullable: true }
+        activeSubscriptions: { type: integer, nullable: true }
+        cancelledSubscriptions: { type: integer, nullable: true }
+        revenue: { type: number, nullable: true }
+        mrr: { type: number, nullable: true }
+        topPlan: { type: string, nullable: true }
+        message: { type: string }
+    ActionResult:
+      type: object
+      required: [success, message]
+      properties:
+        success: { type: boolean }
+        message: { type: string }
     IdeaInput:
       type: object
       required: [topic]

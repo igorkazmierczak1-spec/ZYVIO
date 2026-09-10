@@ -1,5 +1,5 @@
 import { clerkClient, getAuth } from "@clerk/express";
-import { db, profilesTable, type Profile } from "@workspace/db";
+import { appSettingsTable, db, profilesTable, userActivityEventsTable, type Profile } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import type { Request, RequestHandler, Response } from "express";
 
@@ -26,9 +26,22 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
     .where(eq(profilesTable.id, userId));
 
   if (existing) {
+    if (existing.status === "BLOCKED" || existing.status === "DELETED") {
+      throw new Error(`ACCOUNT_${existing.status}`);
+    }
+    if (Date.now() - existing.lastActiveAt.getTime() >= 5 * 60 * 1000) {
+      const active = await db.transaction(async (tx) => {
+        const [row] = await tx.update(profilesTable).set({ lastActiveAt: new Date() }).where(eq(profilesTable.id, userId)).returning();
+        await tx.insert(userActivityEventsTable).values({ id: `activity-${crypto.randomUUID()}`, profileId: userId });
+        return row;
+      });
+      return active ?? existing;
+    }
     return existing;
   }
 
+  const [settings] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.id, "global"));
+  if (settings && !settings.registrationsEnabled) throw new Error("REGISTRATIONS_DISABLED");
   const clerkUser = await clerkClient.users.getUser(userId);
   const primaryEmail =
     clerkUser.emailAddresses.find(
@@ -43,9 +56,8 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
     primaryEmail.split("@")[0] ||
     "VYBE Creator";
 
-  await db
-    .insert(profilesTable)
-    .values({
+  await db.transaction(async (tx) => {
+    await tx.insert(profilesTable).values({
       id: userId,
       email: primaryEmail.toLowerCase(),
       username: usernameFromEmail(primaryEmail, userId),
@@ -54,8 +66,9 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
       avatarUrl: clerkUser.imageUrl ?? "",
       role: "USER",
       authProvider: "clerk",
-    })
-    .onConflictDoNothing();
+    }).onConflictDoNothing();
+    await tx.insert(userActivityEventsTable).values({ id: `activity-${crypto.randomUUID()}`, profileId: userId });
+  });
 
   const [created] = await db
     .select()
@@ -69,7 +82,13 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
 
 export const requireAuthenticatedUser: RequestHandler = async (req, res, next) => {
   try {
-    res.locals.currentUser = await getOrCreateCurrentUser(req);
+    const user = await getOrCreateCurrentUser(req);
+    const [settings] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.id, "global"));
+    if (settings?.maintenanceMode && user.role !== "ADMIN") {
+      res.status(503).json({ error: "VYBE is temporarily in maintenance mode" });
+      return;
+    }
+    res.locals.currentUser = user;
     next();
   } catch (error) {
     if (error instanceof Error && error.message === "UNAUTHENTICATED") {
@@ -78,6 +97,14 @@ export const requireAuthenticatedUser: RequestHandler = async (req, res, next) =
     }
     if (error instanceof Error && error.message === "AUTH_EMAIL_REQUIRED") {
       res.status(422).json({ error: "A verified email address is required" });
+      return;
+    }
+    if (error instanceof Error && (error.message === "ACCOUNT_BLOCKED" || error.message === "ACCOUNT_DELETED")) {
+      res.status(403).json({ error: "Account is not active" });
+      return;
+    }
+    if (error instanceof Error && error.message === "REGISTRATIONS_DISABLED") {
+      res.status(503).json({ error: "Registrations are temporarily disabled" });
       return;
     }
     next(error);

@@ -480,3 +480,476 @@ export const GenerateIdeasResponse = zod.object({
 })
 
 
+/**
+ * @summary Submit a moderation report
+ */
+export const createReportBodyReasonMin = 3;
+export const createReportBodyReasonMax = 120;
+
+export const createReportBodyDescriptionMax = 1000;
+
+
+
+export const CreateReportBody = zod.object({
+  "targetType": zod.enum(['USER', 'BATTLE', 'CONTENT']),
+  "targetId": zod.string(),
+  "reason": zod.string().min(createReportBodyReasonMin).max(createReportBodyReasonMax),
+  "description": zod.string().max(createReportBodyDescriptionMax).optional()
+})
+
+export const CreateReportResponse = zod.object({
+  "id": zod.string(),
+  "reporterProfileId": zod.string(),
+  "targetType": zod.string(),
+  "targetId": zod.string(),
+  "reason": zod.string(),
+  "description": zod.string(),
+  "status": zod.enum(['NEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED']),
+  "priority": zod.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+  "assignedAdminId": zod.string().nullish(),
+  "resolutionNote": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get owner dashboard metrics
+ */
+export const getAdminOverviewQueryRangeDefault = `30d`;
+
+export const GetAdminOverviewQueryParams = zod.object({
+  "range": zod.enum(['24h', '7d', '30d', '90d', 'all']).default(getAdminOverviewQueryRangeDefault)
+})
+
+export const GetAdminOverviewResponse = zod.object({
+  "range": zod.string(),
+  "generatedAt": zod.coerce.date(),
+  "kpis": zod.object({
+  "totalUsers": zod.number().int(),
+  "activeUsers": zod.number().int(),
+  "newRegistrations": zod.number().int(),
+  "onlineUsers": zod.number().int().nullable(),
+  "totalBattles": zod.number().int(),
+  "activeBattles": zod.number().int(),
+  "submissions": zod.number().int(),
+  "openReports": zod.number().int()
+}),
+  "trend": zod.array(zod.object({
+  "date": zod.string(),
+  "users": zod.number().int(),
+  "registrations": zod.number().int(),
+  "battles": zod.number().int(),
+  "submissions": zod.number().int()
+})),
+  "topBattles": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "status": zod.string(),
+  "contentStatus": zod.enum(['ACTIVE', 'HIDDEN', 'REMOVED']),
+  "createdAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "participantCount": zod.number().int(),
+  "totalVotes": zod.number().int()
+})),
+  "topUsers": zod.array(zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "country": zod.string(),
+  "avatarUrl": zod.string(),
+  "role": zod.enum(['USER', 'ADMIN']),
+  "status": zod.enum(['ACTIVE', 'BLOCKED', 'DELETED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastActiveAt": zod.coerce.date(),
+  "xp": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "league": zod.string(),
+  "subscriptionStatus": zod.enum(['NOT_CONNECTED'])
+})),
+  "dataAvailability": zod.object({
+  "onlineUsers": zod.boolean(),
+  "subscriptions": zod.boolean(),
+  "revenue": zod.boolean(),
+  "retention": zod.boolean()
+})
+})
+
+
+/**
+ * @summary Paginated users for administrators
+ */
+export const listAdminUsersQueryPageDefault = 1;
+
+export const listAdminUsersQueryPageSizeDefault = 20;
+export const listAdminUsersQueryPageSizeMax = 100;
+
+
+
+export const ListAdminUsersQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listAdminUsersQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(listAdminUsersQueryPageSizeMax).default(listAdminUsersQueryPageSizeDefault),
+  "search": zod.coerce.string().optional(),
+  "role": zod.enum(['USER', 'ADMIN']).optional(),
+  "status": zod.enum(['ACTIVE', 'BLOCKED', 'DELETED']).optional(),
+  "sort": zod.enum(['createdAt', 'lastActiveAt', 'xp', 'username']).optional(),
+  "order": zod.enum(['asc', 'desc']).optional()
+})
+
+export const ListAdminUsersResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "country": zod.string(),
+  "avatarUrl": zod.string(),
+  "role": zod.enum(['USER', 'ADMIN']),
+  "status": zod.enum(['ACTIVE', 'BLOCKED', 'DELETED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastActiveAt": zod.coerce.date(),
+  "xp": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "league": zod.string(),
+  "subscriptionStatus": zod.enum(['NOT_CONNECTED'])
+})),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int(),
+  "total": zod.number().int(),
+  "totalPages": zod.number().int()
+})
+
+
+export const GetAdminUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetAdminUserResponse = zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "country": zod.string(),
+  "avatarUrl": zod.string(),
+  "role": zod.enum(['USER', 'ADMIN']),
+  "status": zod.enum(['ACTIVE', 'BLOCKED', 'DELETED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastActiveAt": zod.coerce.date(),
+  "xp": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "league": zod.string(),
+  "subscriptionStatus": zod.enum(['NOT_CONNECTED'])
+}).and(zod.object({
+  "email": zod.string().email(),
+  "activity": zod.array(zod.object({
+  "id": zod.string(),
+  "text": zod.string(),
+  "time": zod.string(),
+  "kind": zod.string()
+})),
+  "audit": zod.array(zod.object({
+  "id": zod.string(),
+  "actorProfileId": zod.string(),
+  "action": zod.string(),
+  "targetType": zod.string(),
+  "targetId": zod.string().nullish(),
+  "result": zod.string(),
+  "reason": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+export const UpdateAdminUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const updateAdminUserBodyReasonMin = 3;
+export const updateAdminUserBodyReasonMax = 500;
+
+
+
+export const UpdateAdminUserBody = zod.object({
+  "action": zod.enum(['BLOCK', 'UNBLOCK', 'CHANGE_ROLE', 'RESET_STATS']),
+  "role": zod.enum(['USER', 'ADMIN']).optional(),
+  "reason": zod.string().min(updateAdminUserBodyReasonMin).max(updateAdminUserBodyReasonMax),
+  "confirmation": zod.string()
+})
+
+export const UpdateAdminUserResponse = zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "country": zod.string(),
+  "avatarUrl": zod.string(),
+  "role": zod.enum(['USER', 'ADMIN']),
+  "status": zod.enum(['ACTIVE', 'BLOCKED', 'DELETED']),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "lastActiveAt": zod.coerce.date(),
+  "xp": zod.number().int(),
+  "wins": zod.number().int(),
+  "losses": zod.number().int(),
+  "league": zod.string(),
+  "subscriptionStatus": zod.enum(['NOT_CONNECTED'])
+})
+
+
+export const DeleteAdminUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const deleteAdminUserBodyReasonMin = 3;
+export const deleteAdminUserBodyReasonMax = 500;
+
+
+
+export const DeleteAdminUserBody = zod.object({
+  "confirmation": zod.string(),
+  "reason": zod.string().min(deleteAdminUserBodyReasonMin).max(deleteAdminUserBodyReasonMax)
+})
+
+export const DeleteAdminUserResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string()
+})
+
+
+export const listAdminBattlesQueryPageDefault = 1;
+
+export const listAdminBattlesQueryPageSizeDefault = 20;
+export const listAdminBattlesQueryPageSizeMax = 100;
+
+
+
+export const ListAdminBattlesQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listAdminBattlesQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(listAdminBattlesQueryPageSizeMax).default(listAdminBattlesQueryPageSizeDefault),
+  "search": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListAdminBattlesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "status": zod.string(),
+  "contentStatus": zod.enum(['ACTIVE', 'HIDDEN', 'REMOVED']),
+  "createdAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "participantCount": zod.number().int(),
+  "totalVotes": zod.number().int()
+})),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int(),
+  "total": zod.number().int(),
+  "totalPages": zod.number().int()
+})
+
+
+export const UpdateAdminBattleParams = zod.object({
+  "battleId": zod.coerce.string()
+})
+
+export const updateAdminBattleBodyReasonMin = 3;
+export const updateAdminBattleBodyReasonMax = 500;
+
+
+
+export const UpdateAdminBattleBody = zod.object({
+  "contentStatus": zod.enum(['ACTIVE', 'HIDDEN', 'REMOVED']),
+  "reason": zod.string().min(updateAdminBattleBodyReasonMin).max(updateAdminBattleBodyReasonMax),
+  "confirmation": zod.string()
+})
+
+export const UpdateAdminBattleResponse = zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "category": zod.string(),
+  "status": zod.string(),
+  "contentStatus": zod.enum(['ACTIVE', 'HIDDEN', 'REMOVED']),
+  "createdAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "participantCount": zod.number().int(),
+  "totalVotes": zod.number().int()
+})
+
+
+export const listAdminReportsQueryPageDefault = 1;
+
+export const listAdminReportsQueryPageSizeDefault = 20;
+export const listAdminReportsQueryPageSizeMax = 100;
+
+
+
+export const ListAdminReportsQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listAdminReportsQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(listAdminReportsQueryPageSizeMax).default(listAdminReportsQueryPageSizeDefault),
+  "status": zod.coerce.string().optional(),
+  "priority": zod.coerce.string().optional()
+})
+
+export const ListAdminReportsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "reporterProfileId": zod.string(),
+  "targetType": zod.string(),
+  "targetId": zod.string(),
+  "reason": zod.string(),
+  "description": zod.string(),
+  "status": zod.enum(['NEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED']),
+  "priority": zod.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+  "assignedAdminId": zod.string().nullish(),
+  "resolutionNote": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int(),
+  "total": zod.number().int(),
+  "totalPages": zod.number().int()
+})
+
+
+export const UpdateAdminReportParams = zod.object({
+  "reportId": zod.coerce.string()
+})
+
+export const updateAdminReportBodyResolutionNoteMax = 1000;
+
+
+
+export const UpdateAdminReportBody = zod.object({
+  "status": zod.enum(['NEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED']),
+  "priority": zod.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+  "assignToSelf": zod.boolean().optional(),
+  "resolutionNote": zod.string().max(updateAdminReportBodyResolutionNoteMax).optional()
+})
+
+export const UpdateAdminReportResponse = zod.object({
+  "id": zod.string(),
+  "reporterProfileId": zod.string(),
+  "targetType": zod.string(),
+  "targetId": zod.string(),
+  "reason": zod.string(),
+  "description": zod.string(),
+  "status": zod.enum(['NEW', 'IN_PROGRESS', 'RESOLVED', 'REJECTED']),
+  "priority": zod.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
+  "assignedAdminId": zod.string().nullish(),
+  "resolutionNote": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const listAdminAuditQueryPageDefault = 1;
+
+export const listAdminAuditQueryPageSizeDefault = 20;
+export const listAdminAuditQueryPageSizeMax = 100;
+
+
+
+export const ListAdminAuditQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listAdminAuditQueryPageDefault),
+  "pageSize": zod.coerce.number().int().min(1).max(listAdminAuditQueryPageSizeMax).default(listAdminAuditQueryPageSizeDefault)
+})
+
+export const ListAdminAuditResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "actorProfileId": zod.string(),
+  "action": zod.string(),
+  "targetType": zod.string(),
+  "targetId": zod.string().nullish(),
+  "result": zod.string(),
+  "reason": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int(),
+  "total": zod.number().int(),
+  "totalPages": zod.number().int()
+})
+
+
+export const getAdminAnalyticsQueryRangeDefault = `30d`;
+
+export const GetAdminAnalyticsQueryParams = zod.object({
+  "range": zod.enum(['24h', '7d', '30d', '90d', 'all']).default(getAdminAnalyticsQueryRangeDefault)
+})
+
+export const GetAdminAnalyticsResponse = zod.object({
+  "range": zod.string(),
+  "dau": zod.number().int(),
+  "mau": zod.number().int(),
+  "registrations": zod.number().int(),
+  "battles": zod.number().int(),
+  "submissions": zod.number().int(),
+  "retention": zod.number().nullable(),
+  "trend": zod.array(zod.object({
+  "date": zod.string(),
+  "users": zod.number().int(),
+  "registrations": zod.number().int(),
+  "battles": zod.number().int(),
+  "submissions": zod.number().int()
+}))
+})
+
+
+export const ListAdminNotificationsResponseItem = zod.object({
+  "id": zod.string(),
+  "kind": zod.string(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "severity": zod.enum(['INFO', 'WARNING', 'CRITICAL'])
+})
+export const ListAdminNotificationsResponse = zod.array(ListAdminNotificationsResponseItem)
+
+
+export const GetAdminSettingsResponse = zod.object({
+  "maintenanceMode": zod.boolean(),
+  "registrationsEnabled": zod.boolean(),
+  "moderationAutoAssign": zod.boolean(),
+  "adminNotificationsEnabled": zod.boolean(),
+  "updatedBy": zod.string().nullish(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const UpdateAdminSettingsBody = zod.object({
+  "maintenanceMode": zod.boolean().optional(),
+  "registrationsEnabled": zod.boolean().optional(),
+  "moderationAutoAssign": zod.boolean().optional(),
+  "adminNotificationsEnabled": zod.boolean().optional(),
+  "confirmation": zod.string()
+})
+
+export const UpdateAdminSettingsResponse = zod.object({
+  "maintenanceMode": zod.boolean(),
+  "registrationsEnabled": zod.boolean(),
+  "moderationAutoAssign": zod.boolean(),
+  "adminNotificationsEnabled": zod.boolean(),
+  "updatedBy": zod.string().nullish(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const GetAdminMonetizationResponse = zod.object({
+  "connected": zod.boolean(),
+  "provider": zod.string().nullable(),
+  "activeSubscriptions": zod.number().int().nullable(),
+  "cancelledSubscriptions": zod.number().int().nullable(),
+  "revenue": zod.number().nullable(),
+  "mrr": zod.number().nullable(),
+  "topPlan": zod.string().nullable(),
+  "message": zod.string()
+})
+
+

@@ -80,6 +80,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
+import { AdminDashboardPage } from "@/pages/admin-dashboard";
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -452,13 +453,16 @@ function AdminRoute() {
   if (!profile.data || profile.data.role !== "ADMIN") {
     return <div className="empty-state error-state"><div className="empty-icon"><Crown /></div><h2>Administrator access required</h2><p>This route is available only to accounts with the backend role ADMIN.</p></div>;
   }
-  return <div><PageHeader eyebrow="Panel administratora" title="Dostęp administratora aktywny" description="Ta strona jest widoczna wyłącznie dla kont z rolą ADMIN zweryfikowaną przez backend." /><section className="panel admin-status"><ShieldCheck /><div><strong>{profile.data.displayName}</strong><p>Rola konta: ADMIN · Autoryzacja Clerk aktywna</p></div></section></div>;
+  return <AdminDashboardPage />;
 }
 
 function ProtectedApplication() {
+  const [location] = useLocation();
   return <>
     <Show when="signed-in">
-      <AppShell><ErrorBoundary><Switch><Route path="/" component={DashboardPage} /><Route path="/battles" component={DiscoverPage} /><Route path="/battles/new" component={CreateBattlePage} /><Route path="/battles/:id" component={BattleDetailPage} /><Route path="/leaderboard" component={LeaderboardPage} /><Route path="/profile" component={ProfilePage} /><Route path="/notifications" component={NotificationsPage} /><Route path="/ai" component={AiPage} /><Route path="/premium" component={PremiumPage} /><Route path="/settings" component={SettingsPage} /><Route path="/admin" component={AdminRoute} /><Route component={NotFound} /></Switch></ErrorBoundary></AppShell>
+      {location === "/admin"
+        ? <ErrorBoundary><AdminRoute /></ErrorBoundary>
+        : <AppShell><ErrorBoundary><Switch><Route path="/" component={DashboardPage} /><Route path="/battles" component={DiscoverPage} /><Route path="/battles/new" component={CreateBattlePage} /><Route path="/battles/:id" component={BattleDetailPage} /><Route path="/leaderboard" component={LeaderboardPage} /><Route path="/profile" component={ProfilePage} /><Route path="/notifications" component={NotificationsPage} /><Route path="/ai" component={AiPage} /><Route path="/premium" component={PremiumPage} /><Route path="/settings" component={SettingsPage} /><Route component={NotFound} /></Switch></ErrorBoundary></AppShell>}
     </Show>
     <Show when="signed-out"><Redirect to="/sign-in" /></Show>
   </>;

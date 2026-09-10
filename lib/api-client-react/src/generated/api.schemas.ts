@@ -158,6 +158,357 @@ export interface Dashboard {
   stats: DashboardStats;
 }
 
+export interface TimeSeriesPoint {
+  date: string;
+  users: number;
+  registrations: number;
+  battles: number;
+  submissions: number;
+}
+
+export type AdminOverviewKpis = {
+  totalUsers: number;
+  activeUsers: number;
+  newRegistrations: number;
+  onlineUsers: number | null;
+  totalBattles: number;
+  activeBattles: number;
+  submissions: number;
+  openReports: number;
+};
+
+export type AdminOverviewDataAvailability = {
+  onlineUsers: boolean;
+  subscriptions: boolean;
+  revenue: boolean;
+  retention: boolean;
+};
+
+export type AdminBattleContentStatus = typeof AdminBattleContentStatus[keyof typeof AdminBattleContentStatus];
+
+
+export const AdminBattleContentStatus = {
+  ACTIVE: 'ACTIVE',
+  HIDDEN: 'HIDDEN',
+  REMOVED: 'REMOVED',
+} as const;
+
+export interface AdminBattle {
+  id: string;
+  title: string;
+  category: string;
+  status: string;
+  contentStatus: AdminBattleContentStatus;
+  createdAt: string;
+  endsAt: string;
+  participantCount: number;
+  totalVotes: number;
+}
+
+export type AdminUserRole = typeof AdminUserRole[keyof typeof AdminUserRole];
+
+
+export const AdminUserRole = {
+  USER: 'USER',
+  ADMIN: 'ADMIN',
+} as const;
+
+export type AdminUserStatus = typeof AdminUserStatus[keyof typeof AdminUserStatus];
+
+
+export const AdminUserStatus = {
+  ACTIVE: 'ACTIVE',
+  BLOCKED: 'BLOCKED',
+  DELETED: 'DELETED',
+} as const;
+
+export type AdminUserSubscriptionStatus = typeof AdminUserSubscriptionStatus[keyof typeof AdminUserSubscriptionStatus];
+
+
+export const AdminUserSubscriptionStatus = {
+  NOT_CONNECTED: 'NOT_CONNECTED',
+} as const;
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  displayName: string;
+  country: string;
+  avatarUrl: string;
+  role: AdminUserRole;
+  status: AdminUserStatus;
+  createdAt: string;
+  updatedAt: string;
+  lastActiveAt: string;
+  xp: number;
+  wins: number;
+  losses: number;
+  league: string;
+  subscriptionStatus: AdminUserSubscriptionStatus;
+}
+
+export interface AdminOverview {
+  range: string;
+  generatedAt: string;
+  kpis: AdminOverviewKpis;
+  trend: TimeSeriesPoint[];
+  topBattles: AdminBattle[];
+  topUsers: AdminUser[];
+  dataAvailability: AdminOverviewDataAvailability;
+}
+
+export interface AdminAuditLog {
+  id: string;
+  actorProfileId: string;
+  action: string;
+  targetType: string;
+  targetId?: string | null;
+  result: string;
+  reason?: string | null;
+  createdAt: string;
+}
+
+export type AdminUserDetail = AdminUser & {
+  email: string;
+  activity: Activity[];
+  audit: AdminAuditLog[];
+};
+
+export interface AdminUserPage {
+  items: AdminUser[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export type AdminUserUpdateAction = typeof AdminUserUpdateAction[keyof typeof AdminUserUpdateAction];
+
+
+export const AdminUserUpdateAction = {
+  BLOCK: 'BLOCK',
+  UNBLOCK: 'UNBLOCK',
+  CHANGE_ROLE: 'CHANGE_ROLE',
+  RESET_STATS: 'RESET_STATS',
+} as const;
+
+export type AdminUserUpdateRole = typeof AdminUserUpdateRole[keyof typeof AdminUserUpdateRole];
+
+
+export const AdminUserUpdateRole = {
+  USER: 'USER',
+  ADMIN: 'ADMIN',
+} as const;
+
+export interface AdminUserUpdate {
+  action: AdminUserUpdateAction;
+  role?: AdminUserUpdateRole;
+  /**
+     * @minLength 3
+     * @maxLength 500
+     */
+  reason: string;
+  confirmation: string;
+}
+
+export interface AdminDeleteUserInput {
+  confirmation: string;
+  /**
+     * @minLength 3
+     * @maxLength 500
+     */
+  reason: string;
+}
+
+export interface AdminBattlePage {
+  items: AdminBattle[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export type AdminBattleUpdateContentStatus = typeof AdminBattleUpdateContentStatus[keyof typeof AdminBattleUpdateContentStatus];
+
+
+export const AdminBattleUpdateContentStatus = {
+  ACTIVE: 'ACTIVE',
+  HIDDEN: 'HIDDEN',
+  REMOVED: 'REMOVED',
+} as const;
+
+export interface AdminBattleUpdate {
+  contentStatus: AdminBattleUpdateContentStatus;
+  /**
+     * @minLength 3
+     * @maxLength 500
+     */
+  reason: string;
+  confirmation: string;
+}
+
+export type ReportInputTargetType = typeof ReportInputTargetType[keyof typeof ReportInputTargetType];
+
+
+export const ReportInputTargetType = {
+  USER: 'USER',
+  BATTLE: 'BATTLE',
+  CONTENT: 'CONTENT',
+} as const;
+
+export interface ReportInput {
+  targetType: ReportInputTargetType;
+  targetId: string;
+  /**
+     * @minLength 3
+     * @maxLength 120
+     */
+  reason: string;
+  /** @maxLength 1000 */
+  description?: string;
+}
+
+export type AdminReportStatus = typeof AdminReportStatus[keyof typeof AdminReportStatus];
+
+
+export const AdminReportStatus = {
+  NEW: 'NEW',
+  IN_PROGRESS: 'IN_PROGRESS',
+  RESOLVED: 'RESOLVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export type AdminReportPriority = typeof AdminReportPriority[keyof typeof AdminReportPriority];
+
+
+export const AdminReportPriority = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  CRITICAL: 'CRITICAL',
+} as const;
+
+export interface AdminReport {
+  id: string;
+  reporterProfileId: string;
+  targetType: string;
+  targetId: string;
+  reason: string;
+  description: string;
+  status: AdminReportStatus;
+  priority: AdminReportPriority;
+  assignedAdminId?: string | null;
+  resolutionNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminReportPage {
+  items: AdminReport[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export type AdminReportUpdateStatus = typeof AdminReportUpdateStatus[keyof typeof AdminReportUpdateStatus];
+
+
+export const AdminReportUpdateStatus = {
+  NEW: 'NEW',
+  IN_PROGRESS: 'IN_PROGRESS',
+  RESOLVED: 'RESOLVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export type AdminReportUpdatePriority = typeof AdminReportUpdatePriority[keyof typeof AdminReportUpdatePriority];
+
+
+export const AdminReportUpdatePriority = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  CRITICAL: 'CRITICAL',
+} as const;
+
+export interface AdminReportUpdate {
+  status: AdminReportUpdateStatus;
+  priority: AdminReportUpdatePriority;
+  assignToSelf?: boolean;
+  /** @maxLength 1000 */
+  resolutionNote?: string;
+}
+
+export interface AdminAuditPage {
+  items: AdminAuditLog[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface AdminAnalytics {
+  range: string;
+  dau: number;
+  mau: number;
+  registrations: number;
+  battles: number;
+  submissions: number;
+  retention: number | null;
+  trend: TimeSeriesPoint[];
+}
+
+export type AdminNotificationSeverity = typeof AdminNotificationSeverity[keyof typeof AdminNotificationSeverity];
+
+
+export const AdminNotificationSeverity = {
+  INFO: 'INFO',
+  WARNING: 'WARNING',
+  CRITICAL: 'CRITICAL',
+} as const;
+
+export interface AdminNotification {
+  id: string;
+  kind: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  severity: AdminNotificationSeverity;
+}
+
+export interface AdminSettings {
+  maintenanceMode: boolean;
+  registrationsEnabled: boolean;
+  moderationAutoAssign: boolean;
+  adminNotificationsEnabled: boolean;
+  updatedBy?: string | null;
+  updatedAt: string;
+}
+
+export interface AdminSettingsUpdate {
+  maintenanceMode?: boolean;
+  registrationsEnabled?: boolean;
+  moderationAutoAssign?: boolean;
+  adminNotificationsEnabled?: boolean;
+  confirmation: string;
+}
+
+export interface AdminMonetization {
+  connected: boolean;
+  provider: string | null;
+  activeSubscriptions: number | null;
+  cancelledSubscriptions: number | null;
+  revenue: number | null;
+  mrr: number | null;
+  topPlan: string | null;
+  message: string;
+}
+
+export interface ActionResult {
+  success: boolean;
+  message: string;
+}
+
 export interface IdeaInput {
   /** @minLength 2 */
   topic: string;
@@ -167,6 +518,21 @@ export interface IdeaInput {
 export interface IdeaResponse {
   ideas: string[];
 }
+
+export type PageParameter = number;
+
+export type PageSizeParameter = number;
+
+export type AdminRangeParameter = typeof AdminRangeParameter[keyof typeof AdminRangeParameter];
+
+
+export const AdminRangeParameter = {
+  '24h': '24h',
+  '7d': '7d',
+  '30d': '30d',
+  '90d': '90d',
+  all: 'all',
+} as const;
 
 export type ListBattlesParams = {
 category?: string;
@@ -203,4 +569,104 @@ export const GetLeaderboardPeriod = {
   monthly: 'monthly',
   'all-time': 'all-time',
 } as const;
+
+export type GetAdminOverviewParams = {
+range?: AdminRangeParameter;
+};
+
+export type ListAdminUsersParams = {
+/**
+ * @minimum 1
+ */
+page?: PageParameter;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParameter;
+search?: string;
+role?: ListAdminUsersRole;
+status?: ListAdminUsersStatus;
+sort?: ListAdminUsersSort;
+order?: ListAdminUsersOrder;
+};
+
+export type ListAdminUsersRole = typeof ListAdminUsersRole[keyof typeof ListAdminUsersRole];
+
+
+export const ListAdminUsersRole = {
+  USER: 'USER',
+  ADMIN: 'ADMIN',
+} as const;
+
+export type ListAdminUsersStatus = typeof ListAdminUsersStatus[keyof typeof ListAdminUsersStatus];
+
+
+export const ListAdminUsersStatus = {
+  ACTIVE: 'ACTIVE',
+  BLOCKED: 'BLOCKED',
+  DELETED: 'DELETED',
+} as const;
+
+export type ListAdminUsersSort = typeof ListAdminUsersSort[keyof typeof ListAdminUsersSort];
+
+
+export const ListAdminUsersSort = {
+  createdAt: 'createdAt',
+  lastActiveAt: 'lastActiveAt',
+  xp: 'xp',
+  username: 'username',
+} as const;
+
+export type ListAdminUsersOrder = typeof ListAdminUsersOrder[keyof typeof ListAdminUsersOrder];
+
+
+export const ListAdminUsersOrder = {
+  asc: 'asc',
+  desc: 'desc',
+} as const;
+
+export type ListAdminBattlesParams = {
+/**
+ * @minimum 1
+ */
+page?: PageParameter;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParameter;
+search?: string;
+status?: string;
+};
+
+export type ListAdminReportsParams = {
+/**
+ * @minimum 1
+ */
+page?: PageParameter;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParameter;
+status?: string;
+priority?: string;
+};
+
+export type ListAdminAuditParams = {
+/**
+ * @minimum 1
+ */
+page?: PageParameter;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: PageSizeParameter;
+};
+
+export type GetAdminAnalyticsParams = {
+range?: AdminRangeParameter;
+};
 

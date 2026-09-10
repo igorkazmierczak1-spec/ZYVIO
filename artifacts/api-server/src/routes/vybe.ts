@@ -6,8 +6,11 @@ import {
   battleParticipantsTable,
   battlesTable,
   notificationsTable,
+  moderationReportsTable,
+  appSettingsTable,
   profilesTable,
   votesTable,
+  userActivityEventsTable,
   type Activity,
   type Battle,
   type Profile,
@@ -32,6 +35,8 @@ import {
   UpdateProfileResponse,
   VoteBattleBody,
   VoteBattleParams,
+  CreateReportBody,
+  CreateReportResponse,
 } from "@workspace/api-zod";
 import {
   currentUserFrom,
@@ -41,6 +46,37 @@ import {
 const router: IRouter = Router();
 
 router.use(requireAuthenticatedUser);
+
+router.post("/reports", async (req, res, next) => {
+  try {
+    const parsed = CreateReportBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+    const profile = currentUserFrom(res);
+    const [settings] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.id, "global"));
+    const [admin] = settings?.moderationAutoAssign
+      ? await db.select({ id: profilesTable.id }).from(profilesTable).where(and(eq(profilesTable.role, "ADMIN"), eq(profilesTable.status, "ACTIVE"))).limit(1)
+      : [undefined];
+    const [report] = await db.insert(moderationReportsTable).values({
+      id: `report-${crypto.randomUUID()}`,
+      reporterProfileId: profile.id,
+      targetType: parsed.data.targetType,
+      targetId: parsed.data.targetId,
+      reason: parsed.data.reason,
+      description: parsed.data.description ?? "",
+      assignedAdminId: admin?.id,
+    }).returning();
+    if (!report) {
+      res.status(500).json({ error: "Report creation failed" });
+      return;
+    }
+    res.status(201).json(CreateReportResponse.parse(report));
+  } catch (error) {
+    next(error);
+  }
+});
 
 function summary(profile: Profile) {
   return {
@@ -64,7 +100,7 @@ async function serializeBattle(battle: Battle, currentUserId: string) {
       ? await db
           .select()
           .from(profilesTable)
-          .where(inArray(profilesTable.id, entries.map((entry) => entry.profileId)))
+          .where(and(inArray(profilesTable.id, entries.map((entry) => entry.profileId)), eq(profilesTable.status, "ACTIVE")))
       : [];
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
   const participants = entries.flatMap((entry) => {
@@ -104,6 +140,7 @@ async function listSerializedBattles(
   const filters = [];
   if (category) filters.push(eq(battlesTable.category, category));
   if (status) filters.push(eq(battlesTable.status, status));
+  filters.push(eq(battlesTable.contentStatus, "ACTIVE"));
   const battles = await db
     .select()
     .from(battlesTable)
@@ -122,7 +159,9 @@ async function buildLeaderboard(
   const rows = await db
     .select()
     .from(profilesTable)
-    .where(scope === "country" ? eq(profilesTable.country, profile.country) : undefined)
+    .where(scope === "country"
+      ? and(eq(profilesTable.country, profile.country), eq(profilesTable.status, "ACTIVE"))
+      : eq(profilesTable.status, "ACTIVE"))
     .orderBy(desc(profilesTable.xp))
     .limit(100);
   const entries = rows.map((row, index) => ({
@@ -226,6 +265,7 @@ router.post("/battles", async (req, res, next) => {
         prompt: parsed.data.prompt,
         endsAt: new Date(parsed.data.endsAt),
         maxParticipants: parsed.data.maxParticipants ?? 8,
+        creatorProfileId: profile.id,
       })
       .returning();
     if (!battle) throw new Error("Battle creation failed");
@@ -247,7 +287,7 @@ router.get("/battles/:battleId", async (req, res, next) => {
     const [battle] = await db
       .select()
       .from(battlesTable)
-      .where(eq(battlesTable.id, parsed.data.battleId));
+      .where(and(eq(battlesTable.id, parsed.data.battleId), eq(battlesTable.contentStatus, "ACTIVE")));
     if (!battle) {
       res.status(404).json({ error: "Battle not found" });
       return;
@@ -272,7 +312,7 @@ router.post("/battles/:battleId", async (req, res, next) => {
     const [battle] = await db
       .select()
       .from(battlesTable)
-      .where(eq(battlesTable.id, parsed.data.battleId));
+      .where(and(eq(battlesTable.id, parsed.data.battleId), eq(battlesTable.contentStatus, "ACTIVE")));
     if (!battle) {
       res.status(404).json({ error: "Battle not found" });
       return;
@@ -311,58 +351,45 @@ router.post("/battles/:battleId/vote", async (req, res, next) => {
       return;
     }
     const profile = currentUserFrom(res);
-    const [participant] = await db
-      .select()
-      .from(battleParticipantsTable)
-      .where(
-        and(
-          eq(battleParticipantsTable.id, body.data.participantId),
-          eq(battleParticipantsTable.battleId, params.data.battleId),
-        ),
-      );
-    if (!participant) {
-      res.status(404).json({ error: "Participant not found" });
-      return;
+    try {
+      const result = await db.transaction(async (tx) => {
+        await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${params.data.battleId} for update`);
+        const [activeBattle] = await tx.select().from(battlesTable).where(and(eq(battlesTable.id, params.data.battleId), eq(battlesTable.contentStatus, "ACTIVE")));
+        if (!activeBattle) return { error: "Battle not found", status: 404 as const };
+        const [participant] = await tx
+          .select()
+          .from(battleParticipantsTable)
+          .where(and(eq(battleParticipantsTable.id, body.data.participantId), eq(battleParticipantsTable.battleId, params.data.battleId)));
+        if (!participant) return { error: "Participant not found", status: 404 as const };
+        if (participant.profileId === profile.id) return { error: "You cannot vote for your own entry", status: 400 as const };
+        await tx.insert(votesTable).values({
+          id: `vote-${crypto.randomUUID()}`,
+          battleId: params.data.battleId,
+          participantId: participant.id,
+          voterProfileId: profile.id,
+        });
+        await tx.update(battleParticipantsTable).set({
+          votes: sql`${battleParticipantsTable.votes} + 1`,
+          score: sql`${battleParticipantsTable.score} + 3`,
+        }).where(eq(battleParticipantsTable.id, participant.id));
+        return { battle: activeBattle };
+      });
+      if ("error" in result && result.error) {
+        res.status(result.status ?? 400).json({ error: result.error });
+        return;
+      }
+      if (!("battle" in result) || !result.battle) {
+        res.status(409).json({ error: "Vote could not be completed" });
+        return;
+      }
+      res.json(await serializeBattle(result.battle, profile.id));
+    } catch (error) {
+      if (error && typeof error === "object" && "code" in error && error.code === "23505") {
+        res.status(409).json({ error: "You already voted in this battle" });
+        return;
+      }
+      throw error;
     }
-    if (participant.profileId === profile.id) {
-      res.status(400).json({ error: "You cannot vote for your own entry" });
-      return;
-    }
-    const alreadyVoted = await db
-      .select({ id: votesTable.id })
-      .from(votesTable)
-      .where(
-        and(
-          eq(votesTable.battleId, params.data.battleId),
-          eq(votesTable.voterProfileId, profile.id),
-        ),
-      );
-    if (alreadyVoted.length) {
-      res.status(409).json({ error: "You already voted in this battle" });
-      return;
-    }
-    await db.insert(votesTable).values({
-      id: `vote-${crypto.randomUUID()}`,
-      battleId: params.data.battleId,
-      participantId: participant.id,
-      voterProfileId: profile.id,
-    });
-    await db
-      .update(battleParticipantsTable)
-      .set({
-        votes: sql`${battleParticipantsTable.votes} + 1`,
-        score: sql`${battleParticipantsTable.score} + 3`,
-      })
-      .where(eq(battleParticipantsTable.id, participant.id));
-    const [battle] = await db
-      .select()
-      .from(battlesTable)
-      .where(eq(battlesTable.id, params.data.battleId));
-    if (!battle) {
-      res.status(404).json({ error: "Battle not found" });
-      return;
-    }
-    res.json(await serializeBattle(battle, profile.id));
   } catch (error) {
     next(error);
   }
