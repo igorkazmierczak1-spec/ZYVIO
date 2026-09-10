@@ -98,6 +98,33 @@ function stripBase(path: string): string {
     : path;
 }
 
+function LogoutButton({ compact = false }: { compact?: boolean }) {
+  const { signOut } = useClerk();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    queryClient.clear();
+    try {
+      await signOut({ redirectUrl: `${basePath}/sign-in` });
+    } catch {
+      setIsSigningOut(false);
+      toast({
+        title: "Nie udało się wylogować",
+        description: "Spróbuj ponownie za chwilę.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (compact) {
+    return <button type="button" className="logout-button" onClick={handleLogout} disabled={isSigningOut}>{isSigningOut ? <Loader2 className="spin" /> : <LogOut />} {isSigningOut ? "Wylogowywanie..." : "Wyloguj"}</button>;
+  }
+
+  return <Button type="button" variant="secondary" className="profile-logout-button" onClick={handleLogout} disabled={isSigningOut}>{isSigningOut ? <Loader2 className="spin" /> : <LogOut />} {isSigningOut ? "Wylogowywanie..." : "Wyloguj"}</Button>;
+}
+
 const clerkAppearance = {
   theme: shadcn,
   cssLayerName: "clerk",
@@ -187,7 +214,6 @@ function AppShell({ children }: { children: ReactNode }) {
   const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data: profile } = useGetProfile();
-  const { signOut } = useClerk();
   const navItems = [
     { href: "/", label: "Home", icon: LayoutDashboard },
     { href: "/battles", label: "Discover", icon: Compass },
@@ -239,9 +265,7 @@ function AppShell({ children }: { children: ReactNode }) {
           <span><strong>{profile?.displayName ?? "Igor Paradowski"}</strong><small>@{profile?.username ?? "igor"}</small></span>
           <ChevronRight />
         </button>
-        <button className="logout-button" onClick={() => signOut({ redirectUrl: basePath || "/" })}>
-          <LogOut /> Log out
-        </button>
+        <LogoutButton compact />
       </aside>
       {sidebarOpen && <button className="sidebar-backdrop" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
       <main className="main-content">
@@ -359,11 +383,12 @@ function LeaderboardPage() {
 
 function ProfilePage() {
   const profile = useGetProfile();
+  const [, navigate] = useLocation();
   const data = profile.data as Profile | undefined;
   if (profile.isLoading) return <LoadingState />;
   if (profile.isError || !data) return <ErrorState onRetry={() => void profile.refetch()} />;
   const winRate = Math.round(data.wins / Math.max(1, data.wins + data.losses) * 100);
-  return <div><PageHeader eyebrow="Your profile" title="Build your legend" action={<Button variant="secondary" onClick={() => window.location.href = "/settings"}><Settings2 /> Edit profile</Button>} /><section className="profile-hero panel"><div className="profile-identity"><Avatar name={data.displayName} size="lg" /><div><span className="eyebrow">@{data.username}</span><h2>{data.displayName}</h2><p>{data.bio}</p><div className="profile-meta"><span><Globe2 /> {data.country}</span><span><Crown /> {data.league} league</span></div></div></div><div className="profile-rank"><span className="eyebrow">Global rank</span><strong>#{data.rank}</strong><small>Up 12 this week</small></div></section><div className="profile-stat-grid"><StatCard icon={Zap} label="Total XP" value={data.xp.toLocaleString()} detail={`Level ${data.level}`} accent="lime" /><StatCard icon={Trophy} label="Wins" value={data.wins} detail={`${winRate}% win rate`} accent="violet" /><StatCard icon={Flame} label="Streak" value={`${data.streak} days`} detail="Personal best" accent="coral" /><StatCard icon={Swords} label="Battles" value={data.wins + data.losses} detail={`${data.losses} losses`} accent="cyan" /></div><section className="panel badges-panel"><div className="panel-heading"><div><span className="eyebrow">Proof of play</span><h2>Badges & achievements</h2></div><span className="badge-count">{data.badges.length} unlocked</span></div><div className="badge-grid">{data.badges.map((badge) => <div className="achievement" key={badge}><div className="achievement-icon"><Check /></div><strong>{badge}</strong><small>Achievement unlocked</small></div>)}</div></section></div>;
+  return <div><PageHeader eyebrow="Your profile" title="Build your legend" action={<div className="profile-actions"><Button variant="secondary" onClick={() => navigate("/settings")}><Settings2 /> Edit profile</Button><LogoutButton /></div>} /><section className="profile-hero panel"><div className="profile-identity"><Avatar name={data.displayName} size="lg" /><div><span className="eyebrow">@{data.username}</span><h2>{data.displayName}</h2><p>{data.bio}</p><div className="profile-meta"><span><Globe2 /> {data.country}</span><span><Crown /> {data.league} league</span></div></div></div><div className="profile-rank"><span className="eyebrow">Global rank</span><strong>#{data.rank}</strong><small>Up 12 this week</small></div></section><div className="profile-stat-grid"><StatCard icon={Zap} label="Total XP" value={data.xp.toLocaleString()} detail={`Level ${data.level}`} accent="lime" /><StatCard icon={Trophy} label="Wins" value={data.wins} detail={`${winRate}% win rate`} accent="violet" /><StatCard icon={Flame} label="Streak" value={`${data.streak} days`} detail="Personal best" accent="coral" /><StatCard icon={Swords} label="Battles" value={data.wins + data.losses} detail={`${data.losses} losses`} accent="cyan" /></div><section className="panel badges-panel"><div className="panel-heading"><div><span className="eyebrow">Proof of play</span><h2>Badges & achievements</h2></div><span className="badge-count">{data.badges.length} unlocked</span></div><div className="badge-grid">{data.badges.map((badge) => <div className="achievement" key={badge}><div className="achievement-icon"><Check /></div><strong>{badge}</strong><small>Achievement unlocked</small></div>)}</div></section></div>;
 }
 
 function NotificationsPage() {
@@ -392,7 +417,7 @@ function SettingsPage() {
   const [battleReminders, setBattleReminders] = useState(true);
   if (!profile.data) return <LoadingState />;
   const data = profile.data;
-  return <div><PageHeader eyebrow="Settings" title="Make VYBE yours" description="Language, privacy, and the details people see when you enter a room." /><div className="settings-grid"><section className="panel settings-panel"><div className="settings-heading"><div className="setting-symbol"><Languages /></div><div><h2>Language & region</h2><p>Choose how VYBE speaks to you.</p></div></div><label>Interface language<select value={language} onChange={(event) => { setLanguage(event.target.value); localStorage.setItem("vybe-language", event.target.value); }}><option value="en">English</option><option value="pl">Polski</option></select></label><label>Country<select defaultValue={data.country} onChange={(event) => update.mutate({ data: { country: event.target.value } })}><option>PL</option><option>US</option><option>GB</option><option>DE</option><option>FR</option></select></label></section><section className="panel settings-panel"><div className="settings-heading"><div className="setting-symbol"><UserRound /></div><div><h2>Profile details</h2><p>Keep your public identity fresh.</p></div></div><label>Display name<input defaultValue={data.displayName} onBlur={(event) => update.mutate({ data: { displayName: event.target.value } })} /></label><label>Bio<textarea defaultValue={data.bio} rows={3} onBlur={(event) => update.mutate({ data: { bio: event.target.value } })} /></label></section><section className="panel settings-panel"><div className="settings-heading"><div className="setting-symbol"><ShieldIcon /></div><div><h2>Privacy & safety</h2><p>You decide what gets shared.</p></div></div><div className="setting-toggle"><span><strong>Public profile</strong><small>Let new creators discover your profile</small></span><button aria-pressed={publicProfile} className={`toggle ${publicProfile ? "on" : ""}`} onClick={() => setPublicProfile((current) => !current)}><span /></button></div><div className="setting-toggle"><span><strong>Battle reminders</strong><small>Get notified when a round is ending</small></span><button aria-pressed={battleReminders} className={`toggle ${battleReminders ? "on" : ""}`} onClick={() => setBattleReminders((current) => !current)}><span /></button></div></section></div></div>;
+  return <div><PageHeader eyebrow="Settings" title="Make VYBE yours" description="Language, privacy, and the details people see when you enter a room." /><div className="settings-grid"><section className="panel settings-panel"><div className="settings-heading"><div className="setting-symbol"><Languages /></div><div><h2>Language & region</h2><p>Choose how VYBE speaks to you.</p></div></div><label>Interface language<select value={language} onChange={(event) => { setLanguage(event.target.value); localStorage.setItem("vybe-language", event.target.value); }}><option value="en">English</option><option value="pl">Polski</option></select></label><label>Country<select defaultValue={data.country} onChange={(event) => update.mutate({ data: { country: event.target.value } })}><option>PL</option><option>US</option><option>GB</option><option>DE</option><option>FR</option></select></label></section><section className="panel settings-panel"><div className="settings-heading"><div className="setting-symbol"><UserRound /></div><div><h2>Profile details</h2><p>Keep your public identity fresh.</p></div></div><label>Display name<input defaultValue={data.displayName} onBlur={(event) => update.mutate({ data: { displayName: event.target.value } })} /></label><label>Bio<textarea defaultValue={data.bio} rows={3} onBlur={(event) => update.mutate({ data: { bio: event.target.value } })} /></label></section><section className="panel settings-panel"><div className="settings-heading"><div className="setting-symbol"><ShieldIcon /></div><div><h2>Privacy & safety</h2><p>You decide what gets shared.</p></div></div><div className="setting-toggle"><span><strong>Public profile</strong><small>Let new creators discover your profile</small></span><button aria-pressed={publicProfile} className={`toggle ${publicProfile ? "on" : ""}`} onClick={() => setPublicProfile((current) => !current)}><span /></button></div><div className="setting-toggle"><span><strong>Battle reminders</strong><small>Get notified when a round is ending</small></span><button aria-pressed={battleReminders} className={`toggle ${battleReminders ? "on" : ""}`} onClick={() => setBattleReminders((current) => !current)}><span /></button></div></section><section className="panel settings-panel settings-account-panel"><div className="settings-heading"><div className="setting-symbol account-symbol"><LogOut /></div><div><h2>Sesja konta</h2><p>Wyloguj się z VYBE na tym urządzeniu.</p></div></div><LogoutButton /></section></div></div>;
 }
 
 function ShieldIcon() { return <CircleDollarSign />; }
