@@ -3,11 +3,6 @@ import { db, profilesTable, type Profile } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import type { Request, RequestHandler, Response } from "express";
 
-function configuredAdminUserId(): string | undefined {
-  const value = process.env.VYBE_ADMIN_USER_ID?.trim();
-  return value || undefined;
-}
-
 function usernameFromEmail(email: string, userId: string): string {
   const base =
     email
@@ -30,16 +25,7 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
     .from(profilesTable)
     .where(eq(profilesTable.id, userId));
 
-  const shouldBeAdmin = configuredAdminUserId() === userId;
   if (existing) {
-    if (shouldBeAdmin && existing.role !== "ADMIN") {
-      const [promoted] = await db
-        .update(profilesTable)
-        .set({ role: "ADMIN", updatedAt: new Date() })
-        .where(eq(profilesTable.id, userId))
-        .returning();
-      return promoted ?? existing;
-    }
     return existing;
   }
 
@@ -66,7 +52,7 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
       displayName,
       country: "PL",
       avatarUrl: clerkUser.imageUrl ?? "",
-      role: shouldBeAdmin ? "ADMIN" : "USER",
+      role: "USER",
       authProvider: "clerk",
     })
     .onConflictDoNothing();

@@ -54,6 +54,7 @@ import {
   Search,
   Settings2,
   Share2,
+  ShieldCheck,
   Sparkles,
   Sun,
   Swords,
@@ -226,6 +227,9 @@ function AppShell({ children }: { children: ReactNode }) {
     { href: "/ai", label: "VYBE AI", icon: Bot },
     { href: "/premium", label: "Premium", icon: Crown },
     { href: "/settings", label: "Settings", icon: Settings2 },
+    ...(profile?.role === "ADMIN"
+      ? [{ href: "/admin", label: "Panel administratora", icon: ShieldCheck }]
+      : []),
   ];
   const isCurrent = (href: string) => href === "/" ? location === "/" : location.startsWith(href);
 
@@ -261,8 +265,8 @@ function AppShell({ children }: { children: ReactNode }) {
           <div className="season-progress"><span style={{ width: "68%" }} /></div>
         </div>
         <button className="sidebar-profile" onClick={() => navigate("/profile")}>
-          <Avatar name={profile?.displayName ?? "Igor Paradowski"} size="sm" />
-          <span><strong>{profile?.displayName ?? "Igor Paradowski"}</strong><small>@{profile?.username ?? "igor"}</small></span>
+          <Avatar name={profile?.displayName ?? "VYBE User"} size="sm" />
+          <span><strong>{profile?.displayName ?? "VYBE User"}</strong><small>@{profile?.username ?? "account"}</small></span>
           <ChevronRight />
         </button>
         <LogoutButton compact />
@@ -275,7 +279,7 @@ function AppShell({ children }: { children: ReactNode }) {
           <div className="topbar-actions">
             <IconButton label="Toggle theme" onClick={() => document.documentElement.classList.toggle("dark")}><Moon /></IconButton>
             <IconButton label="Notifications" active={location === "/notifications"} onClick={() => navigate("/notifications")}><Bell /><span className="icon-dot" /></IconButton>
-            <button className="topbar-avatar" onClick={() => navigate("/profile")}><Avatar name={profile?.displayName ?? "Igor Paradowski"} size="sm" /></button>
+            <button className="topbar-avatar" onClick={() => navigate("/profile")}><Avatar name={profile?.displayName ?? "VYBE User"} size="sm" /></button>
           </div>
         </header>
         <div className="page-wrap">{children}</div>
@@ -441,7 +445,7 @@ function AdminRoute() {
   if (!profile.data || profile.data.role !== "ADMIN") {
     return <div className="empty-state error-state"><div className="empty-icon"><Crown /></div><h2>Administrator access required</h2><p>This route is available only to accounts with the backend role ADMIN.</p></div>;
   }
-  return <div><PageHeader eyebrow="Protected area" title="Admin access verified" description="Your ADMIN role was verified by the API. Administrative tools can be added in the next stage." /><section className="panel admin-status"><Crown /><div><strong>Backend authorization active</strong><p>Role: ADMIN · User ID: {profile.data.id}</p></div></section></div>;
+  return <div><PageHeader eyebrow="Panel administratora" title="Dostęp administratora aktywny" description="Ta strona jest widoczna wyłącznie dla kont z rolą ADMIN zweryfikowaną przez backend." /><section className="panel admin-status"><ShieldCheck /><div><strong>{profile.data.displayName}</strong><p>Rola konta: ADMIN · Autoryzacja Clerk aktywna</p></div></section></div>;
 }
 
 function ProtectedApplication() {
