@@ -25,6 +25,7 @@ import {
 } from "@workspace/api-client-react";
 import type { SocialConversation, SocialMessage } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
@@ -158,6 +159,7 @@ function MessageBubble({ message, own }: { message: SocialMessage; own: boolean 
 
 export default function MessagesPage() {
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const profile = useGetProfile({
     query: {
       queryKey: getGetProfileQueryKey(),
@@ -173,7 +175,7 @@ export default function MessagesPage() {
   });
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [profileId, setProfileId] = useState("");
+  const [profileId, setProfileId] = useState(() => new URLSearchParams(window.location.search).get("profile") ?? "");
   const [messageBody, setMessageBody] = useState("");
   const [showStartForm, setShowStartForm] = useState(false);
 
@@ -358,7 +360,7 @@ export default function MessagesPage() {
                   <h2>{activeConversation.otherParticipant.displayName}</h2>
                   <span>@{activeConversation.otherParticipant.username}</span>
                 </div>
-                <button type="button" className="messages-profile-link" onClick={() => toast({ title: "Creator profile", description: `@${activeConversation.otherParticipant.username} profile link is coming soon.` })}>
+                 <button type="button" className="messages-profile-link" onClick={() => navigate(`/profile/${activeConversation.otherParticipant.id}`)}>
                   <UserRound /> View profile
                 </button>
               </header>

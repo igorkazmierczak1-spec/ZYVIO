@@ -60,6 +60,7 @@ import {
   Moon,
   Plus,
   Search,
+  Send,
   Settings2,
   Share2,
   ShieldCheck,
@@ -91,6 +92,7 @@ import NotFound from "@/pages/not-found";
 import { AdminDashboardPage } from "@/pages/admin-dashboard";
 import PremiumPage from "@/pages/premium";
 import { SocialFeedPage, SocialPostPage, SocialProfilePage } from "@/pages/social";
+import MessagesPage from "@/pages/messages";
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -244,6 +246,7 @@ function AppShell({ children }: { children: ReactNode }) {
   const hasUnreadNotifications = notifications?.some((notification) => !notification.read) ?? false;
   const navItems = [
     { href: "/feed", label: "Feed", icon: MessageCircle },
+    { href: "/messages", label: "Messages", icon: Send },
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
     { href: "/battles", label: "Discover", icon: Compass },
     { href: "/battles/new", label: "Create battle", icon: Plus },
@@ -573,7 +576,7 @@ function ProtectedApplication() {
     <Show when="signed-in">
       {location === "/admin"
         ? <ErrorBoundary><AdminRoute /></ErrorBoundary>
-        : <AppShell><ErrorBoundary><Switch><Route path="/feed/:id" component={SocialPostPage} /><Route path="/feed" component={SocialFeedPage} /><Route path="/profile/:id" component={SocialProfilePage} /><Route path="/" component={DashboardPage} /><Route path="/battles" component={DiscoverPage} /><Route path="/battles/new" component={CreateBattlePage} /><Route path="/battles/:id" component={BattleDetailPage} /><Route path="/leaderboard" component={LeaderboardPage} /><Route path="/profile" component={ProfilePage} /><Route path="/notifications" component={NotificationsPage} /><Route path="/ai" component={AiPage} /><Route path="/premium" component={PremiumPage} /><Route path="/settings" component={SettingsPage} /><Route component={NotFound} /></Switch></ErrorBoundary></AppShell>}
+        : <AppShell><ErrorBoundary><Switch><Route path="/feed/:id" component={SocialPostPage} /><Route path="/feed" component={SocialFeedPage} /><Route path="/messages" component={MessagesPage} /><Route path="/profile/:id" component={SocialProfilePage} /><Route path="/" component={DashboardPage} /><Route path="/battles" component={DiscoverPage} /><Route path="/battles/new" component={CreateBattlePage} /><Route path="/battles/:id" component={BattleDetailPage} /><Route path="/leaderboard" component={LeaderboardPage} /><Route path="/profile" component={ProfilePage} /><Route path="/notifications" component={NotificationsPage} /><Route path="/ai" component={AiPage} /><Route path="/premium" component={PremiumPage} /><Route path="/settings" component={SettingsPage} /><Route component={NotFound} /></Switch></ErrorBoundary></AppShell>}
     </Show>
     <Show when="signed-out"><Redirect to="/sign-in" /></Show>
   </>;
