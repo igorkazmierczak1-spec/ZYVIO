@@ -31,11 +31,14 @@ export const profilesTable = pgTable("vybe_profiles", {
   bio: text("bio").notNull().default(""),
   level: integer("level").notNull().default(1),
   xp: integer("xp").notNull().default(0),
+  rankingPoints: integer("ranking_points").notNull().default(0),
   wins: integer("wins").notNull().default(0),
   losses: integer("losses").notNull().default(0),
   rank: integer("rank").notNull().default(0),
   league: text("league").notNull().default("Bronze"),
   streak: integer("streak").notNull().default(0),
+  bestStreak: integer("best_streak").notNull().default(0),
+  activeDays: integer("active_days").notNull().default(0),
   badges: text("badges").array().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -76,6 +79,7 @@ export const battleParticipantsTable = pgTable(
       table.battleId,
       table.profileId,
     ),
+    battleIndex: index("vybe_battle_participants_battle_idx").on(table.battleId),
   }),
 );
 
@@ -93,18 +97,25 @@ export const votesTable = pgTable(
       table.battleId,
       table.voterProfileId,
     ),
+    battleIndex: index("vybe_votes_battle_idx").on(table.battleId),
   }),
 );
 
-export const notificationsTable = pgTable("vybe_notifications", {
-  id: text("id").primaryKey(),
-  profileId: text("profile_id").notNull(),
-  kind: text("kind").notNull(),
-  title: text("title").notNull(),
-  body: text("body").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  read: boolean("read").notNull().default(false),
-});
+export const notificationsTable = pgTable(
+  "vybe_notifications",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id").notNull(),
+    kind: text("kind").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    read: boolean("read").notNull().default(false),
+  },
+  (table) => ({
+    profileCreatedIndex: index("vybe_notifications_profile_created_idx").on(table.profileId, table.createdAt),
+  }),
+);
 
 export const activitiesTable = pgTable("vybe_activities", {
   id: text("id").primaryKey(),
@@ -201,6 +212,37 @@ export const stripeWebhookEventsTable = pgTable("vybe_stripe_webhook_events", {
   processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const battleResultsTable = pgTable(
+  "vybe_battle_results",
+  {
+    id: text("id").primaryKey(),
+    battleId: text("battle_id").notNull(),
+    winnerParticipantId: text("winner_participant_id").notNull(),
+    loserParticipantId: text("loser_participant_id").notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    battleUnique: uniqueIndex("vybe_battle_results_battle_unique").on(table.battleId),
+  }),
+);
+
+export const viralRewardEventsTable = pgTable(
+  "vybe_viral_reward_events",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id").notNull(),
+    battleId: text("battle_id"),
+    kind: text("kind").notNull(),
+    xp: integer("xp").notNull().default(0),
+    rankingPoints: integer("ranking_points").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    rewardUnique: uniqueIndex("vybe_viral_reward_unique").on(table.profileId, table.battleId, table.kind),
+    profileCreatedIndex: index("vybe_viral_reward_profile_created_idx").on(table.profileId, table.createdAt),
+  }),
+);
+
 export const insertProfileSchema = createInsertSchema(profilesTable);
 export const insertBattleSchema = createInsertSchema(battlesTable);
 export const insertParticipantSchema = createInsertSchema(battleParticipantsTable);
@@ -213,6 +255,8 @@ export const insertModerationReportHistorySchema = createInsertSchema(moderation
 export const insertAdminAuditLogSchema = createInsertSchema(adminAuditLogsTable);
 export const insertAppSettingsSchema = createInsertSchema(appSettingsTable);
 export const insertStripeWebhookEventSchema = createInsertSchema(stripeWebhookEventsTable);
+export const insertBattleResultSchema = createInsertSchema(battleResultsTable);
+export const insertViralRewardEventSchema = createInsertSchema(viralRewardEventsTable);
 
 export type Profile = typeof profilesTable.$inferSelect;
 export type Battle = typeof battlesTable.$inferSelect;
@@ -226,5 +270,7 @@ export type ModerationReportHistory = typeof moderationReportHistoryTable.$infer
 export type AdminAuditLog = typeof adminAuditLogsTable.$inferSelect;
 export type AppSettings = typeof appSettingsTable.$inferSelect;
 export type StripeWebhookEvent = typeof stripeWebhookEventsTable.$inferSelect;
+export type BattleResult = typeof battleResultsTable.$inferSelect;
+export type ViralRewardEvent = typeof viralRewardEventsTable.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type InsertBattle = z.infer<typeof insertBattleSchema>;
