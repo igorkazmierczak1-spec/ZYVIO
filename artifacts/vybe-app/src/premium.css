@@ -70,10 +70,11 @@
   background: #fff;
   color: #1c1826;
 }
+.annual-label { color: #7f9d2d; font-size: 10px; margin-left: 4px; }
 
 .premium-plans-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -91,6 +92,35 @@
   color: #fff;
   box-shadow: 0 20px 50px rgba(28, 24, 38, 0.15);
 }
+.premium-plan-card.is-pro {
+  border-color: #9b78ff;
+  background: linear-gradient(145deg, #211537, #120f1d);
+  color: #fff;
+  box-shadow: 0 20px 50px rgba(100, 62, 180, 0.24);
+}
+.premium-plan-card.is-pro .premium-features li { color: #eee6ff; }
+.premium-plan-card.is-pro .premium-features svg { color: #d1a8ff; }
+.premium-plan-card.is-pro .price small { color: #c7b7e7; }
+.plan-badge {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(201,249,103,.18);
+  color: #6b8a16;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.is-premium .plan-badge { color: var(--lime); background: rgba(201,249,103,.13); }
+.is-pro .plan-badge { color: #e4c4ff; background: rgba(180,120,255,.18); }
+.plan-title-row { min-height: 28px; }
+.plan-description { min-height: 48px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.is-premium .plan-description, .is-pro .plan-description { color: #c7bdd7; }
+.annual-savings { color: #6b8a16; font-size: 11px; font-weight: 700; margin: -14px 0 14px; }
+.is-premium .annual-savings, .is-pro .annual-savings { color: var(--lime); }
+.price-unavailable { display: block; margin-top: 10px; color: #b15a4e; font-size: 11px; }
+.free-card .premium-features li { color: #4c4658; }
 .premium-plan-card h3 { font-size: 20px; margin-bottom: 8px; }
 .premium-plan-card .price { font-size: 42px; font-weight: 800; letter-spacing: -0.05em; margin: 16px 0 24px; }
 .premium-plan-card .price small { font-size: 14px; color: var(--muted); font-weight: 500; letter-spacing: 0; }
