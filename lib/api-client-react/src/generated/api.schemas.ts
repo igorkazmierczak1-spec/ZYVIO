@@ -504,11 +504,20 @@ export interface AdminMonetization {
   message: string;
 }
 
+export type PremiumPlanPlan = typeof PremiumPlanPlan[keyof typeof PremiumPlanPlan];
+
+
+export const PremiumPlanPlan = {
+  PREMIUM: 'PREMIUM',
+  PREMIUM_PRO: 'PREMIUM_PRO',
+} as const;
+
 export type PremiumPlanRecurring = { [key: string]: unknown } | null;
 
 export type PremiumPlanMetadata = { [key: string]: unknown };
 
 export interface PremiumPlan {
+  plan: PremiumPlanPlan;
   product_id: string;
   price_id: string;
   name?: string | null;
@@ -523,6 +532,14 @@ export interface PremiumPlansResponse {
   plans: PremiumPlan[];
 }
 
+export type PremiumCheckoutInputPlan = typeof PremiumCheckoutInputPlan[keyof typeof PremiumCheckoutInputPlan];
+
+
+export const PremiumCheckoutInputPlan = {
+  PREMIUM: 'PREMIUM',
+  PREMIUM_PRO: 'PREMIUM_PRO',
+} as const;
+
 export type PremiumCheckoutInputBillingPeriod = typeof PremiumCheckoutInputBillingPeriod[keyof typeof PremiumCheckoutInputBillingPeriod];
 
 
@@ -532,6 +549,7 @@ export const PremiumCheckoutInputBillingPeriod = {
 } as const;
 
 export interface PremiumCheckoutInput {
+  plan: PremiumCheckoutInputPlan;
   billingPeriod: PremiumCheckoutInputBillingPeriod;
 }
 
@@ -541,8 +559,18 @@ export interface CheckoutResponse {
 
 export type PremiumSubscriptionResponseSubscription = { [key: string]: unknown } | null;
 
+export type PremiumSubscriptionResponsePlan = typeof PremiumSubscriptionResponsePlan[keyof typeof PremiumSubscriptionResponsePlan];
+
+
+export const PremiumSubscriptionResponsePlan = {
+  FREE: 'FREE',
+  PREMIUM: 'PREMIUM',
+  PREMIUM_PRO: 'PREMIUM_PRO',
+} as const;
+
 export interface PremiumSubscriptionResponse {
   subscription: PremiumSubscriptionResponseSubscription;
+  plan: PremiumSubscriptionResponsePlan;
 }
 
 export type AdminBillingOverviewSubscriptionsItem = { [key: string]: unknown };

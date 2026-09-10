@@ -5,8 +5,10 @@
  * VYBE 2.0 global social competition platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { PremiumSubscriptionResponsePlan } from './premiumSubscriptionResponsePlan';
 import type { PremiumSubscriptionResponseSubscription } from './premiumSubscriptionResponseSubscription';
 
 export interface PremiumSubscriptionResponse {
   subscription: PremiumSubscriptionResponseSubscription;
+  plan: PremiumSubscriptionResponsePlan;
 }

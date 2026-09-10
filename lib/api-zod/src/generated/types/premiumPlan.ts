@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PremiumPlanMetadata } from './premiumPlanMetadata';
+import type { PremiumPlanPlan } from './premiumPlanPlan';
 import type { PremiumPlanRecurring } from './premiumPlanRecurring';
 
 export interface PremiumPlan {
+  plan: PremiumPlanPlan;
   product_id: string;
   price_id: string;
   name?: string | null;

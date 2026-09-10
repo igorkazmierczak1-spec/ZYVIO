@@ -955,6 +955,7 @@ export const GetAdminMonetizationResponse = zod.object({
 
 export const ListPremiumPlansResponse = zod.object({
   "plans": zod.array(zod.object({
+  "plan": zod.enum(['PREMIUM', 'PREMIUM_PRO']),
   "product_id": zod.string(),
   "price_id": zod.string(),
   "name": zod.string().nullish(),
@@ -968,11 +969,13 @@ export const ListPremiumPlansResponse = zod.object({
 
 
 export const GetPremiumSubscriptionResponse = zod.object({
-  "subscription": zod.record(zod.string(), zod.unknown()).nullable()
+  "subscription": zod.record(zod.string(), zod.unknown()).nullable(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO'])
 })
 
 
 export const CreatePremiumCheckoutBody = zod.object({
+  "plan": zod.enum(['PREMIUM', 'PREMIUM_PRO']),
   "billingPeriod": zod.enum(['MONTHLY', 'YEARLY'])
 })
 

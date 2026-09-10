@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PremiumCheckoutInputBillingPeriod } from './premiumCheckoutInputBillingPeriod';
+import type { PremiumCheckoutInputPlan } from './premiumCheckoutInputPlan';
 
 export interface PremiumCheckoutInput {
+  plan: PremiumCheckoutInputPlan;
   billingPeriod: PremiumCheckoutInputBillingPeriod;
 }
