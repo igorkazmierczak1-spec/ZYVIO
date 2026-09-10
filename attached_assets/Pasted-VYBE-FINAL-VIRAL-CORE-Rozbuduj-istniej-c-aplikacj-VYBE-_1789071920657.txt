@@ -1,0 +1,336 @@
+VYBE — FINAL VIRAL CORE 🚀
+
+Rozbuduj istniejącą aplikację VYBE o profesjonalny Viral Core. Najważniejsze: NIE usuwaj, NIE resetuj i NIE przepisuj od zera istniejących funkcji.
+
+Zachowaj bez zmian:
+
+- Clerk authentication i Google Login
+- profile użytkowników
+- role USER / ADMIN
+- panel administratora
+- PostgreSQL
+- istniejący Premium
+- istniejący Premium Pro
+- Stripe integration i obecne Price ID
+- obecne API
+- obecny system bezpieczeństwa
+
+Najpierw przeanalizuj istniejący kod, bazę danych i routing. Wykorzystaj istniejącą architekturę zamiast tworzyć równoległe systemy.
+
+1. BATTLE — GŁÓWNA FUNKCJA VYBE
+
+Stwórz dopracowany system Battle 1v1.
+
+Użytkownik może:
+
+- rozpocząć Battle,
+- wybrać kategorię,
+- zostać dopasowany z innym użytkownikiem,
+- zobaczyć przeciwnika,
+- głosować na zwycięzcę,
+- zobaczyć wynik,
+- zdobywać XP,
+- zdobywać punkty rankingowe.
+
+Kategorie powinny być przygotowane pod młodych użytkowników, np.:
+
+- Style
+- Music
+- Gaming
+- Fitness
+- Talent
+- Creativity
+- Personality
+- Fun
+
+Nie używaj fake wyników. Wyniki mają pochodzić z rzeczywistych działań użytkowników.
+
+Dodaj ochronę przed:
+
+- wielokrotnym głosowaniem,
+- spamem,
+- głosowaniem na własne konto,
+- sztucznym nabijaniem wyników.
+
+2. RANKINGI 🏆
+
+Dodaj profesjonalny system rankingowy:
+
+- Global
+- Country
+- Weekly
+- Monthly
+- All Time
+
+Użytkownik powinien widzieć:
+
+- miejsce,
+- username,
+- avatar,
+- XP,
+- zwycięstwa,
+- przegrane,
+- win rate,
+- punkty rankingowe.
+
+Dodaj Top 3 z efektowną prezentacją.
+
+Ranking musi być liczony z prawdziwych danych z bazy.
+
+3. XP + LEVELS ⚡
+
+Dodaj system doświadczenia.
+
+XP można zdobywać m.in. za:
+
+- wygranie Battle,
+- udział w Battle,
+- głosowanie,
+- codzienną aktywność,
+- ukończenie określonych działań.
+
+Dodaj poziomy użytkownika.
+
+Pokazuj:
+
+- aktualny level,
+- XP,
+- XP potrzebne do następnego poziomu,
+- pasek progresu.
+
+Nie pozwalaj użytkownikowi samodzielnie zmieniać XP lub levelu przez frontend.
+
+4. STREAK 🔥
+
+Dodaj Daily Streak.
+
+Użytkownik otrzymuje streak za aktywność każdego dnia.
+
+Pokaż:
+
+- aktualny streak,
+- najlepszy streak,
+- liczbę dni aktywności.
+
+Dodaj zabezpieczenia przed ręcznym manipulowaniem datą.
+
+5. ODZNAKI 🏅
+
+Dodaj system osiągnięć.
+
+Przykładowe odznaki:
+
+- First Battle
+- First Win
+- 10 Wins
+- 50 Wins
+- 100 Wins
+- Rising Star
+- Top 100
+- Top 10
+- Champion
+- 7 Day Streak
+- 30 Day Streak
+
+Odznaki muszą być przyznawane automatycznie na podstawie prawdziwych danych.
+
+Dodaj sekcję Badges na profilu.
+
+6. PROFIL
+
+Rozbuduj profil o:
+
+- avatar,
+- username,
+- display name,
+- country,
+- level,
+- XP,
+- streak,
+- Battle wins,
+- Battle losses,
+- win rate,
+- ranking position,
+- badges.
+
+Profil ma wyglądać nowocześnie i profesjonalnie.
+
+7. SHARE — VIRAL LOOP 📲
+
+Po Battle pokaż ekran wyniku z przyciskiem:
+
+„Share your VYBE”
+
+Przygotuj atrakcyjną kartę wyniku zawierającą:
+
+- avatar,
+- username,
+- wynik Battle,
+- kategorię,
+- ranking/level,
+- branding VYBE.
+
+Dodaj możliwość udostępnienia przez systemowy Share API na urządzeniach mobilnych.
+
+Jeżeli Share API nie jest dostępne, zapewnij sensowny fallback.
+
+Nie dodawaj fałszywych statystyk.
+
+8. POWIADOMIENIA 🔔
+
+Dodaj powiadomienia związane z Viral Core:
+
+- ktoś wyzwał mnie do Battle,
+- wygrałem Battle,
+- zdobyłem badge,
+- awansowałem w rankingu,
+- zdobyłem nowy level,
+- streak został zwiększony.
+
+Powiadomienia zapisuj w bazie danych.
+
+Dodaj możliwość oznaczenia jako przeczytane.
+
+9. HOME / DISCOVER
+
+Dopracuj główny ekran VYBE tak, aby użytkownik od razu miał powód do działania.
+
+Dodaj sekcje typu:
+
+🔥 Trending Battles
+🏆 Top Players
+⚡ Continue Your Streak
+🎯 Recommended Battles
+👑 Rising Stars
+
+Wykorzystuj rzeczywiste dane użytkowników.
+
+Jeśli baza jest pusta, pokaż profesjonalny empty state zamiast fake danych.
+
+10. PREMIUM / PREMIUM PRO
+
+Nie zmieniaj istniejących cen ani płatności.
+
+Zachowaj:
+
+PREMIUM
+19,99 zł / miesiąc
+149,99 zł / rok
+
+PREMIUM PRO
+39,99 zł / miesiąc
+299,99 zł / rok
+
+Jeżeli istniejące Premium/Pro mają funkcje związane ze statystykami, rankingiem lub Battle, poprawnie zintegruj je z nowym Viral Core.
+
+Nie twórz drugiego systemu subskrypcji.
+
+11. BACKEND + DATABASE
+
+Dodaj tylko potrzebne tabele/kolumny.
+
+Zadbaj o:
+
+- relacje,
+- indeksy,
+- unique constraints,
+- poprawne migracje,
+- server-side validation.
+
+Nigdy nie ufaj wartościom przesłanym z frontendu dla:
+
+- XP,
+- level,
+- ranking points,
+- wins,
+- losses,
+- badges,
+- streak.
+
+Wszystko musi być obliczane/weryfikowane po stronie serwera.
+
+12. SECURITY
+
+Sprawdź:
+
+- authentication,
+- authorization,
+- rate limiting,
+- anti-spam,
+- anti-abuse,
+- input validation,
+- API permissions.
+
+USER nie może uzyskać dostępu do funkcji ADMIN.
+
+Nie pozwól użytkownikowi zmienić sobie:
+
+- roli,
+- XP,
+- levelu,
+- statystyk,
+- Premium/Pro,
+- wyników Battle.
+
+13. DESIGN
+
+VYBE ma wyglądać jak nowoczesna globalna aplikacja społecznościowa.
+
+Priorytety:
+
+- mobile-first,
+- szybkie działanie,
+- czytelny UI,
+- mocne CTA,
+- atrakcyjne animacje, ale bez przesady,
+- profesjonalne karty,
+- spójny design,
+- dark/light mode, jeśli obecny system go obsługuje.
+
+Nie zmieniaj całego designu bez potrzeby.
+
+14. TESTY
+
+Po implementacji wykonaj testy:
+
+- USER nie może wejść do ADMIN,
+- Battle działa,
+- głosowanie działa,
+- nie można głosować drugi raz,
+- XP nalicza się poprawnie,
+- level aktualizuje się poprawnie,
+- streak działa,
+- badges przyznają się poprawnie,
+- ranking korzysta z prawdziwych danych,
+- powiadomienia działają,
+- Premium działa,
+- Premium Pro działa,
+- istniejące logowanie działa,
+- istniejące API działa.
+
+Uruchom typecheck, lint i dostępne testy.
+
+Jeżeli znajdziesz błędy, napraw je przed zakończeniem.
+
+WAŻNE
+
+Nie twórz fake użytkowników, fake Battle, fake rankingów, fake XP ani fake przychodów.
+
+Nie usuwaj istniejących funkcji.
+
+Nie zmieniaj istniejących cen Premium/Pro.
+
+Nie zmieniaj Clerk authentication.
+
+Nie zmieniaj istniejącego Stripe bez konieczności.
+
+Nie pokazuj funkcji jako „gotowych”, jeżeli backend nie jest faktycznie zaimplementowany.
+
+Na końcu przedstaw dokładne podsumowanie:
+
+1. Co zostało dodane.
+2. Jakie pliki zostały zmienione.
+3. Jakie migracje bazy wykonano.
+4. Jakie testy przeszły.
+5. Czy znaleziono błędy.
+6. Czy wszystkie istniejące funkcje VYBE nadal działają.
