@@ -188,8 +188,11 @@ describe("Battle settlement", () => {
       (error: unknown) =>
         typeof error === "object" &&
         error !== null &&
-        "code" in error &&
-        error.code === "23505",
+        "cause" in error &&
+        typeof error.cause === "object" &&
+        error.cause !== null &&
+        "code" in error.cause &&
+        error.cause.code === "23505",
     );
   });
 });
