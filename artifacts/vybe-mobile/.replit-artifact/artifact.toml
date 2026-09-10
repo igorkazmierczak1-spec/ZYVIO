@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/vybe-mobile/"
+title = "VYBE Mobile"
+description = "Natywna aplikacja Android dla VYBE: feed społecznościowy, kreatywne Battle, profile twórców, rankingi, wiadomości i powiadomienia korzystające z istniejącego API VYBE."
+version = "1.0.0"
+id = "artifacts/vybe-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/vybe-mobile/" ]
+localPort = 22266
+
+[services.development]
+run = "pnpm --filter @workspace/vybe-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vybe-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/vybe-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "22266"
+BASE_PATH = "/vybe-mobile/"
