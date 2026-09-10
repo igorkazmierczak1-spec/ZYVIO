@@ -1,12 +1,17 @@
 import { createInsertSchema } from "drizzle-zod";
-import { pgTable, text, integer, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text, integer, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
+
+export const userRoleEnum = pgEnum("vybe_user_role", ["USER", "ADMIN"]);
 
 export const profilesTable = pgTable("vybe_profiles", {
   id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
   username: text("username").notNull().unique(),
   displayName: text("display_name").notNull(),
   country: text("country").notNull(),
+  role: userRoleEnum("role").notNull().default("USER"),
+  authProvider: text("auth_provider").notNull().default("clerk"),
   language: text("language").notNull().default("en"),
   avatarUrl: text("avatar_url").notNull().default(""),
   bio: text("bio").notNull().default(""),
@@ -19,6 +24,7 @@ export const profilesTable = pgTable("vybe_profiles", {
   streak: integer("streak").notNull().default(0),
   badges: text("badges").array().notNull().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const battlesTable = pgTable("vybe_battles", {

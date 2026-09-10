@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 48" role="img" aria-label="VYBE">
+  <rect x="6" y="8" width="32" height="32" rx="10" transform="rotate(45 22 24)" fill="#16131f"/>
+  <rect x="17" y="19" width="10" height="10" rx="4" transform="rotate(45 22 24)" fill="#c9f967"/>
+  <text x="52" y="33" fill="#16131f" font-family="Arial, sans-serif" font-size="27" font-weight="900" letter-spacing="-2">VYBE</text>
+</svg>

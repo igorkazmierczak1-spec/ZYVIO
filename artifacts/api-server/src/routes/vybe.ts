@@ -33,56 +33,14 @@ import {
   VoteBattleBody,
   VoteBattleParams,
 } from "@workspace/api-zod";
+import {
+  currentUserFrom,
+  requireAuthenticatedUser,
+} from "../middlewares/auth";
 
 const router: IRouter = Router();
-const CURRENT_USER_ID = "user-igor";
 
-const seedBattles = [
-  {
-    id: "battle-neon-portraits",
-    title: "Neon after dark",
-    category: "Photo",
-    status: "live",
-    prompt: "Show us the most cinematic color you can find after sunset.",
-    maxParticipants: 8,
-    rewardXp: 350,
-    coverTone: "violet",
-    offsetHours: 18,
-  },
-  {
-    id: "battle-odd-one-out",
-    title: "Make it unexpected",
-    category: "Creativity",
-    status: "open",
-    prompt: "Turn an ordinary object into an unforgettable idea.",
-    maxParticipants: 12,
-    rewardXp: 280,
-    coverTone: "coral",
-    offsetHours: 42,
-  },
-  {
-    id: "battle-quiet-flex",
-    title: "Quiet flex",
-    category: "Text",
-    status: "open",
-    prompt: "One sentence. No context. Maximum impact.",
-    maxParticipants: 16,
-    rewardXp: 220,
-    coverTone: "cyan",
-    offsetHours: 30,
-  },
-  {
-    id: "battle-ai-remix",
-    title: "AI remix lab",
-    category: "AI",
-    status: "open",
-    prompt: "Give a machine a strange brief and make the result feel human.",
-    maxParticipants: 10,
-    rewardXp: 420,
-    coverTone: "lime",
-    offsetHours: 54,
-  },
-];
+router.use(requireAuthenticatedUser);
 
 function summary(profile: Profile) {
   return {
@@ -95,206 +53,7 @@ function summary(profile: Profile) {
   };
 }
 
-async function ensureSeeded(): Promise<void> {
-  const [existing] = await db
-    .select({ id: profilesTable.id })
-    .from(profilesTable)
-    .where(eq(profilesTable.id, CURRENT_USER_ID));
-  if (existing) return;
-
-  await db.insert(profilesTable).values([
-    {
-      id: CURRENT_USER_ID,
-      username: "igor",
-      displayName: "Igor Paradowski",
-      country: "PL",
-      language: "en",
-      avatarUrl: "",
-      bio: "Building ideas that deserve a spotlight.",
-      level: 12,
-      xp: 2840,
-      wins: 24,
-      losses: 9,
-      rank: 128,
-      league: "Gold",
-      streak: 7,
-      badges: ["First Battle", "10 Wins", "7 Day Streak"],
-    },
-    {
-      id: "user-maya",
-      username: "maya",
-      displayName: "Maya Chen",
-      country: "US",
-      language: "en",
-      avatarUrl: "",
-      bio: "Visual thinker.",
-      level: 18,
-      xp: 5210,
-      wins: 48,
-      losses: 12,
-      rank: 7,
-      league: "Diamond",
-      streak: 14,
-      badges: ["Battle Master", "Top 10"],
-    },
-    {
-      id: "user-ali",
-      username: "ali.codes",
-      displayName: "Ali Rahman",
-      country: "GB",
-      language: "en",
-      avatarUrl: "",
-      bio: "Code, culture, curiosity.",
-      level: 16,
-      xp: 4460,
-      wins: 39,
-      losses: 18,
-      rank: 15,
-      league: "Platinum",
-      streak: 11,
-      badges: ["First Battle", "10 Wins"],
-    },
-    {
-      id: "user-sofia",
-      username: "sofia.jpg",
-      displayName: "Sofia Weber",
-      country: "DE",
-      language: "de",
-      avatarUrl: "",
-      bio: "Finding the frame.",
-      level: 14,
-      xp: 3910,
-      wins: 34,
-      losses: 20,
-      rank: 28,
-      league: "Platinum",
-      streak: 5,
-      badges: ["First Battle", "7 Day Streak"],
-    },
-  ]);
-
-  const now = new Date();
-  await db.insert(battlesTable).values(
-    seedBattles.map((battle) => ({
-      id: battle.id,
-      title: battle.title,
-      category: battle.category,
-      status: battle.status,
-      prompt: battle.prompt,
-      createdAt: new Date(now.getTime() - battle.offsetHours * 60 * 60 * 1000),
-      endsAt: new Date(now.getTime() + (battle.offsetHours + 18) * 60 * 60 * 1000),
-      maxParticipants: battle.maxParticipants,
-      rewardXp: battle.rewardXp,
-      coverTone: battle.coverTone,
-    })),
-  );
-
-  await db.insert(battleParticipantsTable).values([
-    {
-      id: "entry-neon-maya",
-      battleId: "battle-neon-portraits",
-      profileId: "user-maya",
-      submissionLabel: "Chromatic silence",
-      score: 92,
-      votes: 38,
-    },
-    {
-      id: "entry-neon-igor",
-      battleId: "battle-neon-portraits",
-      profileId: CURRENT_USER_ID,
-      submissionLabel: "Last train home",
-      score: 88,
-      votes: 31,
-    },
-    {
-      id: "entry-odd-ali",
-      battleId: "battle-odd-one-out",
-      profileId: "user-ali",
-      submissionLabel: "The useful mistake",
-      score: 81,
-      votes: 22,
-    },
-    {
-      id: "entry-quiet-sofia",
-      battleId: "battle-quiet-flex",
-      profileId: "user-sofia",
-      submissionLabel: "I left the light on.",
-      score: 74,
-      votes: 18,
-    },
-    {
-      id: "entry-ai-igor",
-      battleId: "battle-ai-remix",
-      profileId: CURRENT_USER_ID,
-      submissionLabel: "A brief for the brave",
-      score: 65,
-      votes: 9,
-    },
-  ]);
-
-  await db.insert(notificationsTable).values([
-    {
-      id: "notification-welcome",
-      profileId: CURRENT_USER_ID,
-      kind: "level",
-      title: "You are on a 7 day streak",
-      body: "Keep showing up to unlock the next badge.",
-      read: false,
-    },
-    {
-      id: "notification-battle",
-      profileId: CURRENT_USER_ID,
-      kind: "battle",
-      title: "Your battle is heating up",
-      body: "Neon after dark has 69 votes so far.",
-      read: false,
-    },
-    {
-      id: "notification-rank",
-      profileId: CURRENT_USER_ID,
-      kind: "rank",
-      title: "You moved up 12 places",
-      body: "You are now #128 globally.",
-      read: true,
-    },
-  ]);
-
-  await db.insert(activitiesTable).values([
-    {
-      id: "activity-1",
-      profileId: CURRENT_USER_ID,
-      kind: "vote",
-      text: "You voted in Neon after dark",
-      time: "18 min ago",
-    },
-    {
-      id: "activity-2",
-      profileId: CURRENT_USER_ID,
-      kind: "level",
-      text: "You reached level 12",
-      time: "Yesterday",
-    },
-    {
-      id: "activity-3",
-      profileId: CURRENT_USER_ID,
-      kind: "battle",
-      text: "You joined AI remix lab",
-      time: "2 days ago",
-    },
-  ]);
-}
-
-async function currentProfile(): Promise<Profile> {
-  await ensureSeeded();
-  const [profile] = await db
-    .select()
-    .from(profilesTable)
-    .where(eq(profilesTable.id, CURRENT_USER_ID));
-  if (!profile) throw new Error("Current profile is missing");
-  return profile;
-}
-
-async function serializeBattle(battle: Battle) {
+async function serializeBattle(battle: Battle, currentUserId: string) {
   const entries = await db
     .select()
     .from(battleParticipantsTable)
@@ -308,6 +67,18 @@ async function serializeBattle(battle: Battle) {
           .where(inArray(profilesTable.id, entries.map((entry) => entry.profileId)))
       : [];
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
+  const participants = entries.flatMap((entry) => {
+    const profile = profileMap.get(entry.profileId);
+    if (!profile) return [];
+    return [{
+      id: entry.id,
+      user: summary(profile),
+      submissionLabel: entry.submissionLabel,
+      score: entry.score,
+      votes: entry.votes,
+    }];
+  });
+
   return {
     id: battle.id,
     title: battle.title,
@@ -316,26 +87,20 @@ async function serializeBattle(battle: Battle) {
     prompt: battle.prompt,
     createdAt: battle.createdAt,
     endsAt: battle.endsAt,
-    participantCount: entries.length,
+    participantCount: participants.length,
     maxParticipants: battle.maxParticipants,
     rewardXp: battle.rewardXp,
     coverTone: battle.coverTone,
-    isJoined: entries.some((entry) => entry.profileId === CURRENT_USER_ID),
-    participants: entries.map((entry) => ({
-      id: entry.id,
-      user: summary(profileMap.get(entry.profileId) ?? ({} as Profile)),
-      submissionLabel: entry.submissionLabel,
-      score: entry.score,
-      votes: entry.votes,
-    })),
+    isJoined: entries.some((entry) => entry.profileId === currentUserId),
+    participants,
   };
 }
 
 async function listSerializedBattles(
+  currentUserId: string,
   category?: string,
   status?: "open" | "live" | "completed",
 ) {
-  await ensureSeeded();
   const filters = [];
   if (category) filters.push(eq(battlesTable.category, category));
   if (status) filters.push(eq(battlesTable.status, status));
@@ -344,11 +109,16 @@ async function listSerializedBattles(
     .from(battlesTable)
     .where(filters.length ? and(...filters) : undefined)
     .orderBy(desc(battlesTable.createdAt));
-  return Promise.all(battles.map(serializeBattle));
+  return Promise.all(
+    battles.map((battle) => serializeBattle(battle, currentUserId)),
+  );
 }
 
-async function leaderboard(scope: "global" | "country", period: string) {
-  const profile = await currentProfile();
+async function buildLeaderboard(
+  profile: Profile,
+  scope: "global" | "country",
+  period: string,
+) {
   const rows = await db
     .select()
     .from(profilesTable)
@@ -363,7 +133,7 @@ async function leaderboard(scope: "global" | "country", period: string) {
     streak: row.streak,
     league: row.league,
   }));
-  const currentUser = entries.find((entry) => entry.user.id === CURRENT_USER_ID) ?? {
+  const currentUser = entries.find((entry) => entry.user.id === profile.id) ?? {
     position: profile.rank,
     user: summary(profile),
     xp: profile.xp,
@@ -376,19 +146,20 @@ async function leaderboard(scope: "global" | "country", period: string) {
 
 router.get("/dashboard", async (_req, res, next) => {
   try {
-    const profile = await currentProfile();
-    const battles = await listSerializedBattles();
-    const ranking = await leaderboard("global", "weekly");
+    const profile = currentUserFrom(res);
+    const battles = await listSerializedBattles(profile.id);
+    const ranking = await buildLeaderboard(profile, "global", "weekly");
     const activityRows = await db
       .select()
       .from(activitiesTable)
-      .where(eq(activitiesTable.profileId, CURRENT_USER_ID))
+      .where(eq(activitiesTable.profileId, profile.id))
       .orderBy(desc(activitiesTable.createdAt))
       .limit(6);
     const activeBattles = battles.filter(
       (battle) => battle.status === "open" || battle.status === "live",
     ).length;
     const totalMatches = profile.wins + profile.losses;
+
     res.json(
       GetDashboardResponse.parse({
         profile,
@@ -404,7 +175,9 @@ router.get("/dashboard", async (_req, res, next) => {
         stats: {
           activeBattles,
           weeklyXp: profile.xp,
-          winRate: totalMatches ? Math.round((profile.wins / totalMatches) * 100) : 0,
+          winRate: totalMatches
+            ? Math.round((profile.wins / totalMatches) * 100)
+            : 0,
           globalRank: profile.rank,
         },
       }),
@@ -421,8 +194,16 @@ router.get("/battles", async (req, res, next) => {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    const battles = await listSerializedBattles(parsed.data.category, parsed.data.status);
-    res.json(ListBattlesResponse.parse(battles));
+    const profile = currentUserFrom(res);
+    res.json(
+      ListBattlesResponse.parse(
+        await listSerializedBattles(
+          profile.id,
+          parsed.data.category,
+          parsed.data.status,
+        ),
+      ),
+    );
   } catch (error) {
     next(error);
   }
@@ -435,32 +216,22 @@ router.post("/battles", async (req, res, next) => {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    await currentProfile();
-    const id = `battle-${crypto.randomUUID()}`;
-    const coverTones = ["violet", "coral", "cyan", "lime"];
-    const battle: Battle = {
-      id,
-      title: parsed.data.title,
-      category: parsed.data.category,
-      status: "open",
-      prompt: parsed.data.prompt,
-      createdAt: new Date(),
-      endsAt: parsed.data.endsAt,
-      maxParticipants: parsed.data.maxParticipants,
-      rewardXp: 250,
-      coverTone: coverTones[Math.floor(Math.random() * coverTones.length)] ?? "violet",
-    };
-    await db.insert(battlesTable).values(battle);
-    await db.insert(battleParticipantsTable).values({
-      id: `entry-${crypto.randomUUID()}`,
-      battleId: id,
-      profileId: CURRENT_USER_ID,
-      submissionLabel: "Creator's first move",
-      score: 0,
-      votes: 0,
-    });
-    const response = await serializeBattle(battle);
-    res.status(201).json(CreateBattleResponse.parse(response));
+    const profile = currentUserFrom(res);
+    const [battle] = await db
+      .insert(battlesTable)
+      .values({
+        id: `battle-${crypto.randomUUID()}`,
+        title: parsed.data.title,
+        category: parsed.data.category,
+        prompt: parsed.data.prompt,
+        endsAt: new Date(parsed.data.endsAt),
+        maxParticipants: parsed.data.maxParticipants ?? 8,
+      })
+      .returning();
+    if (!battle) throw new Error("Battle creation failed");
+    res.status(201).json(
+      CreateBattleResponse.parse(await serializeBattle(battle, profile.id)),
+    );
   } catch (error) {
     next(error);
   }
@@ -468,21 +239,23 @@ router.post("/battles", async (req, res, next) => {
 
 router.get("/battles/:battleId", async (req, res, next) => {
   try {
-    const params = GetBattleParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
+    const parsed = GetBattleParams.safeParse(req.params);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
       return;
     }
-    await currentProfile();
     const [battle] = await db
       .select()
       .from(battlesTable)
-      .where(eq(battlesTable.id, params.data.battleId));
+      .where(eq(battlesTable.id, parsed.data.battleId));
     if (!battle) {
       res.status(404).json({ error: "Battle not found" });
       return;
     }
-    res.json(GetBattleResponse.parse(await serializeBattle(battle)));
+    const profile = currentUserFrom(res);
+    res.json(
+      GetBattleResponse.parse(await serializeBattle(battle, profile.id)),
+    );
   } catch (error) {
     next(error);
   }
@@ -490,52 +263,36 @@ router.get("/battles/:battleId", async (req, res, next) => {
 
 router.post("/battles/:battleId", async (req, res, next) => {
   try {
-    const params = JoinBattleParams.safeParse(req.params);
-    if (!params.success) {
-      res.status(400).json({ error: params.error.message });
+    const parsed = JoinBattleParams.safeParse(req.params);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
       return;
     }
-    await currentProfile();
+    const profile = currentUserFrom(res);
     const [battle] = await db
       .select()
       .from(battlesTable)
-      .where(eq(battlesTable.id, params.data.battleId));
+      .where(eq(battlesTable.id, parsed.data.battleId));
     if (!battle) {
       res.status(404).json({ error: "Battle not found" });
       return;
     }
-    if (battle.status === "completed") {
-      res.status(400).json({ error: "This battle is already completed" });
+    if (battle.status !== "open" && battle.status !== "live") {
+      res.status(409).json({ error: "Battle is closed" });
       return;
     }
-    const existing = await db
-      .select()
-      .from(battleParticipantsTable)
-      .where(
-        and(
-          eq(battleParticipantsTable.battleId, battle.id),
-          eq(battleParticipantsTable.profileId, CURRENT_USER_ID),
-        ),
-      );
-    if (!existing.length) {
-      const entries = await db
-        .select({ id: battleParticipantsTable.id })
-        .from(battleParticipantsTable)
-        .where(eq(battleParticipantsTable.battleId, battle.id));
-      if (entries.length >= battle.maxParticipants) {
-        res.status(400).json({ error: "This battle is full" });
-        return;
-      }
-      await db.insert(battleParticipantsTable).values({
+    await db
+      .insert(battleParticipantsTable)
+      .values({
         id: `entry-${crypto.randomUUID()}`,
         battleId: battle.id,
-        profileId: CURRENT_USER_ID,
-        submissionLabel: "New challenger",
-        score: 0,
-        votes: 0,
-      });
-    }
-    res.json(JoinBattleResponse.parse(await serializeBattle(battle)));
+        profileId: profile.id,
+        submissionLabel: "New entry",
+      })
+      .onConflictDoNothing();
+    res.json(
+      JoinBattleResponse.parse(await serializeBattle(battle, profile.id)),
+    );
   } catch (error) {
     next(error);
   }
@@ -553,7 +310,7 @@ router.post("/battles/:battleId/vote", async (req, res, next) => {
       res.status(400).json({ error: body.error.message });
       return;
     }
-    await currentProfile();
+    const profile = currentUserFrom(res);
     const [participant] = await db
       .select()
       .from(battleParticipantsTable)
@@ -567,7 +324,7 @@ router.post("/battles/:battleId/vote", async (req, res, next) => {
       res.status(404).json({ error: "Participant not found" });
       return;
     }
-    if (participant.profileId === CURRENT_USER_ID) {
+    if (participant.profileId === profile.id) {
       res.status(400).json({ error: "You cannot vote for your own entry" });
       return;
     }
@@ -577,7 +334,7 @@ router.post("/battles/:battleId/vote", async (req, res, next) => {
       .where(
         and(
           eq(votesTable.battleId, params.data.battleId),
-          eq(votesTable.voterProfileId, CURRENT_USER_ID),
+          eq(votesTable.voterProfileId, profile.id),
         ),
       );
     if (alreadyVoted.length) {
@@ -588,7 +345,7 @@ router.post("/battles/:battleId/vote", async (req, res, next) => {
       id: `vote-${crypto.randomUUID()}`,
       battleId: params.data.battleId,
       participantId: participant.id,
-      voterProfileId: CURRENT_USER_ID,
+      voterProfileId: profile.id,
     });
     await db
       .update(battleParticipantsTable)
@@ -605,18 +362,14 @@ router.post("/battles/:battleId/vote", async (req, res, next) => {
       res.status(404).json({ error: "Battle not found" });
       return;
     }
-    res.json((await serializeBattle(battle)) as unknown);
+    res.json(await serializeBattle(battle, profile.id));
   } catch (error) {
     next(error);
   }
 });
 
-router.get("/profile", async (_req, res, next) => {
-  try {
-    res.json(GetProfileResponse.parse(await currentProfile()));
-  } catch (error) {
-    next(error);
-  }
+router.get("/profile", (_req, res) => {
+  res.json(GetProfileResponse.parse(currentUserFrom(res)));
 });
 
 router.patch("/profile", async (req, res, next) => {
@@ -626,13 +379,13 @@ router.patch("/profile", async (req, res, next) => {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    await currentProfile();
-    const [profile] = await db
+    const profile = currentUserFrom(res);
+    const [updated] = await db
       .update(profilesTable)
-      .set(parsed.data)
-      .where(eq(profilesTable.id, CURRENT_USER_ID))
+      .set({ ...parsed.data, updatedAt: new Date() })
+      .where(eq(profilesTable.id, profile.id))
       .returning();
-    res.json(UpdateProfileResponse.parse(profile));
+    res.json(UpdateProfileResponse.parse(updated));
   } catch (error) {
     next(error);
   }
@@ -645,7 +398,15 @@ router.get("/leaderboard", async (req, res, next) => {
       res.status(400).json({ error: parsed.error.message });
       return;
     }
-    res.json(GetLeaderboardResponse.parse(await leaderboard(parsed.data.scope, parsed.data.period)));
+    res.json(
+      GetLeaderboardResponse.parse(
+        await buildLeaderboard(
+          currentUserFrom(res),
+          parsed.data.scope,
+          parsed.data.period,
+        ),
+      ),
+    );
   } catch (error) {
     next(error);
   }
@@ -653,11 +414,11 @@ router.get("/leaderboard", async (req, res, next) => {
 
 router.get("/notifications", async (_req, res, next) => {
   try {
-    await currentProfile();
+    const profile = currentUserFrom(res);
     const notifications = await db
       .select()
       .from(notificationsTable)
-      .where(eq(notificationsTable.profileId, CURRENT_USER_ID))
+      .where(eq(notificationsTable.profileId, profile.id))
       .orderBy(desc(notificationsTable.createdAt));
     res.json(ListNotificationsResponse.parse(notifications));
   } catch (error) {

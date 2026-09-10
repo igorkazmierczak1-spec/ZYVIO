@@ -18,7 +18,17 @@ export interface UserSummary {
   level: number;
 }
 
+export type ProfileRole = typeof ProfileRole[keyof typeof ProfileRole];
+
+
+export const ProfileRole = {
+  USER: 'USER',
+  ADMIN: 'ADMIN',
+} as const;
+
 export type Profile = UserSummary & {
+  email: string;
+  role: ProfileRole;
   bio: string;
   xp: number;
   wins: number;

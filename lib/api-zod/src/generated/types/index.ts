@@ -25,6 +25,7 @@ export * from './listBattlesStatus';
 export * from './notification';
 export * from './participant';
 export * from './profile';
+export * from './profileRole';
 export * from './profileUpdate';
 export * from './userSummary';
 export * from './voteInput';

@@ -29,6 +29,8 @@ export const GetDashboardResponse = zod.object({
   "avatarUrl": zod.string(),
   "level": zod.number().int()
 }).and(zod.object({
+  "email": zod.string().email(),
+  "role": zod.enum(['USER', 'ADMIN']),
   "bio": zod.string(),
   "xp": zod.number().int(),
   "wins": zod.number().int(),
@@ -342,6 +344,8 @@ export const GetProfileResponse = zod.object({
   "avatarUrl": zod.string(),
   "level": zod.number().int()
 }).and(zod.object({
+  "email": zod.string().email(),
+  "role": zod.enum(['USER', 'ADMIN']),
   "bio": zod.string(),
   "xp": zod.number().int(),
   "wins": zod.number().int(),
@@ -385,6 +389,8 @@ export const UpdateProfileResponse = zod.object({
   "avatarUrl": zod.string(),
   "level": zod.number().int()
 }).and(zod.object({
+  "email": zod.string().email(),
+  "role": zod.enum(['USER', 'ADMIN']),
   "bio": zod.string(),
   "xp": zod.number().int(),
   "wins": zod.number().int(),

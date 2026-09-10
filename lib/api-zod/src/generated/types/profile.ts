@@ -5,9 +5,12 @@
  * VYBE 2.0 global social competition platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProfileRole } from './profileRole';
 import type { UserSummary } from './userSummary';
 
 export type Profile = UserSummary & {
+  email: string;
+  role: ProfileRole;
   bio: string;
   xp: number;
   wins: number;

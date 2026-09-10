@@ -252,8 +252,12 @@ components:
       allOf:
         - $ref: "#/components/schemas/UserSummary"
         - type: object
-          required: [bio, xp, wins, losses, rank, league, streak, badges]
+          required: [email, role, bio, xp, wins, losses, rank, league, streak, badges]
           properties:
+            email: { type: string, format: email }
+            role:
+              type: string
+              enum: [USER, ADMIN]
             bio: { type: string }
             xp: { type: integer }
             wins: { type: integer }

@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   useCreateBattle,
   useGenerateIdeas,
@@ -27,6 +27,9 @@ import type {
   Profile,
 } from "@workspace/api-client-react";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { ClerkProvider, Show, SignIn, SignUp, useClerk } from "@clerk/react";
+import { publishableKeyFromHost } from "@clerk/react/internal";
+import { shadcn } from "@clerk/themes";
 import {
   ArrowUpRight,
   Bell,
@@ -43,6 +46,7 @@ import {
   Languages,
   LayoutDashboard,
   Loader2,
+  LogOut,
   Menu,
   MessageCircle,
   Moon,
@@ -63,6 +67,7 @@ import {
 } from "lucide-react";
 import {
   Route,
+  Redirect,
   Switch,
   useLocation,
   useRoute,
@@ -76,6 +81,72 @@ import { toast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+if (!clerkPubKey) {
+  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY");
+}
+
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || "/"
+    : path;
+}
+
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: "clerk",
+  options: {
+    logoPlacement: "inside" as const,
+    logoLinkUrl: basePath || "/",
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+    socialButtonsPlacement: "bottom" as const,
+  },
+  variables: {
+    colorPrimary: "#7357ff",
+    colorForeground: "#16131f",
+    colorMutedForeground: "#7a7487",
+    colorDanger: "#c74437",
+    colorBackground: "#ffffff",
+    colorInput: "#f6f5f8",
+    colorInputForeground: "#16131f",
+    colorNeutral: "#ebe8f0",
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+    borderRadius: "12px",
+  },
+  elements: {
+    rootBox: "w-full flex justify-center",
+    cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-xl",
+    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
+    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
+    headerTitle: "text-[#16131f]",
+    headerSubtitle: "text-[#7a7487]",
+    socialButtonsBlockButtonText: "text-[#16131f]",
+    formFieldLabel: "text-[#4c4658]",
+    footerActionLink: "text-[#5b43d2]",
+    footerActionText: "text-[#7a7487]",
+    dividerText: "text-[#7a7487]",
+    identityPreviewEditButton: "text-[#5b43d2]",
+    formFieldSuccessText: "text-[#537514]",
+    alertText: "text-[#9d382e]",
+    logoBox: "h-10",
+    logoImage: "h-9",
+    socialButtonsBlockButton: "border-[#ebe8f0]",
+    formButtonPrimary: "bg-[#7357ff] hover:bg-[#5b43d2]",
+    formFieldInput: "border-[#ebe8f0] bg-[#f6f5f8] text-[#16131f]",
+    footerAction: "bg-transparent",
+    dividerLine: "bg-[#ebe8f0]",
+    alert: "bg-[#fff0ed] border-[#ffc9c0]",
+    otpCodeFieldInput: "border-[#ebe8f0]",
+    formFieldRow: "text-[#16131f]",
+    main: "gap-5",
+  },
+};
 
 const categoryFilters = ["All", "Photo", "Creativity", "Text", "AI", "Music"];
 
@@ -116,6 +187,7 @@ function AppShell({ children }: { children: ReactNode }) {
   const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data: profile } = useGetProfile();
+  const { signOut } = useClerk();
   const navItems = [
     { href: "/", label: "Home", icon: LayoutDashboard },
     { href: "/battles", label: "Discover", icon: Compass },
@@ -166,6 +238,9 @@ function AppShell({ children }: { children: ReactNode }) {
           <Avatar name={profile?.displayName ?? "Igor Paradowski"} size="sm" />
           <span><strong>{profile?.displayName ?? "Igor Paradowski"}</strong><small>@{profile?.username ?? "igor"}</small></span>
           <ChevronRight />
+        </button>
+        <button className="logout-button" onClick={() => signOut({ redirectUrl: basePath || "/" })}>
+          <LogOut /> Log out
         </button>
       </aside>
       {sidebarOpen && <button className="sidebar-backdrop" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
@@ -322,12 +397,68 @@ function SettingsPage() {
 
 function ShieldIcon() { return <CircleDollarSign />; }
 
+function PublicLanding() {
+  const [, navigate] = useLocation();
+  return <main className="auth-landing"><div className="auth-landing-panel"><Logo /><span className="eyebrow">Global creative competition</span><h1>Make your move.<br /><em>Own your VYBE.</em></h1><p>Join creative battles, earn XP, and build a profile that reflects what you can do.</p><div className="auth-actions"><Button onClick={() => navigate("/sign-up")}>Create account <ArrowUpRight /></Button><Button variant="secondary" onClick={() => navigate("/sign-in")}>Sign in</Button></div></div><div className="auth-visual"><div className="auth-orbit orbit-a" /><div className="auth-orbit orbit-b" /><div className="auth-orbit orbit-c" /><div className="auth-visual-mark"><Swords /><span>VYBE</span></div></div></main>;
+}
+
+function SignInPage() {
+  return <main className="auth-page"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></main>;
+}
+
+function SignUpPage() {
+  return <main className="auth-page"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></main>;
+}
+
+function AdminRoute() {
+  const profile = useGetProfile();
+  if (profile.isLoading) return <LoadingState />;
+  if (!profile.data || profile.data.role !== "ADMIN") {
+    return <div className="empty-state error-state"><div className="empty-icon"><Crown /></div><h2>Administrator access required</h2><p>This route is available only to accounts with the backend role ADMIN.</p></div>;
+  }
+  return <div><PageHeader eyebrow="Protected area" title="Admin access verified" description="Your ADMIN role was verified by the API. Administrative tools can be added in the next stage." /><section className="panel admin-status"><Crown /><div><strong>Backend authorization active</strong><p>Role: ADMIN · User ID: {profile.data.id}</p></div></section></div>;
+}
+
+function ProtectedApplication() {
+  return <>
+    <Show when="signed-in">
+      <AppShell><ErrorBoundary><Switch><Route path="/" component={DashboardPage} /><Route path="/battles" component={DiscoverPage} /><Route path="/battles/new" component={CreateBattlePage} /><Route path="/battles/:id" component={BattleDetailPage} /><Route path="/leaderboard" component={LeaderboardPage} /><Route path="/profile" component={ProfilePage} /><Route path="/notifications" component={NotificationsPage} /><Route path="/ai" component={AiPage} /><Route path="/premium" component={PremiumPage} /><Route path="/settings" component={SettingsPage} /><Route path="/admin" component={AdminRoute} /><Route component={NotFound} /></Switch></ErrorBoundary></AppShell>
+    </Show>
+    <Show when="signed-out"><Redirect to="/sign-in" /></Show>
+  </>;
+}
+
+function HomeRoute() {
+  return <>
+    <Show when="signed-in"><ProtectedApplication /></Show>
+    <Show when="signed-out"><PublicLanding /></Show>
+  </>;
+}
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const previousUserId = useRef<string | null | undefined>(undefined);
+  useEffect(() => addListener(({ user }) => {
+    const userId = user?.id ?? null;
+    if (previousUserId.current !== undefined && previousUserId.current !== userId) {
+      queryClient.clear();
+    }
+    previousUserId.current = userId;
+  }), [addListener]);
+  return null;
+}
+
 function Router() {
-  return <AppShell><ErrorBoundary><Switch><Route path="/" component={DashboardPage} /><Route path="/battles" component={DiscoverPage} /><Route path="/battles/new" component={CreateBattlePage} /><Route path="/battles/:id" component={BattleDetailPage} /><Route path="/leaderboard" component={LeaderboardPage} /><Route path="/profile" component={ProfilePage} /><Route path="/notifications" component={NotificationsPage} /><Route path="/ai" component={AiPage} /><Route path="/premium" component={PremiumPage} /><Route path="/settings" component={SettingsPage} /><Route component={NotFound} /></Switch></ErrorBoundary></AppShell>;
+  return <Switch><Route path="/" component={HomeRoute} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route component={ProtectedApplication} /></Switch>;
+}
+
+function ClerkApplication() {
+  const [, setLocation] = useLocation();
+  return <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={clerkAppearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} localization={{ signIn: { start: { title: "Welcome back to VYBE", subtitle: "Sign in to continue" } }, signUp: { start: { title: "Create your VYBE account", subtitle: "Join the creative competition" } } }} routerPush={(to) => setLocation(stripBase(to))} routerReplace={(to) => setLocation(stripBase(to), { replace: true })}><QueryClientProvider client={queryClient}><ClerkQueryClientCacheInvalidator /><TooltipProvider><Router /><Toaster /></TooltipProvider></QueryClientProvider></ClerkProvider>;
 }
 
 function App() {
-  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}><Router /></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
+  return <WouterRouter base={basePath}><ClerkApplication /></WouterRouter>;
 }
 
 export default App;
