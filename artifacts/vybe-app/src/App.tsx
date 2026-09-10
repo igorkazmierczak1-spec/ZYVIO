@@ -7,6 +7,8 @@ import {
   useGetLeaderboard,
   useGetProfile,
   useJoinBattle,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
   useListBattles,
   useListNotifications,
   useUpdateProfile,
@@ -152,7 +154,7 @@ const clerkAppearance = {
     colorInput: "#f6f5f8",
     colorInputForeground: "#16131f",
     colorNeutral: "#ebe8f0",
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+     fontFamily: "Plus Jakarta Sans, ui-sans-serif, system-ui, sans-serif",
     borderRadius: "12px",
   },
   elements: {
@@ -230,6 +232,13 @@ function AppShell({ children }: { children: ReactNode }) {
       refetchOnWindowFocus: true,
     },
   });
+  const { data: notifications } = useListNotifications({
+    query: {
+      queryKey: getListNotificationsQueryKey(),
+      staleTime: 30_000,
+    },
+  });
+  const hasUnreadNotifications = notifications?.some((notification) => !notification.read) ?? false;
   const navItems = [
     { href: "/", label: "Home", icon: LayoutDashboard },
     { href: "/battles", label: "Discover", icon: Compass },
@@ -267,17 +276,17 @@ function AppShell({ children }: { children: ReactNode }) {
         <nav className="main-nav">
           {secondaryItems.map(({ href, label, icon: Icon }) => (
             <button key={href} className={`nav-item ${isCurrent(href) ? "is-current" : ""}`} onClick={() => { navigate(href); setSidebarOpen(false); }}>
-              <Icon /><span>{label}</span>{label === "Notifications" && <span className="notification-dot" />}
+               <Icon /><span>{label}</span>{label === "Notifications" && hasUnreadNotifications && <span className="notification-dot" />}
             </button>
           ))}
         </nav>
         <div className="sidebar-spacer" />
-        <div className="season-card">
+         <div className="season-card">
           <div className="season-orbit"><Sparkles /></div>
-          <span className="eyebrow">Season 04</span>
-          <strong>Make it memorable.</strong>
-          <span className="season-meta">12 days remaining</span>
-          <div className="season-progress"><span style={{ width: "68%" }} /></div>
+           <span className="eyebrow">Your momentum</span>
+           <strong>{profile ? `${profile.streak} day streak` : "Loading your streak"}</strong>
+           <span className="season-meta">{profile ? `${profile.xp.toLocaleString()} XP · level ${profile.level}` : "Loading your progress"}</span>
+           <div className="season-progress"><span style={{ width: `${profile?.progress ?? 0}%` }} /></div>
         </div>
         <button className="sidebar-profile" onClick={() => navigate("/profile")}>
           <Avatar name={profile?.displayName ?? "VYBE User"} size="sm" />
@@ -338,26 +347,31 @@ function BattleCard({ battle, compact = false }: { battle: Battle; compact?: boo
 
 function DashboardPage() {
   const [, navigate] = useLocation();
-  const dashboard = useGetDashboard();
+  const dashboard = useGetDashboard({
+    query: {
+      queryKey: getGetDashboardQueryKey(),
+      refetchOnWindowFocus: true,
+      staleTime: 15_000,
+    },
+  });
   if (dashboard.isLoading) return <LoadingState />;
   if (dashboard.isError || !dashboard.data) return <ErrorState onRetry={() => void dashboard.refetch()} />;
   const data = dashboard.data as Dashboard;
   const profile = data.profile;
-  const levelTarget = (profile.level + 1) * 320;
-  const levelProgress = Math.min(100, Math.round((profile.xp % 320) / 320 * 100));
+  const levelProgress = Math.max(0, Math.min(100, profile.progress));
   return <div className="dashboard-page">
-    <div className="welcome-row"><div><span className="eyebrow">Tuesday, 08 September 2026</span><h1>Good evening, {profile.displayName.split(" ")[0]}<span className="title-dot">.</span></h1><p>Your next great VYBE is closer than you think.</p></div><Button className="create-cta" onClick={() => navigate("/battles/new")}><Plus /> Create battle</Button></div>
+     <div className="welcome-row"><div><span className="eyebrow">{new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</span><h1>Good evening, {profile.displayName.split(" ")[0]}<span className="title-dot">.</span></h1><p>Your next great VYBE is closer than you think.</p></div><Button className="create-cta" onClick={() => navigate("/battles/new")}><Plus /> Create battle</Button></div>
     <section className="hero-card">
-      <div className="hero-copy"><span className="eyebrow">Your momentum</span><h2>Keep the streak<br /><em>alive.</em></h2><p>You are 160 XP away from level {profile.level + 1}. One more bold move today.</p><Button variant="secondary" onClick={() => navigate("/battles")}>Find your next battle <ArrowUpRight /></Button></div>
+       <div className="hero-copy"><span className="eyebrow">Your momentum</span><h2>Keep the streak<br /><em>alive.</em></h2><p>{profile.streak > 0 ? `${profile.streak} day streak. ` : "Start your streak today. "}{profile.xpForNextLevel.toLocaleString()} XP to the next level.</p><Button variant="secondary" onClick={() => navigate("/battles")}>Find your next battle <ArrowUpRight /></Button></div>
       <div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" /><div className="hero-orbit orbit-three" />
-      <div className="level-card"><div className="level-ring"><strong>{profile.level}</strong><span>level</span></div><div><span className="eyebrow">Gold league</span><strong>{profile.xp.toLocaleString()} XP</strong><div className="level-bar"><span style={{ width: `${levelProgress}%` }} /></div><small>{(levelTarget - profile.xp % levelTarget).toLocaleString()} XP to next level</small></div></div>
+       <div className="level-card"><div className="level-ring"><strong>{profile.level}</strong><span>level</span></div><div><span className="eyebrow">{profile.league} league</span><strong>{profile.xp.toLocaleString()} XP</strong><div className="level-bar"><span style={{ width: `${levelProgress}%` }} /></div><small>{profile.xpForNextLevel.toLocaleString()} XP to next level</small></div></div>
     </section>
-    <div className="stats-grid"><StatCard icon={Swords} label="Active battles" value={data.stats.activeBattles} detail="2 new today" accent="violet" /><StatCard icon={Zap} label="Weekly XP" value={data.stats.weeklyXp.toLocaleString()} detail="+18% from last week" accent="lime" /><StatCard icon={Target} label="Win rate" value={`${data.stats.winRate}%`} detail="Top 14% globally" accent="coral" /><StatCard icon={Trophy} label="Global rank" value={`#${data.stats.globalRank}`} detail="Up 12 places" accent="cyan" /></div>
-    <div className="section-heading"><div><span className="eyebrow">Picked for you</span><h2>Featured battles</h2></div><button className="text-button" onClick={() => navigate("/battles")}>View all <ArrowUpRight /></button></div>
-    <div className="battle-grid">{data.featuredBattles.map((battle) => <BattleCard key={battle.id} battle={battle} />)}</div>
+     <div className="stats-grid"><StatCard icon={Swords} label="Active battles" value={data.stats.activeBattles} detail="From your dashboard" accent="violet" /><StatCard icon={Zap} label="Weekly XP" value={data.stats.weeklyXp.toLocaleString()} detail="Earned this week" accent="lime" /><StatCard icon={Target} label="Win rate" value={`${data.stats.winRate}%`} detail={`${profile.wins} wins · ${profile.losses} losses`} accent="coral" /><StatCard icon={Trophy} label="Global rank" value={`#${data.stats.globalRank}`} detail={`${profile.rankingPoints.toLocaleString()} ranking points`} accent="cyan" /></div>
+     <div className="section-heading"><div><span className="eyebrow">Picked for you</span><h2>Featured battles</h2></div><button className="text-button" onClick={() => navigate("/battles")}>View all <ArrowUpRight /></button></div>
+     {data.featuredBattles.length === 0 ? <div className="empty-state"><div className="empty-icon"><Compass /></div><h2>No active battles yet</h2><p>Start a 1v1 battle and invite a creator to make the next move.</p><Button onClick={() => navigate("/battles/new")}><Plus /> Create battle</Button></div> : <div className="battle-grid">{data.featuredBattles.map((battle) => <BattleCard key={battle.id} battle={battle} />)}</div>}
     <div className="dashboard-lower">
-      <section className="panel activity-panel"><div className="panel-heading"><div><span className="eyebrow">Your loop</span><h2>Recent activity</h2></div><IconButton label="Activity options"><Settings2 /></IconButton></div>{data.activity.map((item) => <div className="activity-row" key={item.id}><div className={`activity-mark mark-${item.kind}`}><Zap /></div><div><strong>{item.text}</strong><small>{item.time}</small></div><ChevronRight /></div>)}</section>
-      <section className="panel ranking-panel"><div className="panel-heading"><div><span className="eyebrow">This week</span><h2>Leaderboard</h2></div><button className="text-button" onClick={() => navigate("/leaderboard")}>Full ranking <ArrowUpRight /></button></div>{data.leaderboardPreview.map((entry, index) => <div className="rank-row" key={entry.user.id}><span className={`rank-number ${index < 3 ? "top-rank" : ""}`}>{String(entry.position).padStart(2, "0")}</span><Avatar name={entry.user.displayName} size="sm" accent={index === 1 ? "coral" : index === 2 ? "cyan" : "violet"} /><div><strong>{entry.user.displayName}</strong><small>Level {entry.user.level} · {entry.league}</small></div><span className="rank-xp">{entry.xp.toLocaleString()} <small>XP</small></span></div>)}</section>
+       <section className="panel activity-panel"><div className="panel-heading"><div><span className="eyebrow">Your loop</span><h2>Recent activity</h2></div><IconButton label="Activity options"><Settings2 /></IconButton></div>{data.activity.length === 0 ? <div className="mini-empty">Your next vote or battle will appear here.</div> : data.activity.map((item) => <div className="activity-row" key={item.id}><div className={`activity-mark mark-${item.kind}`}><Zap /></div><div><strong>{item.text}</strong><small>{item.time}</small></div><ChevronRight /></div>)}</section>
+       <section className="panel ranking-panel"><div className="panel-heading"><div><span className="eyebrow">This week</span><h2>Leaderboard</h2></div><button className="text-button" onClick={() => navigate("/leaderboard")}>Full ranking <ArrowUpRight /></button></div>{data.leaderboardPreview.length === 0 ? <div className="mini-empty">No ranking entries yet.</div> : data.leaderboardPreview.map((entry, index) => <div className="rank-row" key={entry.user.id}><span className={`rank-number ${index < 3 ? "top-rank" : ""}`}>{String(entry.position).padStart(2, "0")}</span><Avatar name={entry.user.displayName} size="sm" accent={index === 1 ? "coral" : index === 2 ? "cyan" : "violet"} /><div><strong>{entry.user.displayName}</strong><small>Level {entry.user.level} · {entry.league}</small></div><span className="rank-xp">{entry.xp.toLocaleString()} <small>XP</small></span></div>)}</section>
     </div>
   </div>;
 }
@@ -373,10 +387,11 @@ function DiscoverPage() {
 
 function CreateBattlePage() {
   const [, navigate] = useLocation();
-  const [form, setForm] = useState<BattleInput>({ title: "", category: "Creativity", prompt: "", endsAt: new Date(Date.now() + 48 * 3600000).toISOString(), maxParticipants: 8 });
-  const create = useCreateBattle({ mutation: { onSuccess: (battle) => { toast({ title: "Battle created", description: "Your arena is ready for challengers." }); navigate(`/battles/${battle.id}`); } } });
+  const [form, setForm] = useState<BattleInput>({ title: "", category: "Creativity", prompt: "", endsAt: new Date(Date.now() + 48 * 3600000).toISOString(), maxParticipants: 2 });
+  const qc = useQueryClient();
+  const create = useCreateBattle({ mutation: { onSuccess: (battle) => { void qc.invalidateQueries({ queryKey: getListBattlesQueryKey() }); void qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); toast({ title: "Battle created", description: "Your 1v1 arena is ready for a challenger." }); navigate(`/battles/${battle.id}`); }, onError: () => toast({ title: "Could not create battle", description: "Check the fields and try again.", variant: "destructive" }) } });
   const setField = (field: keyof BattleInput, value: string | number) => setForm((current) => ({ ...current, [field]: value }));
-  return <div className="form-page"><PageHeader eyebrow="Create" title="Start a new battle" description="A great prompt makes people want to show up." /><form className="create-form" onSubmit={(event) => { event.preventDefault(); create.mutate({ data: form }); }}><div className="form-main"><label>Battle title<input value={form.title} onChange={(event) => setField("title", event.target.value)} placeholder="Give it a name people remember" required minLength={3} /></label><label>Category<div className="category-select-grid">{["Photo", "Music", "Creativity", "Text", "AI", "Quiz"].map((item) => <button type="button" key={item} className={form.category === item ? "selected" : ""} onClick={() => setField("category", item)}>{item}</button>)}</div></label><label>Challenge prompt<textarea value={form.prompt} onChange={(event) => setField("prompt", event.target.value)} placeholder="What will challengers need to make, answer, or prove?" rows={5} required minLength={5} /></label></div><aside className="form-aside panel"><span className="eyebrow">Battle settings</span><label>Closes on<input type="datetime-local" value={form.endsAt.slice(0, 16)} onChange={(event) => setField("endsAt", new Date(event.target.value).toISOString())} /></label><label>Max participants<select value={form.maxParticipants} onChange={(event) => setField("maxParticipants", Number(event.target.value))}><option value={2}>2 — One vs one</option><option value={8}>8 — Small room</option><option value={16}>16 — Open arena</option><option value={32}>32 — Full lobby</option></select></label><div className="form-tip"><Sparkles /><div><strong>Make it specific</strong><p>Prompts with a clear constraint get 2.4x more entries.</p></div></div><Button className="form-submit" type="submit" disabled={create.isPending}>{create.isPending ? <><Loader2 className="spin" /> Creating...</> : <>Publish battle <ArrowUpRight /></>}</Button></aside></form></div>;
+  return <div className="form-page"><PageHeader eyebrow="Create" title="Start a new 1v1 battle" description="Set one clear challenge. One challenger. One winner." /><form className="create-form" onSubmit={(event) => { event.preventDefault(); create.mutate({ data: { ...form, maxParticipants: 2 } }); }}><div className="form-main"><div className="one-v-one-note"><Swords /> 1v1 format · two creator slots</div><label>Battle title<input value={form.title} onChange={(event) => setField("title", event.target.value)} placeholder="Give it a name people remember" required minLength={3} /></label><label>Category<div className="category-select-grid">{["Photo", "Music", "Creativity", "Text", "AI", "Quiz"].map((item) => <button type="button" key={item} className={form.category === item ? "selected" : ""} onClick={() => setField("category", item)}>{item}</button>)}</div></label><label>Challenge prompt<textarea value={form.prompt} onChange={(event) => setField("prompt", event.target.value)} placeholder="What will the two creators make, answer, or prove?" rows={5} required minLength={5} /></label></div><aside className="form-aside panel"><span className="eyebrow">1v1 battle settings</span><label>Closes on<input type="datetime-local" value={form.endsAt.slice(0, 16)} onChange={(event) => setField("endsAt", new Date(event.target.value).toISOString())} /></label><div className="one-v-one-note"><Users /> Exactly 2 participants</div><div className="form-tip"><Sparkles /><div><strong>Make it specific</strong><p>A focused prompt gives both creators a fair lane to stand out.</p></div></div><Button className="form-submit" type="submit" disabled={create.isPending}>{create.isPending ? <><Loader2 className="spin" /> Creating...</> : <>Publish battle <ArrowUpRight /></>}</Button></aside></form></div>;
 }
 
 function BattleDetailPage() {
@@ -384,24 +399,41 @@ function BattleDetailPage() {
   const id = params?.id ?? "";
   const battle = useGetBattle(id, { query: { enabled: Boolean(id), queryKey: getGetBattleQueryKey(id) } });
   const qc = useQueryClient();
-  const join = useJoinBattle({ mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetBattleQueryKey(id) }); toast({ title: "You are in", description: "Your entry is ready." }); } } });
-  const vote = useVoteBattle({ mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetBattleQueryKey(id) }); toast({ title: "Vote counted", description: "You earned XP for showing up." }); } } });
+  const join = useJoinBattle({ mutation: { onSuccess: (updatedBattle) => { qc.setQueryData(getGetBattleQueryKey(id), updatedBattle); void qc.invalidateQueries({ queryKey: getListBattlesQueryKey() }); void qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); toast({ title: "You are in", description: "Your entry is ready." }); }, onError: () => toast({ title: "Could not join", description: "This battle may already be full.", variant: "destructive" }) } });
+  const vote = useVoteBattle({ mutation: { onSuccess: (updatedBattle) => { qc.setQueryData(getGetBattleQueryKey(id), updatedBattle); void qc.invalidateQueries({ queryKey: getGetBattleQueryKey(id) }); void qc.invalidateQueries({ queryKey: getGetProfileQueryKey() }); void qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); void qc.invalidateQueries({ queryKey: getGetLeaderboardQueryKey() }); toast({ title: updatedBattle.status === "completed" ? "Battle complete" : "Vote counted", description: updatedBattle.status === "completed" ? "The result is in." : "Your vote has been recorded." }); }, onError: () => toast({ title: "Vote not counted", description: "Try again when both entries are ready.", variant: "destructive" }) } });
   if (battle.isLoading) return <LoadingState />;
   if (battle.isError || !battle.data) return <ErrorState onRetry={() => void battle.refetch()} />;
   const data = battle.data;
-  return <div><PageHeader eyebrow={`${data.category} battle`} title={data.title} description={data.prompt} action={<Button variant="secondary" onClick={() => navigator.clipboard?.writeText(window.location.href).then(() => toast({ title: "Link copied" }))}><Share2 /> Share</Button>} /><div className="battle-detail-grid"><section className={`battle-stage tone-${data.coverTone ?? "violet"}`}><div className="battle-stage-pattern" /><div className="stage-top"><span className={`status-pill status-${data.status}`}>{data.status === "live" ? "Live now" : data.status}</span><span className="stage-time"><Clock3 /> {formatTimeLeft(data.endsAt)}</span></div><div className="stage-center"><div className="stage-orb"><Swords /></div><span className="eyebrow">The prompt</span><h2>{data.prompt}</h2><p>Make a move that only you could make.</p></div><div className="stage-bottom"><span><Users /> {data.participantCount} / {data.maxParticipants} challengers</span><span><Zap /> +{data.rewardXp ?? 250} XP</span></div></section><section className="panel participants-panel"><div className="panel-heading"><div><span className="eyebrow">The arena</span><h2>Entries</h2></div>{!data.isJoined && <Button size="sm" onClick={() => join.mutate({ battleId: id })}>{join.isPending ? <Loader2 className="spin" /> : <><Swords /> Join</>}</Button>}</div>{data.participants.map((participant) => <div className="participant-row" key={participant.id}><Avatar name={participant.user.displayName} size="md" accent={participant.user.username === "igor" ? "violet" : "coral"} /><div className="participant-copy"><strong>{participant.user.displayName}</strong><small>{participant.submissionLabel}</small></div><div className="participant-score"><strong>{participant.score}</strong><small>{participant.votes} votes</small></div><Button size="sm" variant="ghost" disabled={vote.isPending || participant.user.username === "igor"} onClick={() => vote.mutate({ battleId: id, data: { participantId: participant.id } })}><Heart /> Vote</Button></div>)}{data.participants.length === 0 && <div className="mini-empty">Be the first one in.</div>}</section></div></div>;
+  const winner = data.participants.find((participant) => participant.id === data.winnerParticipantId);
+  const canJoin = !data.isJoined && data.status !== "completed" && data.participantCount < data.maxParticipants;
+  const shareBattle = async () => {
+    const shareData = { title: data.title, text: `Join this 1v1 battle on VYBE: ${data.title}`, url: window.location.href };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      await navigator.clipboard.writeText(window.location.href);
+      toast({ title: "Link copied", description: "Battle link is ready to share." });
+    } catch {
+      toast({ title: "Could not share", description: "Copy the URL from your browser and send it to your challenger.", variant: "destructive" });
+    }
+  };
+  return <div><PageHeader eyebrow={`${data.category} · 1v1 battle`} title={data.title} description={data.prompt} action={<Button variant="secondary" onClick={() => void shareBattle()}><Share2 /> Share</Button>} />{data.status === "completed" && <section className="battle-result"><strong>{winner ? `${winner.user.displayName} takes the win.` : "This battle is complete."}</strong><p>{winner ? "The final result has been recorded by VYBE." : "The final result will appear when the backend provides a winner."}</p><div className="result-meta"><span><Trophy /> {winner ? `${winner.score} score` : "Result recorded"}</span><span><Zap /> +{data.rewardXp ?? 0} XP reward</span></div></section>}<div className="battle-detail-grid"><section className={`battle-stage tone-${data.coverTone ?? "violet"}`}><div className="battle-stage-pattern" /><div className="stage-top"><span className={`status-pill status-${data.status}`}>{data.status === "live" ? "Live now" : data.status}</span><span className="stage-time"><Clock3 /> {data.status === "completed" ? "Closed" : formatTimeLeft(data.endsAt)}</span></div><div className="stage-center"><div className="stage-orb"><Swords /></div><span className="eyebrow">The prompt</span><h2>{data.prompt}</h2><p>Two creators enter. One point of view wins the room.</p></div><div className="stage-bottom"><span><Users /> {data.participantCount} / {data.maxParticipants} challengers</span><span><Zap /> +{data.rewardXp ?? 0} XP</span></div></section><section className="panel participants-panel"><div className="panel-heading"><div><span className="eyebrow">The arena</span><h2>Entries</h2></div>{canJoin && <Button size="sm" onClick={() => join.mutate({ battleId: id })}>{join.isPending ? <Loader2 className="spin" /> : <><Swords /> Join</>}</Button>}</div>{data.participants.map((participant, index) => <div className={`participant-row ${participant.id === data.winnerParticipantId ? "participant-winner" : ""}`} key={participant.id}><Avatar name={participant.user.displayName} size="md" accent={index % 2 === 0 ? "violet" : "coral"} /><div className="participant-copy"><strong>{participant.user.displayName}{participant.id === data.winnerParticipantId ? " · Winner" : ""}</strong><small>{participant.submissionLabel}</small></div><div className="participant-score"><strong>{participant.score}</strong><small>{participant.votes} votes</small></div><Button size="sm" variant="ghost" disabled={vote.isPending || data.status === "completed"} onClick={() => vote.mutate({ battleId: id, data: { participantId: participant.id } })}><Heart /> Vote</Button></div>)}{data.participants.length === 0 && <div className="mini-empty">Be the first one in.</div>}{data.status !== "completed" && data.participants.length === 1 && <div className="mini-empty">Waiting for one challenger before voting opens.</div>}</section></div></div>;
 }
 
 function LeaderboardPage() {
   const [scope, setScope] = useState<"global" | "country">("global");
   const [period, setPeriod] = useState<"weekly" | "monthly" | "all-time">("weekly");
-  const leaderboard = useGetLeaderboard({ scope, period }, { query: { queryKey: getGetLeaderboardQueryKey({ scope, period }) } });
+  const [, navigate] = useLocation();
+  const params = { scope, period };
+  const leaderboard = useGetLeaderboard(params, { query: { queryKey: getGetLeaderboardQueryKey(params), refetchOnWindowFocus: true } });
   const data = leaderboard.data as Leaderboard | undefined;
-  return <div><PageHeader eyebrow="Leaderboard" title="Make your mark" description="Every vote, battle, and comeback moves the board." action={<div className="segmented"><button className={scope === "global" ? "is-selected" : ""} onClick={() => setScope("global")}><Globe2 /> Global</button><button className={scope === "country" ? "is-selected" : ""} onClick={() => setScope("country")}><Target /> Country</button></div>} /><div className="leaderboard-toolbar"><div className="league-banner"><div className="league-emblem"><Crown /></div><div><span className="eyebrow">Your league</span><strong>Gold</strong><small>Top 15% this season</small></div><div className="league-progress"><span style={{ width: "72%" }} /></div><span className="league-next">Platinum <ChevronRight /></span></div><div className="period-tabs">{(["weekly", "monthly", "all-time"] as const).map((item) => <button key={item} className={period === item ? "is-selected" : ""} onClick={() => setPeriod(item)}>{item.replace("-", " ")}</button>)}</div></div>{leaderboard.isLoading ? <LoadingState /> : leaderboard.isError || !data ? <ErrorState onRetry={() => void leaderboard.refetch()} /> : <div className="leaderboard-table panel"><div className="leaderboard-head"><span>Rank</span><span>Creator</span><span>League</span><span>Wins</span><span>XP</span></div>{data.entries.map((entry) => <div className={`leaderboard-row ${entry.user.id === data.currentUser.user.id ? "current-user" : ""}`} key={entry.user.id}><strong className="leaderboard-rank">{entry.position < 4 ? <Crown /> : `#${entry.position}`}</strong><div className="leaderboard-user"><Avatar name={entry.user.displayName} size="sm" accent={entry.position === 2 ? "coral" : entry.position === 3 ? "cyan" : "violet"} /><span><strong>{entry.user.displayName}</strong><small>@{entry.user.username}</small></span></div><span className={`league-text league-${entry.league.toLowerCase()}`}>{entry.league}</span><span>{entry.wins}</span><strong>{entry.xp.toLocaleString()}</strong></div>)}<div className="your-rank"><span>Your position</span><strong>#{data.currentUser.position}</strong><span>{data.currentUser.xp.toLocaleString()} XP</span><button>View profile <ArrowUpRight /></button></div></div>}</div>;
+  return <div><PageHeader eyebrow="Leaderboard" title="Make your mark" description="Every vote, battle, and comeback moves the board." action={<div className="segmented"><button className={scope === "global" ? "is-selected" : ""} onClick={() => setScope("global")}><Globe2 /> Global</button><button className={scope === "country" ? "is-selected" : ""} onClick={() => setScope("country")}><Target /> Country</button></div>} /><div className="leaderboard-toolbar"><div className="league-banner"><div className="league-emblem"><Crown /></div><div><span className="eyebrow">Your league</span><strong>{data?.currentUser.league ?? "—"}</strong><small>{data ? `${data.currentUser.rankingPoints.toLocaleString()} ranking points` : "Loading your position"}</small></div><div className="league-progress"><span style={{ width: `${data?.currentUser.streak ? Math.min(100, data.currentUser.streak * 8) : 0}%` }} /></div><span className="league-next">Current <ChevronRight /></span></div><div className="period-tabs">{(["weekly", "monthly", "all-time"] as const).map((item) => <button key={item} className={period === item ? "is-selected" : ""} onClick={() => setPeriod(item)}>{item.replace("-", " ")}</button>)}</div></div>{leaderboard.isLoading ? <LoadingState /> : leaderboard.isError || !data ? <ErrorState onRetry={() => void leaderboard.refetch()} /> : data.entries.length === 0 ? <div className="empty-state"><div className="empty-icon"><Trophy /></div><h2>No rankings in this period yet</h2><p>Enter a battle to put your name on the board.</p></div> : <div className="leaderboard-table panel"><div className="leaderboard-head"><span>Rank</span><span>Creator</span><span>League</span><span>Wins</span><span>Losses</span><span>Win rate</span><span>Points</span></div>{data.entries.map((entry) => <div className={`leaderboard-row ${entry.user.id === data.currentUser.user.id ? "current-user" : ""}`} key={entry.user.id}><strong className="leaderboard-rank">{entry.position < 4 ? <Crown /> : `#${entry.position}`}</strong><div className="leaderboard-user"><Avatar name={entry.user.displayName} size="sm" accent={entry.position === 2 ? "coral" : entry.position === 3 ? "cyan" : "violet"} /><span><strong>{entry.user.displayName}</strong><small>@{entry.user.username} · {entry.xp.toLocaleString()} XP</small></span></div><span className={`league-text league-${entry.league.toLowerCase()}`}>{entry.league}</span><span>{entry.wins}</span><span>{entry.losses}</span><span>{entry.winRate}%</span><strong className="mono-value">{entry.rankingPoints.toLocaleString()}</strong></div>)}<div className="your-rank"><span>Your position</span><strong>#{data.currentUser.position}</strong><span>{data.currentUser.rankingPoints.toLocaleString()} points · {data.currentUser.winRate}% win rate</span><button onClick={() => navigate("/profile")}>View profile <ArrowUpRight /></button></div></div>}</div>;
 }
 
 function ProfilePage() {
-  const profile = useGetProfile();
+  const profile = useGetProfile({ query: { queryKey: getGetProfileQueryKey(), refetchOnWindowFocus: true } });
   const [, navigate] = useLocation();
   const { data: subData } = useGetPremiumSubscription();
   const portalMut = useCreatePremiumPortal({
@@ -448,7 +480,7 @@ function ProfilePage() {
         <div className="panel-heading" style={{ margin: 0, marginBottom: '16px' }}>
           <div>
             <span className="eyebrow" style={{ color: '#537514' }}>Subskrypcja</span>
-            <h2 style={{ color: '#293b09' }}>{currentPlan === "PREMIUM_PRO" ? "👑 VYBE Premium Pro aktywne" : "⭐ VYBE Premium aktywne"}</h2>
+           <h2 style={{ color: '#293b09' }}>{currentPlan === "PREMIUM_PRO" ? "VYBE Premium Pro aktywne" : "VYBE Premium aktywne"}</h2>
             {sub.cancel_at_period_end && <p style={{ color: '#c74437', fontSize: '12px', marginTop: '4px' }}>Anulowano - wygasa: {new Date(sub.current_period_end * 1000).toLocaleDateString()}</p>}
           </div>
           <Button onClick={() => portalMut.mutate()} disabled={portalMut.isPending} style={{ background: '#293b09', color: 'var(--lime)' }}>
@@ -473,15 +505,19 @@ function ProfilePage() {
       </section>
     )}
 
-    <div className="profile-stat-grid"><StatCard icon={Zap} label="Total XP" value={data.xp.toLocaleString()} detail={`Level ${data.level}`} accent="lime" /><StatCard icon={Trophy} label="Wins" value={data.wins} detail={`${winRate}% win rate`} accent="violet" /><StatCard icon={Flame} label="Streak" value={`${data.streak} days`} detail="Personal best" accent="coral" /><StatCard icon={Swords} label="Battles" value={data.wins + data.losses} detail={`${data.losses} losses`} accent="cyan" /></div>
-    <section className="panel badges-panel"><div className="panel-heading"><div><span className="eyebrow">Proof of play</span><h2>Badges & achievements</h2></div><span className="badge-count">{data.badges.length} unlocked</span></div><div className="badge-grid">{data.badges.map((badge) => <div className="achievement" key={badge}><div className="achievement-icon"><Check /></div><strong>{badge}</strong><small>Achievement unlocked</small></div>)}</div></section>
+     <div className="profile-stat-grid"><StatCard icon={Zap} label="Level & XP" value={`Lvl ${data.level}`} detail={`${data.xp.toLocaleString()} XP · ${data.xpForNextLevel.toLocaleString()} to next`} accent="lime" /><StatCard icon={Trophy} label="Record" value={`${data.wins}–${data.losses}`} detail={`${winRate}% win rate`} accent="violet" /><StatCard icon={Flame} label="Streak" value={`${data.streak} days`} detail={`Best: ${data.bestStreak} days`} accent="coral" /><StatCard icon={Target} label="Ranking" value={`#${data.rank}`} detail={`${data.rankingPoints.toLocaleString()} points`} accent="cyan" /></div>
+     <section className="panel badges-panel"><div className="panel-heading"><div><span className="eyebrow">Proof of play</span><h2>Badges & achievements</h2></div><span className="badge-count">{data.badges.length} unlocked · {data.activeDays} active days</span></div>{data.badges.length === 0 ? <div className="mini-empty">Your first badge is waiting for your next battle.</div> : <div className="badge-grid">{data.badges.map((badge) => <div className="achievement" key={badge}><div className="achievement-icon"><Check /></div><strong>{badge}</strong><small>Achievement unlocked</small></div>)}</div>}</section>
   </div>;
 }
 
 function NotificationsPage() {
-  const notifications = useListNotifications();
+  const qc = useQueryClient();
+  const notifications = useListNotifications({ query: { queryKey: getListNotificationsQueryKey(), refetchOnWindowFocus: true } });
   const data = (notifications.data ?? []) as Notification[];
-  return <div><PageHeader eyebrow="Inbox" title="Stay in the loop" description="The moments that keep your VYBE moving forward." /><section className="panel notification-list">{notifications.isLoading ? <LoadingState /> : data.map((item) => <div className={`notification-row ${item.read ? "" : "unread"}`} key={item.id}><div className={`notification-icon notification-${item.kind}`}><Bell /></div><div><strong>{item.title}</strong><p>{item.body}</p><small>{new Date(item.createdAt).toLocaleDateString()}</small></div>{!item.read && <span className="unread-dot" />}</div>)}</section></div>;
+  const markRead = useMarkNotificationRead({ mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getListNotificationsQueryKey() }); }, onError: () => toast({ title: "Could not update notification", description: "Try again in a moment.", variant: "destructive" }) } });
+  const markAllRead = useMarkAllNotificationsRead({ mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getListNotificationsQueryKey() }); toast({ title: "Inbox cleared", description: "All notifications are marked as read." }); }, onError: () => toast({ title: "Could not update inbox", description: "Try again in a moment.", variant: "destructive" }) } });
+  const unreadCount = data.filter((item) => !item.read).length;
+  return <div><PageHeader eyebrow="Inbox" title="Stay in the loop" description="The moments that keep your VYBE moving forward." /><section className="panel notification-list">{notifications.isLoading ? <LoadingState /> : notifications.isError ? <ErrorState onRetry={() => void notifications.refetch()} /> : <><div className="notification-list-header"><p>{unreadCount === 0 ? "You are all caught up." : `${unreadCount} unread ${unreadCount === 1 ? "update" : "updates"}`}</p>{unreadCount > 0 && <Button variant="secondary" onClick={() => markAllRead.mutate()} disabled={markAllRead.isPending}>{markAllRead.isPending ? <Loader2 className="spin" /> : <Check />} Mark all read</Button>}</div>{data.length === 0 ? <div className="empty-state"><div className="empty-icon"><Bell /></div><h2>Your inbox is quiet</h2><p>Battle updates and ranking moments will show up here.</p></div> : data.map((item) => <div className={`notification-row ${item.read ? "" : "unread"}`} key={item.id}><div className={`notification-icon notification-${item.kind}`}><Bell /></div><div className="notification-main"><strong>{item.title}</strong><p>{item.body}</p><small>{new Date(item.createdAt).toLocaleDateString()}</small></div><div className="notification-actions">{!item.read && <><span className="unread-dot" /><button className="notification-read-button" onClick={() => markRead.mutate({ notificationId: item.id })} disabled={markRead.isPending}>Mark read</button></>}</div></div>)}</>}</section></div>;
 }
 
 function AiPage() {
