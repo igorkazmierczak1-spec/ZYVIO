@@ -9,7 +9,7 @@ const filters = ['All', 'Photo', 'Music', 'Creativity', 'AI'];
 export default function BattlesScreen() {
   const colors = useColors();
   const [category, setCategory] = useState('All');
-  const params = category === 'All' ? {} : { category };
+  const params: { category?: string } = category === 'All' ? {} : { category };
   const battles = useListBattles(params, { query: { staleTime: 15_000 } });
   const list = battles.data ?? [];
   return (

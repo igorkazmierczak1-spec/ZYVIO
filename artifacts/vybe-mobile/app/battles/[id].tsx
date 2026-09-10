@@ -1,4 +1,4 @@
-import { useGetBattle, useJoinBattle, useVoteBattle } from '@workspace/api-client-react';
+import { getGetBattleQueryKey, useGetBattle, useJoinBattle, useVoteBattle } from '@workspace/api-client-react';
 import { useLocalSearchParams, router } from 'expo-router';
 import React from 'react';
 import { Text, View } from 'react-native';
@@ -8,7 +8,7 @@ import { useColors } from '@/hooks/useColors';
 export default function BattleDetailScreen() {
   const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const battle = useGetBattle(id ?? '', { query: { enabled: Boolean(id) } });
+  const battle = useGetBattle(id ?? '', { query: { enabled: Boolean(id), queryKey: getGetBattleQueryKey(id ?? '') } });
   const join = useJoinBattle();
   const vote = useVoteBattle();
   if (battle.isLoading) return <AppScreen scroll={false}><LoadingState /></AppScreen>;

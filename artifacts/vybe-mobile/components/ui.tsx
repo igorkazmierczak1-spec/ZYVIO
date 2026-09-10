@@ -131,8 +131,6 @@ export function BackButton() {
   return <IconButton icon="arrow-left" label="Wróć" onPress={() => router.back()} />;
 }
 
-export const uiStyles = styles;
-
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   scrollContent: { flexGrow: 1 },
@@ -157,3 +155,5 @@ const styles = StyleSheet.create({
   avatar: { alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontFamily: 'Inter_700Bold' },
 });
+
+export const uiStyles = styles;

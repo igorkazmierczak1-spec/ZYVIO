@@ -8,38 +8,53 @@ import { useColors } from '@/hooks/useColors';
 
 export default function SignInScreen() {
   const colors = useColors();
-  const { signIn, errors, fetchStatus } = useSignIn();
+  const { isLoaded, signIn, setActive } = useSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [message, setMessage] = useState('');
-  const busy = fetchStatus === 'fetching';
+  const [busy, setBusy] = useState(false);
 
   const finish = async () => {
-    await signIn.finalize({ navigate: () => router.replace('/') });
+    if (signIn?.createdSessionId) {
+      await setActive?.({ session: signIn.createdSessionId });
+      router.replace('/');
+    }
   };
 
   const submit = async () => {
+    if (!isLoaded || !signIn) return;
     setMessage('');
-    const result = await signIn.password({ emailAddress: email.trim(), password });
-    if (result.error) {
-      setMessage(result.error.message ?? 'Nie udało się zalogować.');
-      return;
-    }
-    if (signIn.status === 'complete') await finish();
-    else if (signIn.status === 'needs_second_factor' || signIn.status === 'needs_client_trust') {
-      const emailFactor = signIn.supportedSecondFactors?.find((factor) => factor.strategy === 'email_code');
-      if (emailFactor) await signIn.mfa.sendEmailCode();
-      setMessage('Wpisz kod wysłany na adres e-mail.');
+    setBusy(true);
+    try {
+      await signIn.create({ strategy: 'password', identifier: email.trim(), password });
+      if (signIn.status === 'complete') await finish();
+      else {
+        const emailFactor = signIn.supportedSecondFactors?.find((factor) => factor.strategy === 'email_code');
+        if (emailFactor) await signIn.prepareSecondFactor({ strategy: 'email_code' });
+        setMessage('Wpisz kod wysłany na adres e-mail.');
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nie udało się zalogować.');
+    } finally {
+      setBusy(false);
     }
   };
 
   const verify = async () => {
-    const result = await signIn.mfa.verifyEmailCode({ code });
-    if (result.error) setMessage(result.error.message ?? 'Nieprawidłowy kod.');
-    else if (signIn.status === 'complete') await finish();
+    if (!signIn) return;
+    setBusy(true);
+    try {
+      await signIn.attemptSecondFactor({ strategy: 'email_code', code });
+      if (signIn.status === 'complete') await finish();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nieprawidłowy kod.');
+    } finally {
+      setBusy(false);
+    }
   };
 
+  if (!isLoaded || !signIn) return null;
   return (
     <KeyboardAwareScrollViewCompat style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={[uiStyles.screenContent, { paddingTop: 70, paddingBottom: 36 }]} bottomOffset={30}>
       <BrandMark size={54} />
@@ -59,7 +74,7 @@ export default function SignInScreen() {
           <TextInput testID="sign-in-email" value={email} onChangeText={setEmail} placeholder="Adres e-mail" placeholderTextColor={colors.mutedForeground} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" style={[inputStyle, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]} />
           <TextInput testID="sign-in-password" value={password} onChangeText={setPassword} placeholder="Hasło" placeholderTextColor={colors.mutedForeground} secureTextEntry style={[inputStyle, { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border }]} />
           <PrimaryButton onPress={submit} disabled={!email || !password || busy}>{busy ? 'Logowanie…' : 'Zaloguj się'}</PrimaryButton>
-          {message || errors?.global?.[0]?.message ? <Text style={{ color: colors.destructive }}>{message || errors?.global?.[0]?.message}</Text> : null}
+          {message ? <Text style={{ color: colors.destructive }}>{message}</Text> : null}
         </View>
       )}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 5, marginTop: 8 }}>

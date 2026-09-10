@@ -26,7 +26,7 @@ export default function HomeScreen() {
         <View style={{ flex: 1 }}><Stat label="XP" value={profile.xp.toLocaleString()} icon="flash-outline" /></View>
       </View>
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <View style={{ flex: 1 }}><Stat label="Win rate" value={`${data.stats.winRate}%`} icon="target-outline" /></View>
+        <View style={{ flex: 1 }}><Stat label="Win rate" value={`${data.stats.winRate}%`} icon="radio-button-on-outline" /></View>
         <View style={{ flex: 1 }}><Stat label="Globalnie" value={`#${data.stats.globalRank}`} icon="trophy-outline" /></View>
       </View>
       <Header eyebrow="PICKED FOR YOU" title="Featured Battle" right={<Text onPress={() => router.push('/battles')} style={{ color: colors.primary, fontFamily: 'Inter_700Bold', marginTop: 8 }}>Wszystkie</Text>} />
