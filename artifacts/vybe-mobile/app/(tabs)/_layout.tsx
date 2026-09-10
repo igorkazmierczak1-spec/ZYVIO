@@ -24,9 +24,17 @@ function NativeTabLayout() {
         />
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="feed">
+        <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left', selected: 'bubble.left.fill' }} />
+        <NativeTabs.Trigger.Label>Social</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="battles">
         <NativeTabs.Trigger.Icon sf={{ default: 'bolt', selected: 'bolt.fill' }} />
         <NativeTabs.Trigger.Label>Battle</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="leaderboard">
+        <NativeTabs.Trigger.Icon sf={{ default: 'trophy', selected: 'trophy.fill' }} />
+        <NativeTabs.Trigger.Label>Ranking</NativeTabs.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Icon sf={{ default: 'person', selected: 'person.fill' }} />
@@ -94,10 +102,18 @@ function ClassicTabLayout() {
             ),
         }}
       />
+      <Tabs.Screen
+        name="feed"
+        options={{
+          title: 'Social',
+          tabBarIcon: ({ color }) => <Feather name="message-circle" size={22} color={color} />,
+        }}
+      />
       <Tabs.Screen name="battles" options={{ title: 'Battle', tabBarIcon: ({ color }) => <Feather name="zap" size={22} color={color} /> }} />
+      <Tabs.Screen name="leaderboard" options={{ title: 'Ranking', tabBarIcon: ({ color }) => <Feather name="award" size={22} color={color} /> }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: ({ color }) => <Feather name="user" size={22} color={color} /> }} />
-      <Tabs.Screen name="notifications" options={{ title: 'Alerty', tabBarIcon: ({ color }) => <Feather name="bell" size={22} color={color} /> }} />
-      <Tabs.Screen name="premium" options={{ title: 'Premium', tabBarIcon: ({ color }) => <Feather name="star" size={22} color={color} /> }} />
+      <Tabs.Screen name="notifications" options={{ href: null, title: 'Alerty', tabBarIcon: ({ color }) => <Feather name="bell" size={22} color={color} /> }} />
+      <Tabs.Screen name="premium" options={{ href: null, title: 'Premium', tabBarIcon: ({ color }) => <Feather name="star" size={22} color={color} /> }} />
     </Tabs>
   );
 }
