@@ -26,7 +26,7 @@ function HeroButton({ onPress, children }: React.PropsWithChildren<{ onPress: ()
       })}
     >
       <Text style={{ color: colors.foreground, fontSize: 12, fontFamily: 'Inter_700Bold' }}>{children}</Text>
-      <Ionicons name="arrow-up-right" size={16} color={colors.foreground} />
+      <Ionicons name="arrow-up-right-box" size={16} color={colors.foreground} />
     </Pressable>
   );
 }
@@ -103,7 +103,7 @@ function FeaturedBattleCard({ battle }: { battle: { id: string; category: string
           <Text style={{ color: lightTone ? colors.heroStart : colors.accent, fontSize: 11, fontFamily: 'Inter_700Bold' }}>+{battle.rewardXp ?? 250} XP</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <Text style={{ color: lightTone ? colors.heroStart : colors.card, fontSize: 11, fontFamily: 'Inter_700Bold' }}>Otwórz Battle</Text>
-            <Ionicons name="arrow-up-right" size={15} color={lightTone ? colors.heroStart : colors.card} />
+            <Ionicons name="arrow-up-right-box" size={15} color={lightTone ? colors.heroStart : colors.card} />
           </View>
         </View>
       </LinearGradient>
@@ -138,7 +138,7 @@ export default function HomeScreen() {
       />
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1 }}><Stat label="Aktywne Battle" value={data.stats.activeBattles} icon="flash-outline" accent="violet" /></View>
-        <View style={{ flex: 1 }}><Stat label="Tygodniowe XP" value={data.stats.weeklyXp.toLocaleString()} icon="zap-outline" accent="lime" /></View>
+        <View style={{ flex: 1 }}><Stat label="Tygodniowe XP" value={data.stats.weeklyXp.toLocaleString()} icon="flash-outline" accent="lime" /></View>
       </View>
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <View style={{ flex: 1 }}><Stat label="Win rate" value={`${data.stats.winRate}%`} icon="radio-button-on-outline" accent="coral" /></View>
