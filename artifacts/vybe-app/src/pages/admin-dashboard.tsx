@@ -864,8 +864,10 @@ function AdminRevenueTab() {
       </div>
 
       <div className="admin-kpi-grid">
-        <KpiCard label="Revenue" value={data.revenue != null ? `$${(data.revenue / 100).toFixed(2)}` : '$0.00'} />
+        <KpiCard label="Revenue" value={data.revenue != null ? `${(data.revenue / 100).toFixed(2)} zł` : '0,00 zł'} />
         <KpiCard label="Payments" value={data.payments != null ? data.payments : '0'} />
+        <KpiCard label="Premium users" value={(data as any).premiumCount ?? '0'} />
+        <KpiCard label="Premium Pro users" value={(data as any).premiumProCount ?? '0'} />
       </div>
 
       <div className="admin-card mt-4">
@@ -938,7 +940,7 @@ function AdminSubscriptionsTab() {
             <tr>
               <th>ID</th>
               <th>Customer</th>
-              <th>Plan</th>
+                <th>Plan</th>
               <th>Status</th>
               <th>Period End</th>
             </tr>
@@ -948,7 +950,7 @@ function AdminSubscriptionsTab() {
               <tr key={sub.id}>
                 <td>{sub.id}</td>
                 <td>{sub.customer_email || 'Unknown'}</td>
-                <td>{sub.plan_name || 'Standard'}</td>
+                <td>{sub.plan === 'PREMIUM_PRO' ? '👑 Premium Pro' : sub.plan === 'PREMIUM' ? '⭐ Premium' : 'Free'}</td>
                 <td><span className={`admin-badge status-${sub.status}`}>{sub.status}</span></td>
                 <td>{sub.current_period_end ? new Date(sub.current_period_end * 1000).toLocaleDateString() : 'N/A'}</td>
               </tr>
