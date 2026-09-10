@@ -37,11 +37,12 @@ async function listPaidPrices() {
 async function findPrice(plan: PaidPlan, period: BillingPeriod) {
   const prices = await listPaidPrices();
   const configuredId = configuredPriceId(plan, period);
-  return prices.find((price) =>
-    (configuredId ? price.id === configuredId : true)
-    && planFromMetadata(price) === plan
-    && periodFromPrice(price) === period,
-  );
+  const catalogMatch = (price: Record<string, unknown>) => planFromMetadata(price) === plan && periodFromPrice(price) === period;
+  // A configured Price ID is preferred, but the Stripe catalog metadata remains
+  // a safe server-side fallback if a Replit Secret was copied before the price
+  // was created or contains an outdated value. The client never supplies this ID.
+  return prices.find((price) => configuredId && price.id === configuredId && catalogMatch(price))
+    ?? prices.find(catalogMatch);
 }
 
 function activeSubscription(rows: Array<Record<string, unknown>>) {
