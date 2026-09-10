@@ -1,4 +1,4 @@
-import { and, count, eq, gte } from "drizzle-orm";
+import { and, count, eq, gte, sql } from "drizzle-orm";
 import { aiUsageTable, db } from "@workspace/db";
 import type { VybePlan } from "./premium";
 
@@ -42,7 +42,7 @@ export async function reserveAiUsage(input: {
     // Serialize reservations for one profile/feature/day so concurrent requests
     // cannot both pass the count check.
     await tx.execute(
-      `select pg_advisory_xact_lock(hashtext('${input.profileId}:${input.feature}:${dayStart.toISOString()}'))`,
+      sql`select pg_advisory_xact_lock(hashtext(${`${input.profileId}:${input.feature}:${dayStart.toISOString()}`}))`,
     );
     const [usage] = await tx
       .select({ total: count() })
