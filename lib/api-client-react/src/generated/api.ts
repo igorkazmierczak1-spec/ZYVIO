@@ -63,6 +63,7 @@ import type {
   ListAdminReportsParams,
   ListAdminUsersParams,
   ListBattlesParams,
+  ListSocialMessagesParams,
   MarkAllNotificationsRead200,
   Notification,
   OkResponse,
@@ -74,7 +75,12 @@ import type {
   ReportInput,
   SocialComment,
   SocialCommentInput,
+  SocialConversation,
+  SocialConversationInput,
   SocialFeed,
+  SocialMessage,
+  SocialMessageInput,
+  SocialMessagePage,
   SocialPost,
   SocialPostInput,
   SocialProfile,
@@ -2107,6 +2113,315 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUnblockSocialProfileMutationOptions(options));
+    }
+
+export const getListSocialConversationsUrl = () => {
+
+
+
+
+  return `/api/social/conversations`
+}
+
+/**
+ * @summary List the authenticated user's private conversations
+ */
+export const listSocialConversations = async ( options?: Parameters<typeof customFetch>[1]): Promise<SocialConversation[]> => {
+
+  return customFetch<SocialConversation[]>(getListSocialConversationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSocialConversationsQueryKey = () => {
+    return [
+    `/api/social/conversations`
+    ] as const;
+    }
+
+
+export const getListSocialConversationsQueryOptions = <TData = Awaited<ReturnType<typeof listSocialConversations>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialConversations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSocialConversationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSocialConversations>>> = ({ signal }) => listSocialConversations({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSocialConversations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSocialConversationsQueryResult = NonNullable<Awaited<ReturnType<typeof listSocialConversations>>>
+export type ListSocialConversationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the authenticated user's private conversations
+ */
+
+export function useListSocialConversations<TData = Awaited<ReturnType<typeof listSocialConversations>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialConversations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSocialConversationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSocialConversationUrl = () => {
+
+
+
+
+  return `/api/social/conversations`
+}
+
+/**
+ * @summary Start or reopen a private conversation
+ */
+export const createSocialConversation = async (socialConversationInput: SocialConversationInput, options?: Parameters<typeof customFetch>[1]): Promise<SocialConversation> => {
+
+  return customFetch<SocialConversation>(getCreateSocialConversationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialConversationInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSocialConversationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSocialConversation>>, TError,{data: BodyType<SocialConversationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSocialConversation>>, TError,{data: BodyType<SocialConversationInput>}, TContext> => {
+
+const mutationKey = ['createSocialConversation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSocialConversation>>, {data: BodyType<SocialConversationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSocialConversation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSocialConversationMutationResult = NonNullable<Awaited<ReturnType<typeof createSocialConversation>>>
+    export type CreateSocialConversationMutationBody = BodyType<SocialConversationInput>
+    export type CreateSocialConversationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Start or reopen a private conversation
+ */
+export const useCreateSocialConversation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSocialConversation>>, TError,{data: BodyType<SocialConversationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSocialConversation>>,
+        TError,
+        {data: BodyType<SocialConversationInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSocialConversationMutationOptions(options));
+    }
+
+export const getListSocialMessagesUrl = (conversationId: string,
+    params?: ListSocialMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/social/conversations/${conversationId}/messages?${stringifiedParams}` : `/api/social/conversations/${conversationId}/messages`
+}
+
+/**
+ * @summary List messages for a conversation the user belongs to
+ */
+export const listSocialMessages = async (conversationId: string,
+    params?: ListSocialMessagesParams, options?: Parameters<typeof customFetch>[1]): Promise<SocialMessagePage> => {
+
+  return customFetch<SocialMessagePage>(getListSocialMessagesUrl(conversationId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSocialMessagesQueryKey = (conversationId: string,
+    params?: ListSocialMessagesParams,) => {
+    return [
+    `/api/social/conversations/${conversationId}/messages`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSocialMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listSocialMessages>>, TError = ErrorType<unknown>>(conversationId: string,
+    params?: ListSocialMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSocialMessagesQueryKey(conversationId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSocialMessages>>> = ({ signal }) => listSocialMessages(conversationId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: conversationId !== null && conversationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSocialMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSocialMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listSocialMessages>>>
+export type ListSocialMessagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List messages for a conversation the user belongs to
+ */
+
+export function useListSocialMessages<TData = Awaited<ReturnType<typeof listSocialMessages>>, TError = ErrorType<unknown>>(
+ conversationId: string,
+    params?: ListSocialMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSocialMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSocialMessagesQueryOptions(conversationId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateSocialMessageUrl = (conversationId: string,) => {
+
+
+
+
+  return `/api/social/conversations/${conversationId}/messages`
+}
+
+/**
+ * @summary Send a private message to a conversation participant
+ */
+export const createSocialMessage = async (conversationId: string,
+    socialMessageInput: SocialMessageInput, options?: Parameters<typeof customFetch>[1]): Promise<SocialMessage> => {
+
+  return customFetch<SocialMessage>(getCreateSocialMessageUrl(conversationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(socialMessageInput)
+  }
+);}
+
+
+
+
+
+export const getCreateSocialMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSocialMessage>>, TError,{conversationId: string;data: BodyType<SocialMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSocialMessage>>, TError,{conversationId: string;data: BodyType<SocialMessageInput>}, TContext> => {
+
+const mutationKey = ['createSocialMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSocialMessage>>, {conversationId: string;data: BodyType<SocialMessageInput>}> = (props) => {
+          const {conversationId,data} = props ?? {};
+
+          return  createSocialMessage(conversationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSocialMessageMutationResult = NonNullable<Awaited<ReturnType<typeof createSocialMessage>>>
+    export type CreateSocialMessageMutationBody = BodyType<SocialMessageInput>
+    export type CreateSocialMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Send a private message to a conversation participant
+ */
+export const useCreateSocialMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSocialMessage>>, TError,{conversationId: string;data: BodyType<SocialMessageInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSocialMessage>>,
+        TError,
+        {conversationId: string;data: BodyType<SocialMessageInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSocialMessageMutationOptions(options));
     }
 
 export const getGenerateIdeasUrl = () => {

@@ -105,6 +105,48 @@ export interface BlockState {
   blocked: boolean;
 }
 
+export interface SocialParticipant {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string;
+}
+
+export interface SocialMessage {
+  id: string;
+  conversationId: string;
+  sender: SocialParticipant;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SocialConversation {
+  id: string;
+  otherParticipant: SocialParticipant;
+  lastMessage: SocialMessage | null;
+  updatedAt: string;
+}
+
+export interface SocialConversationInput {
+  /** @minLength 1 */
+  profileId: string;
+}
+
+export interface SocialMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  body: string;
+}
+
+export interface SocialMessagePage {
+  items: SocialMessage[];
+  page: number;
+  hasMore: boolean;
+}
+
 export interface UserSummary {
   id: string;
   username: string;
@@ -813,6 +855,13 @@ export const GetSocialFeedFilter = {
   trending: 'trending',
   latest: 'latest',
 } as const;
+
+export type ListSocialMessagesParams = {
+/**
+ * @minimum 1
+ */
+page?: number;
+};
 
 export type GetAdminOverviewParams = {
 range?: AdminRangeParameter;

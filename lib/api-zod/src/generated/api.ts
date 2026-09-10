@@ -890,6 +890,134 @@ export const UnblockSocialProfileResponse = zod.object({
 
 
 /**
+ * @summary List the authenticated user's private conversations
+ */
+export const ListSocialConversationsResponseItem = zod.object({
+  "id": zod.string(),
+  "otherParticipant": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string()
+}),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.string(),
+  "conversationId": zod.string(),
+  "sender": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string()
+}),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),zod.null()]),
+  "updatedAt": zod.coerce.date()
+})
+export const ListSocialConversationsResponse = zod.array(ListSocialConversationsResponseItem)
+
+
+/**
+ * @summary Start or reopen a private conversation
+ */
+
+
+
+export const CreateSocialConversationBody = zod.object({
+  "profileId": zod.string().min(1)
+})
+
+export const CreateSocialConversationResponse = zod.object({
+  "id": zod.string(),
+  "otherParticipant": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string()
+}),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.string(),
+  "conversationId": zod.string(),
+  "sender": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string()
+}),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),zod.null()]),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List messages for a conversation the user belongs to
+ */
+export const ListSocialMessagesParams = zod.object({
+  "conversationId": zod.coerce.string()
+})
+
+export const listSocialMessagesQueryPageDefault = 1;
+
+
+
+export const ListSocialMessagesQueryParams = zod.object({
+  "page": zod.coerce.number().int().min(1).default(listSocialMessagesQueryPageDefault)
+})
+
+export const ListSocialMessagesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "conversationId": zod.string(),
+  "sender": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string()
+}),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "page": zod.number().int(),
+  "hasMore": zod.boolean()
+})
+
+
+/**
+ * @summary Send a private message to a conversation participant
+ */
+export const CreateSocialMessageParams = zod.object({
+  "conversationId": zod.coerce.string()
+})
+
+export const createSocialMessageBodyBodyMax = 2000;
+
+
+
+export const CreateSocialMessageBody = zod.object({
+  "body": zod.string().min(1).max(createSocialMessageBodyBodyMax)
+})
+
+export const CreateSocialMessageResponse = zod.object({
+  "id": zod.string(),
+  "conversationId": zod.string(),
+  "sender": zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string()
+}),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Generate creative battle ideas
  */
 export const generateIdeasBodyTopicMin = 2;
