@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, notInArray, or } from "drizzle-orm";
 import {
   blocksTable,
   commentsTable,
@@ -139,7 +139,7 @@ async function getPostForUser(postId: string, profileId: string) {
   const filters = [
     eq(postsTable.id, postId),
     eq(postsTable.contentStatus, "ACTIVE"),
-    ...(blocked.length ? [sql`${postsTable.authorProfileId} not in ${blocked}`] : []),
+    ...(blocked.length ? [notInArray(postsTable.authorProfileId, blocked)] : []),
   ];
   const [post] = await db.select().from(postsTable).where(and(...filters)).limit(1);
   return post;
@@ -157,7 +157,7 @@ router.get("/social/feed", async (req, res, next) => {
     const blocked = await blockedProfileIds(profile.id);
     const filters = [
       eq(postsTable.contentStatus, "ACTIVE"),
-      ...(blocked.length ? [sql`${postsTable.authorProfileId} not in ${blocked}`] : []),
+      ...(blocked.length ? [notInArray(postsTable.authorProfileId, blocked)] : []),
     ];
     if (query.category) filters.push(eq(postsTable.category, query.category));
     if (query.filter === "following") {
