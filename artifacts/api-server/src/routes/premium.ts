@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, profilesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { stripeRequest } from "../stripeClient";
 import { currentUserFrom, requireAuthenticatedUser } from "../middlewares/auth";
 
@@ -9,11 +9,24 @@ type BillingPeriod = "MONTHLY" | "YEARLY";
 
 const router: IRouter = Router();
 
+class CheckoutConflictError extends Error {}
+
 function planFromMetadata(price: Record<string, unknown>): PaidPlan | null {
   const plan = (price.metadata as Record<string, string> | undefined)?.vybe_plan;
   if (plan === "premium_pro") return "PREMIUM_PRO";
   if (plan === "premium") return "PREMIUM";
   return null;
+}
+
+function planFromPrice(price: Record<string, unknown>): PaidPlan | null {
+  const id = typeof price.id === "string" ? price.id : undefined;
+  if (id === process.env.STRIPE_PREMIUM_PRO_MONTHLY_PRICE_ID || id === process.env.STRIPE_PREMIUM_PRO_YEARLY_PRICE_ID) {
+    return "PREMIUM_PRO";
+  }
+  if (id === process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID || id === process.env.STRIPE_PREMIUM_YEARLY_PRICE_ID) {
+    return "PREMIUM";
+  }
+  return planFromMetadata(price);
 }
 
 function periodFromPrice(price: Record<string, unknown>): BillingPeriod | null {
@@ -37,7 +50,7 @@ async function listPaidPrices() {
 async function findPrice(plan: PaidPlan, period: BillingPeriod) {
   const prices = await listPaidPrices();
   const configuredId = configuredPriceId(plan, period);
-  const catalogMatch = (price: Record<string, unknown>) => planFromMetadata(price) === plan && periodFromPrice(price) === period;
+  const catalogMatch = (price: Record<string, unknown>) => planFromPrice(price) === plan && periodFromPrice(price) === period;
   // A configured Price ID is preferred, but the Stripe catalog metadata remains
   // a safe server-side fallback if a Replit Secret was copied before the price
   // was created or contains an outdated value. The client never supplies this ID.
@@ -86,7 +99,7 @@ router.get("/premium/plans", async (_req, res, next): Promise<void> => {
       if (productPlan !== "premium" && productPlan !== "premium_pro") continue;
       const prices = await stripeRequest<{ data: Array<Record<string, unknown>> }>(`prices?active=true&product=${product.id}&limit=100`);
       for (const price of prices.data ?? []) {
-        const plan = planFromMetadata(price) ?? (productPlan === "premium_pro" ? "PREMIUM_PRO" : "PREMIUM");
+        const plan = planFromPrice(price) ?? (productPlan === "premium_pro" ? "PREMIUM_PRO" : "PREMIUM");
         const period = periodFromPrice(price);
         if (!period) continue;
         plans.push({
@@ -117,8 +130,8 @@ router.get("/premium/subscription", requireAuthenticatedUser, async (_req, res, 
     const subscription = activeSubscription(result.data ?? []) ?? result.data?.[0] ?? null;
     const item = ((subscription?.items as Record<string, unknown> | undefined)?.data as Array<Record<string, unknown>> | undefined)?.[0];
     const price = item?.price as Record<string, unknown> | undefined;
-    const plan = price ? planFromMetadata(price) : null;
-    if (subscription && plan) await updateLocalSubscription(user.id, subscription, plan);
+     const plan = price ? planFromPrice(price) : null;
+     if (subscription) await updateLocalSubscription(user.id, subscription, plan ?? "FREE");
     res.json({ subscription: subscription ? { ...subscription, plan } : null, plan: plan ?? user.plan ?? "FREE" });
   } catch (error) {
     next(error);
@@ -134,41 +147,78 @@ router.post("/premium/checkout", requireAuthenticatedUser, async (req, res, next
       return;
     }
     const user = currentUserFrom(res);
-    if (user.stripeCustomerId) {
-      const existing = await stripeRequest<{ data: Array<Record<string, unknown>> }>(`subscriptions?customer=${encodeURIComponent(user.stripeCustomerId)}&status=all&limit=10`);
-      if (activeSubscription(existing.data ?? [])) {
-        res.status(409).json({ error: "An active subscription already exists. Use subscription management to change plans." });
-        return;
-      }
-    }
     const price = await findPrice(plan, period);
     if (!price?.id) {
       res.status(503).json({ error: `${plan} ${period} price is not configured in Stripe` });
       return;
     }
-    let customerId = user.stripeCustomerId;
-    if (!customerId) {
-      const customer = await stripeRequest<{ id: string }>("customers", "POST", {
-        email: user.email,
-        "metadata[vybeUserId]": user.id,
-      });
-      customerId = customer.id;
-      await db.update(profilesTable).set({ stripeCustomerId: customerId }).where(eq(profilesTable.id, user.id));
-    }
     const base = `${req.protocol}://${req.get("host")}`;
-    const session = await stripeRequest<{ url: string }>("checkout/sessions", "POST", {
-      customer: customerId,
-      mode: "subscription",
-      "line_items[0][price]": String(price.id),
-      "line_items[0][quantity]": 1,
-      success_url: `${base}/premium?checkout=success&plan=${plan}`,
-      cancel_url: `${base}/premium?checkout=cancel&plan=${plan}`,
-      "metadata[vybeUserId]": user.id,
-      "subscription_data[metadata][vybeUserId]": user.id,
-      "subscription_data[metadata][vybePlan]": plan,
+    const session = await db.transaction(async (tx) => {
+      // The lock covers customer resolution, the active-subscription check, and
+      // the open-session lookup so concurrent checkout clicks cannot create
+      // duplicate Stripe customers or sessions for the same profile.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`vybe-checkout:${user.id}`}))`);
+      const [lockedProfile] = await tx.select().from(profilesTable).where(eq(profilesTable.id, user.id));
+      if (!lockedProfile) throw new Error("Profile not found");
+
+      let customerId = lockedProfile.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripeRequest<{ id: string }>("customers", "POST", {
+          email: lockedProfile.email,
+          "metadata[vybeUserId]": lockedProfile.id,
+        });
+        customerId = customer.id;
+        await tx.update(profilesTable).set({ stripeCustomerId: customerId }).where(eq(profilesTable.id, lockedProfile.id));
+      } else {
+        const customer = await stripeRequest<Record<string, unknown>>(`customers/${encodeURIComponent(customerId)}`);
+        const metadata = customer.metadata as Record<string, unknown> | undefined;
+        const customerUserId = typeof metadata?.vybeUserId === "string" ? metadata.vybeUserId : undefined;
+        const customerEmail = typeof customer.email === "string" ? customer.email.toLowerCase() : undefined;
+        if ((customerUserId && customerUserId !== lockedProfile.id) ||
+          (!customerUserId && customerEmail && customerEmail !== lockedProfile.email.toLowerCase())) {
+          throw new Error("Stripe customer does not belong to this profile");
+        }
+        if (!customerUserId) {
+          await stripeRequest(`customers/${encodeURIComponent(customerId)}`, "POST", {
+            "metadata[vybeUserId]": lockedProfile.id,
+          });
+        }
+      }
+
+      const existing = await stripeRequest<{ data: Array<Record<string, unknown>> }>(`subscriptions?customer=${encodeURIComponent(customerId)}&status=all&limit=10`);
+      if (activeSubscription(existing.data ?? [])) {
+        throw new CheckoutConflictError("An active subscription already exists");
+      }
+
+      const openSessions = await stripeRequest<{ data: Array<Record<string, unknown>> }>(
+        `checkout/sessions?customer=${encodeURIComponent(customerId)}&status=open&limit=10`,
+      );
+      const reusableSession = (openSessions.data ?? []).find((candidate) => {
+        const metadata = candidate.metadata as Record<string, unknown> | undefined;
+        return metadata?.vybeUserId === lockedProfile.id && metadata?.vybePlan === plan &&
+          typeof candidate.url === "string";
+      });
+      if (reusableSession?.url) return { url: reusableSession.url };
+
+      return stripeRequest<{ url: string }>("checkout/sessions", "POST", {
+        customer: customerId,
+        mode: "subscription",
+        "line_items[0][price]": String(price.id),
+        "line_items[0][quantity]": 1,
+        success_url: `${base}/premium?checkout=success&plan=${plan}`,
+        cancel_url: `${base}/premium?checkout=cancel&plan=${plan}`,
+        "metadata[vybeUserId]": lockedProfile.id,
+        "metadata[vybePlan]": plan,
+        "subscription_data[metadata][vybeUserId]": lockedProfile.id,
+        "subscription_data[metadata][vybePlan]": plan,
+      });
     });
     res.json({ url: session.url, plan, billingPeriod: period });
   } catch (error) {
+    if (error instanceof CheckoutConflictError) {
+      res.status(409).json({ error: "An active subscription already exists. Use subscription management to change plans." });
+      return;
+    }
     next(error);
   }
 });

@@ -22,10 +22,14 @@ function periodFromPrice(price: any) {
 async function findProfile(customerId: string | null | undefined, userId?: string | null) {
   if (userId) {
     const [byUser] = await db.select().from(profilesTable).where(eq(profilesTable.id, userId));
-    if (byUser) return byUser;
+    if (byUser) {
+      if (customerId && byUser.stripeCustomerId && byUser.stripeCustomerId !== customerId) return undefined;
+      return byUser;
+    }
   }
   if (customerId) {
     const [byCustomer] = await db.select().from(profilesTable).where(eq(profilesTable.stripeCustomerId, customerId));
+    if (byCustomer && userId && byCustomer.id !== userId) return undefined;
     return byCustomer;
   }
   return undefined;
@@ -64,29 +68,36 @@ export class WebhookHandlers {
       .returning({ id: stripeWebhookEventsTable.id });
     if (!inserted) return;
 
-    const data: any = event.data.object;
-    if (event.type === "checkout.session.completed") {
-      const userId = data.metadata?.vybeUserId ?? data.subscription_details?.metadata?.vybeUserId;
-      if (data.subscription) {
-        const subscription = await stripeRequest<any>(`subscriptions/${String(data.subscription)}`);
-        await syncSubscription(subscription, userId);
+    try {
+      const data: any = event.data.object;
+      if (event.type === "checkout.session.completed") {
+        const userId = data.metadata?.vybeUserId ?? data.subscription_details?.metadata?.vybeUserId;
+        if (data.subscription) {
+          const subscription = await stripeRequest<any>(`subscriptions/${String(data.subscription)}`);
+          await syncSubscription(subscription, userId);
+        }
+        return;
       }
-      return;
-    }
-    if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
-      await syncSubscription(data, data.metadata?.vybeUserId);
-      return;
-    }
-    if (event.type === "customer.subscription.deleted") {
-      await syncSubscription(data, data.metadata?.vybeUserId, "canceled");
-      return;
-    }
-    if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
-      const subscriptionId = typeof data.subscription === "string" ? data.subscription : data.subscription?.id;
-      if (subscriptionId) {
-        const subscription = await stripeRequest<any>(`subscriptions/${subscriptionId}`);
-        await syncSubscription(subscription, undefined, event.type === "invoice.payment_failed" ? "past_due" : undefined);
+      if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
+        await syncSubscription(data, data.metadata?.vybeUserId);
+        return;
       }
+      if (event.type === "customer.subscription.deleted") {
+        await syncSubscription(data, data.metadata?.vybeUserId, "canceled");
+        return;
+      }
+      if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
+        const subscriptionId = typeof data.subscription === "string" ? data.subscription : data.subscription?.id;
+        if (subscriptionId) {
+          const subscription = await stripeRequest<any>(`subscriptions/${subscriptionId}`);
+          await syncSubscription(subscription, undefined, event.type === "invoice.payment_failed" ? "past_due" : undefined);
+        }
+      }
+    } catch (error) {
+      // Do not leave a failed event permanently marked as processed. Stripe
+      // must be able to retry after a transient API/database failure.
+      await db.delete(stripeWebhookEventsTable).where(eq(stripeWebhookEventsTable.id, event.id));
+      throw error;
     }
   }
 }
