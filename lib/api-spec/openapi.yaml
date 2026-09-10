@@ -206,6 +206,34 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Notification"
+  /notifications/{notificationId}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark one notification as read
+      parameters:
+        - $ref: "#/components/parameters/NotificationId"
+      responses:
+        "200":
+          description: Updated notification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notification" }
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all current notifications as read
+      responses:
+        "200":
+          description: Notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { type: boolean }
   /ai/ideas:
     post:
       operationId: generateIdeas
@@ -540,6 +568,11 @@ components:
       required: true
       schema:
         type: string
+    NotificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema: { type: string }
     UserId:
       name: userId
       in: path
@@ -570,7 +603,7 @@ components:
         - status
     UserSummary:
       type: object
-      required: [id, username, displayName, country, avatarUrl, level]
+      required: [id, username, displayName, country, avatarUrl, level, wins, losses, winRate, rankingPoints]
       properties:
         id: { type: string }
         username: { type: string }
@@ -578,11 +611,15 @@ components:
         country: { type: string }
         avatarUrl: { type: string }
         level: { type: integer }
+        wins: { type: integer }
+        losses: { type: integer }
+        winRate: { type: integer }
+        rankingPoints: { type: integer }
     Profile:
       allOf:
         - $ref: "#/components/schemas/UserSummary"
         - type: object
-          required: [email, role, bio, xp, wins, losses, rank, league, streak, badges]
+          required: [email, role, bio, xp, wins, losses, rank, league, streak, bestStreak, activeDays, badges, rankingPoints, xpForNextLevel, progress]
           properties:
             email: { type: string, format: email }
             role:
@@ -590,11 +627,16 @@ components:
               enum: [USER, ADMIN]
             bio: { type: string }
             xp: { type: integer }
+            rankingPoints: { type: integer }
             wins: { type: integer }
             losses: { type: integer }
             rank: { type: integer }
             league: { type: string }
             streak: { type: integer }
+            bestStreak: { type: integer }
+            activeDays: { type: integer }
+            xpForNextLevel: { type: integer }
+            progress: { type: integer }
             badges:
               type: array
               items: { type: string }
@@ -617,7 +659,7 @@ components:
         votes: { type: integer }
     Battle:
       type: object
-      required: [id, title, category, status, prompt, createdAt, endsAt, participants, participantCount, maxParticipants]
+      required: [id, title, category, status, prompt, createdAt, endsAt, participants, participantCount, maxParticipants, winnerParticipantId, loserParticipantId]
       properties:
         id: { type: string }
         title: { type: string }
@@ -636,6 +678,8 @@ components:
         rewardXp: { type: integer }
         coverTone: { type: string }
         isJoined: { type: boolean }
+        winnerParticipantId: { type: string, nullable: true }
+        loserParticipantId: { type: string, nullable: true }
     BattleInput:
       type: object
       required: [title, category, prompt, endsAt]
@@ -652,12 +696,15 @@ components:
         participantId: { type: string }
     LeaderboardEntry:
       type: object
-      required: [position, user, xp, wins, streak, league]
+      required: [position, user, xp, wins, losses, winRate, rankingPoints, streak, league]
       properties:
         position: { type: integer }
         user: { $ref: "#/components/schemas/UserSummary" }
         xp: { type: integer }
         wins: { type: integer }
+        losses: { type: integer }
+        winRate: { type: integer }
+        rankingPoints: { type: integer }
         streak: { type: integer }
         league: { type: string }
     Leaderboard:

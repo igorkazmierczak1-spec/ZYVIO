@@ -392,7 +392,7 @@ router.post("/battles/:battleId", async (req, res, next) => {
       return { battle: updated ?? lockedBattle };
     });
     if ("error" in battle) {
-      res.status(battle.status).json({ error: battle.error });
+      res.status(battle.status ?? 409).json({ error: battle.error });
       return;
     }
     if (!battle.battle) {
