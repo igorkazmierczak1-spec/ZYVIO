@@ -1,0 +1,413 @@
+ROZBUDUJ ISTNIEJĄCY SYSTEM MONETYZACJI VYBE O DRUGI PŁATNY PLAN: PREMIUM PRO.
+
+OBECNIE DZIAŁA:
+
+- Clerk authentication,
+- PostgreSQL,
+- role USER/ADMIN,
+- VYBE Premium,
+- Stripe,
+- subskrypcje,
+- panel ADMIN,
+- Premium 19,99 zł/miesiąc,
+- Premium 149,99 zł/rok.
+
+NIE USUWAJ, NIE NADPISUJ I NIE PSUJ ISTNIEJĄCEGO PREMIUM.
+
+==================================================
+
+1. NOWA STRUKTURA PLANÓW
+   ==================================================
+
+FREE
+0 zł
+
+PREMIUM
+19,99 zł / miesiąc
+149,99 zł / rok
+
+PREMIUM PRO
+39,99 zł / miesiąc
+299,99 zł / rok
+
+Roczne plany mają być wyraźnie oznaczone jako korzystniejsze cenowo.
+
+Dodaj przełącznik:
+
+MIESIĘCZNIE | ROCZNIE
+
+Użytkownik ma móc wybrać plan przed rozpoczęciem płatności.
+
+==================================================
+2. KONKRETNE FUNKCJE PREMIUM PRO
+
+Premium Pro powinno zawierać wszystkie funkcje Premium oraz dodatkowe funkcje PRO.
+
+PREMIUM:
+
+- rozszerzone możliwości profilu,
+- dodatkowe możliwości personalizacji,
+- rozszerzone funkcje Battle,
+- dodatkowe statystyki,
+- usunięcie reklam, JEŚLI reklamy istnieją w VYBE,
+- oznaczenie PREMIUM.
+
+PREMIUM PRO:
+Wszystko z Premium +
+
+- ⭐ specjalna odznaka PRO,
+- 📊 zaawansowane statystyki profilu,
+- 📈 szczegółowe statystyki Battle,
+- 🏆 rozszerzone statystyki rankingowe,
+- 🎨 dodatkowe opcje personalizacji profilu,
+- 🚀 priorytetowy dostęp do nowych funkcji, jeśli architektura VYBE na to pozwala,
+- 🤖 rozszerzone limity funkcji AI, jeśli AI jest już wdrożone,
+- 👑 wyróżnienie profilu PRO,
+- 🔥 dodatkowe opcje dostępne wyłącznie dla PRO.
+
+WAŻNE:
+Nie pokazuj funkcji jako dostępnych, jeśli nie są faktycznie zaimplementowane.
+Jeżeli jakaś funkcja nie istnieje jeszcze w VYBE, najpierw przygotuj ją technicznie albo oznacz ją jako „Coming soon” zamiast udawać, że działa.
+
+==================================================
+3. STRONA CENOWA
+
+Przebuduj /premium w profesjonalną stronę wyboru planu.
+
+Pokaż trzy karty:
+
+FREE
+PREMIUM
+PREMIUM PRO
+
+Dodaj tabelę porównawczą funkcji.
+
+Premium Pro ma być wizualnie wyróżnione jako plan dla najbardziej aktywnych użytkowników.
+
+Dodaj przyciski:
+
+„Zacznij za darmo”
+„Kup Premium”
+„Kup Premium Pro”
+
+Dodaj przełącznik miesięcznie/rocznie.
+
+Na telefonie karty mają wyglądać bardzo dobrze.
+
+==================================================
+4. STRIPE
+
+Dodaj do Stripe cztery ceny:
+
+PREMIUM MONTHLY
+19,99 zł / miesiąc
+
+PREMIUM YEARLY
+149,99 zł / rok
+
+PREMIUM PRO MONTHLY
+39,99 zł / miesiąc
+
+PREMIUM PRO YEARLY
+299,99 zł / rok
+
+Jeżeli istniejące Premium Price ID są już skonfigurowane, ZACHOWAJ JE.
+
+Dodaj nowe Replit Secrets:
+
+STRIPE_PREMIUM_PRO_MONTHLY_PRICE_ID
+STRIPE_PREMIUM_PRO_YEARLY_PRICE_ID
+
+Nie usuwaj istniejących:
+STRIPE_PREMIUM_MONTHLY_PRICE_ID
+STRIPE_PREMIUM_YEARLY_PRICE_ID
+
+Nie umieszczaj sekretów w frontendzie.
+
+==================================================
+5. CHECKOUT
+
+Po wyborze planu i okresu:
+
+- użytkownik musi być zalogowany,
+- backend pobiera prawdziwy Clerk user ID,
+- backend określa wybraną cenę na podstawie bezpiecznej konfiguracji,
+- frontend NIE może przesłać własnej ceny,
+- frontend NIE może nadać sobie planu,
+- Stripe Checkout otrzymuje prawidłowy Price ID,
+- użytkownik zostaje przekierowany do Stripe.
+
+Backend ma akceptować tylko skonfigurowane Price ID.
+
+==================================================
+6. BAZA DANYCH
+
+Rozbuduj istniejącą strukturę subskrypcji tak, aby obsługiwała:
+
+FREE
+PREMIUM
+PREMIUM_PRO
+
+Dodaj/wykorzystaj pole:
+
+plan
+
+z wartościami:
+
+FREE
+PREMIUM
+PREMIUM_PRO
+
+Nie twórz osobnych, niepotrzebnych systemów dla każdego planu.
+
+Zachowaj:
+
+- stripeCustomerId,
+- stripeSubscriptionId,
+- stripePriceId,
+- status,
+- billingPeriod,
+- currentPeriodStart,
+- currentPeriodEnd,
+- cancelAtPeriodEnd.
+
+==================================================
+7. WEBHOOK
+
+Rozszerz istniejący webhook Stripe.
+
+Po prawidłowym webhooku system ma rozpoznawać:
+
+Premium Monthly
+Premium Yearly
+Premium Pro Monthly
+Premium Pro Yearly
+
+Na podstawie Stripe Price ID ustaw odpowiedni plan.
+
+Obsłuż:
+
+- checkout.session.completed,
+- customer.subscription.created,
+- customer.subscription.updated,
+- customer.subscription.deleted,
+- invoice.paid,
+- invoice.payment_failed.
+
+Zachowaj weryfikację podpisu webhooka i ochronę przed podwójnym przetwarzaniem eventów.
+
+==================================================
+8. UPRAWNIENIA
+
+Stwórz centralny system:
+
+hasPremiumAccess(userId)
+hasPremiumProAccess(userId)
+
+Zasada:
+
+FREE:
+brak funkcji płatnych.
+
+PREMIUM:
+Premium + podstawowe funkcje płatne.
+
+PREMIUM_PRO:
+Premium + wszystkie funkcje Pro.
+
+Premium Pro MUSI automatycznie posiadać dostęp do funkcji Premium.
+
+Nie pozwól użytkownikowi zmienić planu przez frontend, localStorage, DevTools ani request body.
+
+==================================================
+9. PROFIL UŻYTKOWNIKA
+
+W profilu pokaż:
+
+FREE
+PREMIUM ⭐
+PREMIUM PRO 👑
+
+Dla Premium Pro dodaj specjalną odznakę PRO.
+
+Pokaż:
+
+- aktualny plan,
+- status,
+- okres rozliczeniowy,
+- następne rozliczenie,
+- możliwość zarządzania subskrypcją.
+
+Przycisk:
+
+„Zarządzaj subskrypcją”
+
+ma prowadzić do Stripe Customer Portal.
+
+==================================================
+10. ZMIANA PLANU
+
+Użytkownik Premium powinien móc przejść na Premium Pro.
+
+Użytkownik Premium Pro powinien móc przejść na Premium.
+
+Wykorzystaj Stripe Billing/Customer Portal albo bezpieczną logikę zmiany subskrypcji.
+
+Nie twórz drugiej równoległej subskrypcji, jeżeli użytkownik już posiada aktywną subskrypcję.
+
+Obsłuż prawidłowo:
+
+- upgrade,
+- downgrade,
+- anulowanie,
+- odnowienie,
+- nieudaną płatność.
+
+==================================================
+11. PANEL ADMINA
+
+Rozbuduj istniejący panel ADMIN → MONETYZACJA.
+
+Dodaj statystyki:
+
+- FREE users,
+- PREMIUM users,
+- PREMIUM PRO users,
+- aktywne subskrypcje,
+- nowe subskrypcje,
+- anulowania,
+- MRR,
+- ARR, jeśli można go prawidłowo obliczyć,
+- przychód Premium,
+- przychód Premium Pro.
+
+Dodaj wykres:
+
+FREE → PREMIUM → PREMIUM PRO
+
+oraz przychody według planu.
+
+Dodaj filtry:
+
+Wszystkie
+FREE
+PREMIUM
+PREMIUM PRO
+
+Wszystkie dane muszą pochodzić z rzeczywistej bazy/Stripe.
+
+==================================================
+12. ADMIN — UŻYTKOWNIK
+
+W szczegółach użytkownika pokaż:
+
+Plan:
+FREE / PREMIUM / PREMIUM PRO
+
+Status subskrypcji.
+
+Nie pozwalaj zwykłemu ADMINOWI fałszować płatności.
+
+Jeżeli istnieje system ręcznego przyznania dostępu promocyjnego, zachowaj go jako osobny ADMIN GRANT i wyraźnie oznacz taki dostęp jako ręcznie nadany.
+
+==================================================
+13. CENNIK W CAŁEJ APLIKACJI
+
+Usuń hardcoded ceny z komponentów frontendowych.
+
+Ceny i Price ID powinny pochodzić z centralnej konfiguracji.
+
+Nie może być sytuacji, w której strona pokazuje 19,99 zł, ale Stripe pobiera inną cenę.
+
+Źródłem prawdy dla płatności ma być Stripe.
+
+==================================================
+14. UX
+
+Dodaj jasne komunikaty:
+
+„Wybrano Premium”
+„Wybrano Premium Pro”
+„Płatność zakończona pomyślnie”
+„Twoje Premium Pro jest aktywne”
+„Subskrypcja została anulowana”
+„Nie udało się przetworzyć płatności”
+
+Dodaj loading/error states.
+
+Nie pokazuj błędów technicznych użytkownikowi.
+
+==================================================
+15. BEZPIECZEŃSTWO
+
+Sprawdź szczególnie:
+
+- Price ID kontrolowane przez backend,
+- Stripe Secret Key tylko backend,
+- webhook signature verification,
+- Clerk jako źródło tożsamości,
+- brak możliwości samodzielnego nadania Premium/Pro,
+- brak możliwości manipulacji ceną,
+- ochrona endpointów,
+- walidacja requestów,
+- brak sekretów w frontendzie,
+- brak danych kart w PostgreSQL.
+
+==================================================
+16. TESTY
+
+Przetestuj:
+
+1. FREE → Premium Monthly.
+2. FREE → Premium Yearly.
+3. FREE → Premium Pro Monthly.
+4. FREE → Premium Pro Yearly.
+5. Premium → Premium Pro.
+6. Premium Pro → Premium.
+7. Anulowanie.
+8. Odnowienie.
+9. Nieudaną płatność.
+10. Customer Portal.
+11. Webhook.
+12. USER nie może nadać sobie planu.
+13. USER nie może zmienić ceny.
+14. ADMIN widzi statystyki.
+15. Panel przychodów pokazuje prawdziwe dane.
+16. Mobile UI.
+17. Typecheck.
+18. Production build.
+
+==================================================
+17. BRAK ATRAP
+
+Jeżeli którykolwiek Price ID lub Stripe Secret nie istnieje:
+
+NIE twórz fikcyjnego checkoutu.
+NIE pokazuj fikcyjnych przychodów.
+NIE aktywuj Premium Pro ręcznie.
+NIE udawaj udanej płatności.
+
+Pokaż mi dokładnie, którego elementu brakuje i jak go skonfigurować.
+
+==================================================
+18. FINALNA ODPOWIEDŹ
+
+Po wykonaniu podaj:
+
+- co zostało dodane,
+- jakie funkcje ma FREE,
+- jakie funkcje ma PREMIUM,
+- jakie funkcje ma PREMIUM PRO,
+- jakie Price ID zostały skonfigurowane,
+- jakie Secrets są wymagane,
+- wyniki wszystkich testów,
+- ewentualne błędy,
+- co muszę zrobić ręcznie w Stripe,
+- czy system jest gotowy do prawdziwych płatności.
+
+NIE USUWAJ ISTNIEJĄCEGO PREMIUM.
+NIE ZMIENIAJ CLERK.
+NIE TWÓRZ FIKCYJNYCH DANYCH.
+NIE TWÓRZ ATRAP PŁATNOŚCI.
+ZACHOWAJ OBECNY SYSTEM ADMINA I STRIPE.
+WYKONAJ PRAWDZIWĄ INTEGRACJĘ END-TO-END.
