@@ -98,8 +98,10 @@ function summary(profile: Profile) {
 }
 
 function profileView(profile: Profile) {
+  const totalMatches = profile.wins + profile.losses;
   return {
     ...profile,
+    winRate: totalMatches ? Math.round((profile.wins / totalMatches) * 100) : 0,
     ...xpProgress(profile.xp),
   };
 }
