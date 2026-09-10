@@ -88,11 +88,13 @@ export function Card({ children, accent }: PropsWithChildren<{ accent?: string }
   return <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, accent ? { borderLeftColor: accent, borderLeftWidth: 4 } : null]}>{children}</View>;
 }
 
-export function Stat({ label, value, icon }: { label: string; value: string | number; icon: keyof typeof Ionicons.glyphMap }) {
+export function Stat({ label, value, icon, accent = 'violet' }: { label: string; value: string | number; icon: keyof typeof Ionicons.glyphMap; accent?: 'violet' | 'lime' | 'coral' | 'cyan' }) {
   const colors = useColors();
+  const accentColor = accent === 'lime' ? colors.accent : accent === 'coral' ? colors.destructive : accent === 'cyan' ? colors.cyan : colors.primary;
+  const iconBackground = accent === 'lime' ? `${colors.accent}35` : accent === 'coral' ? `${colors.destructive}20` : accent === 'cyan' ? `${colors.cyan}35` : `${colors.primary}18`;
   return (
     <Card>
-      <View style={styles.statIcon}><Ionicons name={icon} size={17} color={colors.primary} /></View>
+      <View style={[styles.statIcon, { backgroundColor: iconBackground }]}><Ionicons name={icon} size={17} color={accentColor} /></View>
       <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>{label}</Text>
       <Text style={[styles.statValue, { color: colors.foreground }]}>{value}</Text>
     </Card>
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
   button: { minHeight: 48, paddingHorizontal: 18, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   buttonText: { fontSize: 14, fontFamily: 'Inter_700Bold' },
   card: { borderWidth: 1, borderRadius: 18, padding: 16, gap: 8 },
-  statIcon: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: '#f0edff' },
+  statIcon: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
   statLabel: { fontSize: 11, fontFamily: 'Inter_600SemiBold' },
   statValue: { fontSize: 24, fontFamily: 'Inter_700Bold' },
   center: { flex: 1, minHeight: 300, alignItems: 'center', justifyContent: 'center', gap: 12 },
