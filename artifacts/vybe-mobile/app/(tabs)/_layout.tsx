@@ -34,7 +34,7 @@ function NativeTabLayout() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="leaderboard">
         <NativeTabs.Trigger.Icon sf={{ default: 'trophy', selected: 'trophy.fill' }} />
-        <NativeTabs.Trigger.Label>Ranking</NativeTabs.Label>
+        <NativeTabs.Trigger.Label>Ranking</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Icon sf={{ default: 'person', selected: 'person.fill' }} />
