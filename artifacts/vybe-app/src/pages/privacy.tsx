@@ -52,7 +52,7 @@ export default function PrivacyPage() {
             Administratorem danych związanych z korzystaniem z VYBE jest właściciel
             serwisu VYBE („VYBE”, „my” lub „nas”). W sprawach prywatności możesz
             skontaktować się z nami pod adresem{" "}
-            <a href="mailto:privacy@vybe.app">privacy@vybe.app</a>.
+            <a href="mailto:Igor.kazmierczak1@onet.com.pl">Igor.kazmierczak1@onet.com.pl</a>.
           </p>
         </Section>
 
@@ -151,7 +151,7 @@ export default function PrivacyPage() {
             ich sprostowania, usunięcia, ograniczenia przetwarzania, przeniesienia,
             sprzeciwu oraz wycofania zgody. Możesz także złożyć skargę do właściwego
             organu ochrony danych. Aby skorzystać z praw, napisz na{" "}
-            <a href="mailto:privacy@vybe.app">privacy@vybe.app</a>.
+            <a href="mailto:Igor.kazmierczak1@onet.com.pl">Igor.kazmierczak1@onet.com.pl</a>.
           </p>
         </Section>
 
@@ -183,7 +183,7 @@ export default function PrivacyPage() {
 
         <footer className="legal-footer">
           <span>Masz pytanie dotyczące prywatności?</span>
-          <a href="mailto:privacy@vybe.app">Napisz do nas <ArrowUpRight /></a>
+          <a href="mailto:Igor.kazmierczak1@onet.com.pl">Napisz do nas <ArrowUpRight /></a>
         </footer>
       </article>
     </main>
