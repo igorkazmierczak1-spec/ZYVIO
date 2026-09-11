@@ -5,3 +5,4 @@
 - [Stripe webhook retries](stripe-webhook-retries.md) — claiming an event before processing must release the claim when processing fails so Stripe can retry transient errors.
 - [Expo SDK alignment](expo-sdk-alignment.md) — Clerk’s Expo peer-dependency examples may target an older SDK; use Expo’s installed SDK versions for native modules.
 - [Mobile preview CORS](mobile-preview-cors.md) — Expo preview requests need REPLIT_EXPO_DEV_DOMAIN in the API CORS allowlist during development.
+- [Expo build Metro port](expo-build-metro-port.md) — static Expo builds use a separate configurable Metro port so they do not collide with the mockup sandbox.
