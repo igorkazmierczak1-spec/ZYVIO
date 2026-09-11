@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
+import { BrandMark } from '@/components/ui';
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
@@ -10,6 +11,7 @@ import { SymbolView } from 'expo-symbols';
 import { Redirect, Tabs as RouterTabs } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { setAuthTokenGetter } from '@workspace/api-client-react';
+import { router } from 'expo-router';
 
 // IMPORTANT: iOS 26 uses NativeTabs for native tabs with liquid glass support.
 // NativeTabs intentionally does NOT use custom design tokens — liquid glass
@@ -65,6 +67,20 @@ function ClassicTabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
         headerShown: true,
+        headerTitleAlign: 'center',
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: colors.background },
+        headerTitle: () => (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Przejdź do strony głównej"
+            onPress={() => router.replace('/(tabs)')}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingVertical: 4 }}
+          >
+            <BrandMark size={25} />
+            <Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold', fontSize: 16, letterSpacing: 1.4 }}>VYBE</Text>
+          </Pressable>
+        ),
         tabBarStyle: {
           position: 'absolute',
           backgroundColor: isIOS ? 'transparent' : colors.background,

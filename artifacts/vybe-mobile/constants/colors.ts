@@ -24,6 +24,7 @@ const colors = {
     heroMid: '#2d2250',
     heroEnd: '#4c3a87',
     heroMuted: '#c5bdd6',
+    heroForeground: '#f8f7fa',
   },
   dark: {
     text: '#f8f7fa',
@@ -50,6 +51,7 @@ const colors = {
     heroMid: '#2a2050',
     heroEnd: '#5847a0',
     heroMuted: '#c5bdd6',
+    heroForeground: '#f8f7fa',
   },
   radius: 18,
 };

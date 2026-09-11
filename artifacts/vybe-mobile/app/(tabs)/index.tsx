@@ -54,7 +54,7 @@ function MomentumHero({ streak, xpForNextLevel, level, league, xp, progress, onP
       <View pointerEvents="none" style={{ position: 'absolute', width: 128, height: 128, borderRadius: 64, borderWidth: 1, borderColor: `${colors.destructive}55`, right: 72, top: 8 }} />
       <View style={{ zIndex: 2, gap: 11 }}>
         <Text style={[uiStyles.eyebrow, { color: `${colors.heroMuted}dd` }]}>TWÓJ MOMENTUM</Text>
-        <Text style={{ color: colors.card, fontSize: 36, lineHeight: 36, letterSpacing: -1.8, fontFamily: 'Inter_700Bold' }}>
+        <Text style={{ color: colors.heroForeground, fontSize: 36, lineHeight: 36, letterSpacing: -1.8, fontFamily: 'Inter_700Bold' }}>
           Utrzymaj streak{'\n'}<Text style={{ color: colors.accent }}>przy życiu.</Text>
         </Text>
         <Text style={{ color: colors.heroMuted, fontSize: 13, lineHeight: 19, maxWidth: 230 }}>
@@ -64,12 +64,12 @@ function MomentumHero({ streak, xpForNextLevel, level, league, xp, progress, onP
       </View>
       <View style={{ position: 'absolute', zIndex: 3, left: 18, right: 18, bottom: 18, minHeight: 82, padding: 14, borderRadius: 16, borderWidth: 1, borderColor: '#ffffff25', backgroundColor: '#191429aa', flexDirection: 'row', alignItems: 'center', gap: 13 }}>
         <View style={{ width: 58, height: 58, borderRadius: 29, borderWidth: 4, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: colors.card, fontSize: 20, lineHeight: 21, fontFamily: 'Inter_700Bold' }}>{level}</Text>
+          <Text style={{ color: colors.heroForeground, fontSize: 20, lineHeight: 21, fontFamily: 'Inter_700Bold' }}>{level}</Text>
           <Text style={{ color: colors.heroMuted, fontSize: 8, fontFamily: 'Inter_500Medium' }}>LEVEL</Text>
         </View>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={[uiStyles.eyebrow, { color: colors.accent, fontSize: 9 }]}>{league} LEAGUE</Text>
-          <Text style={{ color: colors.card, fontSize: 14, fontFamily: 'Inter_700Bold' }}>{xp.toLocaleString()} XP</Text>
+          <Text style={{ color: colors.heroForeground, fontSize: 14, fontFamily: 'Inter_700Bold' }}>{xp.toLocaleString()} XP</Text>
           <View style={{ height: 5, overflow: 'hidden', borderRadius: 5, backgroundColor: '#ffffff25' }}>
             <View style={{ width: `${safeProgress}%`, height: '100%', borderRadius: 5, backgroundColor: colors.accent }} />
           </View>
@@ -103,14 +103,14 @@ function FeaturedBattleCard({ battle }: { battle: { id: string; category: string
           <Text style={{ color: lightTone ? `${colors.heroStart}bb` : `${colors.card}bb`, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>{formatTimeLeft(battle.endsAt)}</Text>
         </View>
         <View style={{ flex: 1, justifyContent: 'flex-end', gap: 7 }}>
-          <Text style={{ color: colors.card, fontSize: 21, lineHeight: 24, letterSpacing: -0.6, fontFamily: 'Inter_700Bold' }}>{battle.title}</Text>
-          <Text numberOfLines={2} style={{ color: `${colors.card}b8`, fontSize: 12, lineHeight: 17 }}>{battle.prompt}</Text>
+          <Text style={{ color: colors.heroForeground, fontSize: 21, lineHeight: 24, letterSpacing: -0.6, fontFamily: 'Inter_700Bold' }}>{battle.title}</Text>
+          <Text numberOfLines={2} style={{ color: `${colors.heroForeground}b8`, fontSize: 12, lineHeight: 17 }}>{battle.prompt}</Text>
         </View>
         <View style={{ borderTopWidth: 1, borderTopColor: '#ffffff28', marginTop: 15, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ color: lightTone ? colors.heroStart : colors.accent, fontSize: 11, fontFamily: 'Inter_700Bold' }}>+{battle.rewardXp ?? 250} XP</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <Text style={{ color: colors.card, fontSize: 11, fontFamily: 'Inter_700Bold' }}>Otwórz Battle</Text>
-            <Ionicons name="arrow-up-right-box" size={15} color={colors.card} />
+            <Text style={{ color: colors.heroForeground, fontSize: 11, fontFamily: 'Inter_700Bold' }}>Otwórz Battle</Text>
+            <Ionicons name="arrow-up-right-box" size={15} color={colors.heroForeground} />
           </View>
         </View>
       </LinearGradient>
