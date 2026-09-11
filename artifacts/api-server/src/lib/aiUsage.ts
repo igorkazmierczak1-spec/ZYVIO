@@ -1,4 +1,4 @@
-import { and, count, eq, gte, sql } from "drizzle-orm";
+import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
 import { aiUsageTable, db } from "@workspace/db";
 import type { VybePlan } from "./premium";
 
@@ -52,6 +52,7 @@ export async function reserveAiUsage(input: {
           eq(aiUsageTable.profileId, input.profileId),
           eq(aiUsageTable.feature, input.feature),
           gte(aiUsageTable.createdAt, dayStart),
+            inArray(aiUsageTable.status, ["reserved", "success"]),
         ),
       );
     const used = Number(usage?.total ?? 0);

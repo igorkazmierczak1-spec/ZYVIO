@@ -208,18 +208,14 @@ export const createBattleBodyCategoryMin = 2;
 
 export const createBattleBodyPromptMin = 5;
 
-export const createBattleBodyMaxParticipantsDefault = 8;
-export const createBattleBodyMaxParticipantsMin = 2;
-export const createBattleBodyMaxParticipantsMax = 64;
-
-
+export const createBattleBodyMaxParticipantsDefault = 2;
 
 export const CreateBattleBody = zod.object({
   "title": zod.string().min(createBattleBodyTitleMin),
   "category": zod.string().min(createBattleBodyCategoryMin),
   "prompt": zod.string().min(createBattleBodyPromptMin),
   "endsAt": zod.coerce.date(),
-  "maxParticipants": zod.number().int().min(createBattleBodyMaxParticipantsMin).max(createBattleBodyMaxParticipantsMax).default(createBattleBodyMaxParticipantsDefault)
+  "maxParticipants": zod.literal(2).default(createBattleBodyMaxParticipantsDefault)
 })
 
 export const CreateBattleResponse = zod.object({

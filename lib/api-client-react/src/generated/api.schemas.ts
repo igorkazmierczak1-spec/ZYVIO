@@ -240,6 +240,13 @@ export interface Battle {
   loserParticipantId: string | null;
 }
 
+export type BattleInputMaxParticipants = typeof BattleInputMaxParticipants[keyof typeof BattleInputMaxParticipants];
+
+
+export const BattleInputMaxParticipants = {
+  NUMBER_2: 2,
+} as const;
+
 export interface BattleInput {
   /** @minLength 3 */
   title: string;
@@ -248,11 +255,7 @@ export interface BattleInput {
   /** @minLength 5 */
   prompt: string;
   endsAt: string;
-  /**
-     * @minimum 2
-     * @maximum 64
-     */
-  maxParticipants?: number;
+  maxParticipants?: BattleInputMaxParticipants;
 }
 
 export interface VoteInput {

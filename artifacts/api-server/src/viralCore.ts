@@ -6,6 +6,7 @@ import {
   battlesTable,
   notificationsTable,
   profilesTable,
+  votesTable,
   viralRewardEventsTable,
 } from "@workspace/db";
 
@@ -128,9 +129,20 @@ async function refreshRanksAndBadges(tx: any, profileIds: string[]) {
   }
 }
 
-export async function settleBattleInTransaction(tx: any, battleId: string, voterProfileId: string) {
+export async function settleBattleInTransaction(
+  tx: any,
+  battleId: string,
+  voterProfileId?: string | null,
+) {
   const [existingResult] = await tx.select().from(battleResultsTable).where(eq(battleResultsTable.battleId, battleId));
   if (existingResult) return existingResult;
+
+  const [battle] = await tx
+    .select()
+    .from(battlesTable)
+    .where(eq(battlesTable.id, battleId));
+  if (!battle || (battle.status !== "open" && battle.status !== "live")) return null;
+  if (battle.endsAt.getTime() > Date.now()) return null;
 
   const entries = await tx
     .select()
@@ -142,6 +154,26 @@ export async function settleBattleInTransaction(tx: any, battleId: string, voter
   const winner = entries[0];
   const loser = entries[1];
   if (!winner || !loser) return null;
+
+  if (voterProfileId) {
+    const [voterEntry] = await tx
+      .select({ id: battleParticipantsTable.id })
+      .from(battleParticipantsTable)
+      .where(and(
+        eq(battleParticipantsTable.battleId, battleId),
+        eq(battleParticipantsTable.profileId, voterProfileId),
+      ));
+    if (voterEntry) return null;
+
+    const [vote] = await tx
+      .select({ id: votesTable.id })
+      .from(votesTable)
+      .where(and(
+        eq(votesTable.battleId, battleId),
+        eq(votesTable.voterProfileId, voterProfileId),
+      ));
+    if (!vote) return null;
+  }
 
   const [result] = await tx
     .insert(battleResultsTable)
@@ -167,11 +199,16 @@ export async function settleBattleInTransaction(tx: any, battleId: string, voter
 
   await addReward(tx, winner.profileId, battleId, "battle-win", 250, 25);
   await addReward(tx, loser.profileId, battleId, "battle-loss", 50, 5);
-  if (voterProfileId !== winner.profileId && voterProfileId !== loser.profileId) {
+  if (voterProfileId && voterProfileId !== winner.profileId && voterProfileId !== loser.profileId) {
     await addReward(tx, voterProfileId, battleId, "battle-vote", 10, 1);
   }
   await notify(tx, winner.profileId, "battle", "You won a Battle", "Your result is now part of your VYBE record.");
   await notify(tx, loser.profileId, "battle", "Battle completed", "Keep going — your next Battle can move your ranking.");
-  await refreshRanksAndBadges(tx, [winner.profileId, loser.profileId, voterProfileId]);
+  await refreshRanksAndBadges(
+    tx,
+    [winner.profileId, loser.profileId, voterProfileId].filter(
+      (profileId): profileId is string => Boolean(profileId),
+    ),
+  );
   return result;
 }

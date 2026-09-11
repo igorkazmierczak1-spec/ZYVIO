@@ -5,6 +5,7 @@
  * VYBE 2.0 global social competition platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { BattleInputMaxParticipants } from './battleInputMaxParticipants';
 
 export interface BattleInput {
   /** @minLength 3 */
@@ -14,9 +15,5 @@ export interface BattleInput {
   /** @minLength 5 */
   prompt: string;
   endsAt: Date;
-  /**
-     * @minimum 2
-     * @maximum 64
-     */
-  maxParticipants?: number;
+  maxParticipants?: BattleInputMaxParticipants;
 }

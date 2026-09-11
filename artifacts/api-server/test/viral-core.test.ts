@@ -156,6 +156,21 @@ describe("Battle settlement", () => {
       },
     ]);
 
+    const earlyResult = await db.transaction((tx) =>
+      settleBattleInTransaction(tx, ids.battle, ids.voter),
+    );
+    assert.equal(earlyResult, null);
+
+    await db.update(battlesTable)
+      .set({ endsAt: new Date(Date.now() - 1_000) })
+      .where(eq(battlesTable.id, ids.battle));
+    await db.insert(votesTable).values({
+      id: ids.vote,
+      battleId: ids.battle,
+      participantId: ids.winnerEntry,
+      voterProfileId: ids.voter,
+    });
+
     const result = await db.transaction((tx) =>
       settleBattleInTransaction(tx, ids.battle, ids.voter),
     );
@@ -207,13 +222,6 @@ describe("Battle settlement", () => {
   });
 
   test("database rejects a second vote from the same profile in one battle", async () => {
-    await db.insert(votesTable).values({
-      id: ids.vote,
-      battleId: ids.battle,
-      participantId: ids.winnerEntry,
-      voterProfileId: ids.voter,
-    });
-
     await assert.rejects(
       db.insert(votesTable).values({
         id: `${ids.vote}-duplicate`,

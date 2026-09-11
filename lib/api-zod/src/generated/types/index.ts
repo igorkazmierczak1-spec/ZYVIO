@@ -50,6 +50,7 @@ export * from './adminUserUpdateAction';
 export * from './adminUserUpdateRole';
 export * from './battle';
 export * from './battleInput';
+export * from './battleInputMaxParticipants';
 export * from './battleStatus';
 export * from './blockState';
 export * from './checkoutResponse';

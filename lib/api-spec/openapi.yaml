@@ -1092,7 +1092,7 @@ components:
         category: { type: string, minLength: 2 }
         prompt: { type: string, minLength: 5 }
         endsAt: { type: string, format: date-time }
-        maxParticipants: { type: integer, minimum: 2, maximum: 64, default: 8 }
+        maxParticipants: { type: integer, enum: [2], default: 2 }
     VoteInput:
       type: object
       required: [participantId]

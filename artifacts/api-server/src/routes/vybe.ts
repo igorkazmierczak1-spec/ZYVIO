@@ -324,6 +324,15 @@ router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
       return;
     }
     const profile = currentUserFrom(res);
+    const endsAt = new Date(parsed.data.endsAt);
+    if (!Number.isFinite(endsAt.getTime()) || endsAt.getTime() <= Date.now()) {
+      res.status(400).json({ error: "Battle end time must be in the future" });
+      return;
+    }
+    if (parsed.data.maxParticipants !== 2) {
+      res.status(400).json({ error: "VYBE Battles are limited to 2 participants" });
+      return;
+    }
     const battleId = `battle-${crypto.randomUUID()}`;
     const battle = await db.transaction(async (tx) => {
       const [created] = await tx
@@ -333,8 +342,8 @@ router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
           title: parsed.data.title,
           category: parsed.data.category,
           prompt: parsed.data.prompt,
-          endsAt: new Date(parsed.data.endsAt),
-          maxParticipants: 2,
+           endsAt,
+           maxParticipants: parsed.data.maxParticipants,
           creatorProfileId: profile.id,
         })
         .returning();
@@ -372,8 +381,15 @@ router.get("/battles/:battleId", async (req, res, next) => {
       return;
     }
     const profile = currentUserFrom(res);
+    const currentBattle = battle.endsAt.getTime() <= Date.now() && (battle.status === "open" || battle.status === "live")
+      ? await db.transaction(async (tx) => {
+          const result = await settleBattleInTransaction(tx, battle.id);
+          const [updated] = await tx.select().from(battlesTable).where(eq(battlesTable.id, battle.id));
+          return result ? updated : battle;
+        })
+      : battle;
     res.json(
-      GetBattleResponse.parse(await serializeBattle(battle, profile.id)),
+      GetBattleResponse.parse(await serializeBattle(currentBattle, profile.id)),
     );
   } catch (error) {
     next(error);
@@ -610,27 +626,43 @@ router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
       throw error;
     }
     try {
-      const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-5-mini",
-          max_completion_tokens: 700,
-          messages: [
-            {
-              role: "system",
-              content: "You are VYBE AI, a creative competition producer.",
-            },
-            { role: "user", content: prompt },
-          ],
-        }),
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000);
+      let upstream: Response;
+      try {
+        upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: "gpt-5-mini",
+            max_completion_tokens: 700,
+            messages: [
+              {
+                role: "system",
+                content: "You are VYBE AI, a creative competition producer.",
+              },
+              { role: "user", content: prompt },
+            ],
+          }),
+        });
+      } catch (error) {
+        if (usageId) await completeAiUsage(usageId, "provider_error").catch(() => undefined);
+        if (error instanceof Error && error.name === "AbortError") {
+          res.status(504).json({ error: "AI provider timed out" });
+          return;
+        }
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
       if (!upstream.ok) {
-        const errorText = await upstream.text();
-        req.log.error({ status: upstream.status, errorText }, "OpenAI request failed");
+        await upstream.body?.cancel().catch(() => undefined);
+        if (usageId) await completeAiUsage(usageId, "provider_error").catch(() => undefined);
+        req.log.error({ status: upstream.status }, "OpenAI request failed");
         if (upstream.status === 429) {
           res.status(503).json({ error: "AI provider has no remaining credits" });
           return;
