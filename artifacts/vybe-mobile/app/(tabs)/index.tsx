@@ -91,19 +91,26 @@ function FeaturedBattleCard({ battle }: { battle: { id: string; category: string
     <Pressable onPress={() => router.push(`/battles/${battle.id}`)} style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}>
       <LinearGradient colors={tone as [string, string]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ minHeight: 190, overflow: 'hidden', borderRadius: 19, padding: 18 }}>
         <View style={{ position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: '#ffffff18', right: -35, top: -54 }} />
+        <LinearGradient
+          pointerEvents="none"
+          colors={['transparent', '#171327c7']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 132 }}
+        />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <Text style={{ color: lightTone ? colors.heroStart : colors.card, fontSize: 10, letterSpacing: 1.2, fontFamily: 'Inter_700Bold' }}>{battle.category.toUpperCase()}</Text>
           <Text style={{ color: lightTone ? `${colors.heroStart}bb` : `${colors.card}bb`, fontSize: 11, fontFamily: 'Inter_600SemiBold' }}>{formatTimeLeft(battle.endsAt)}</Text>
         </View>
         <View style={{ flex: 1, justifyContent: 'flex-end', gap: 7 }}>
-          <Text style={{ color: lightTone ? colors.heroStart : colors.card, fontSize: 21, lineHeight: 24, letterSpacing: -0.6, fontFamily: 'Inter_700Bold' }}>{battle.title}</Text>
-          <Text numberOfLines={2} style={{ color: lightTone ? `${colors.heroStart}b8` : `${colors.card}b8`, fontSize: 12, lineHeight: 17 }}>{battle.prompt}</Text>
+          <Text style={{ color: colors.card, fontSize: 21, lineHeight: 24, letterSpacing: -0.6, fontFamily: 'Inter_700Bold' }}>{battle.title}</Text>
+          <Text numberOfLines={2} style={{ color: `${colors.card}b8`, fontSize: 12, lineHeight: 17 }}>{battle.prompt}</Text>
         </View>
         <View style={{ borderTopWidth: 1, borderTopColor: '#ffffff28', marginTop: 15, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ color: lightTone ? colors.heroStart : colors.accent, fontSize: 11, fontFamily: 'Inter_700Bold' }}>+{battle.rewardXp ?? 250} XP</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <Text style={{ color: lightTone ? colors.heroStart : colors.card, fontSize: 11, fontFamily: 'Inter_700Bold' }}>Otwórz Battle</Text>
-            <Ionicons name="arrow-up-right-box" size={15} color={lightTone ? colors.heroStart : colors.card} />
+            <Text style={{ color: colors.card, fontSize: 11, fontFamily: 'Inter_700Bold' }}>Otwórz Battle</Text>
+            <Ionicons name="arrow-up-right-box" size={15} color={colors.card} />
           </View>
         </View>
       </LinearGradient>
