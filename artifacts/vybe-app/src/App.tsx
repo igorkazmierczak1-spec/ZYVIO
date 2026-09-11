@@ -89,6 +89,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
+import PrivacyPage from "@/pages/privacy";
 import { AdminDashboardPage } from "@/pages/admin-dashboard";
 import PremiumPage from "@/pages/premium";
 import { SocialFeedPage, SocialPostPage, SocialProfilePage } from "@/pages/social";
@@ -551,7 +552,7 @@ function ShieldIcon() { return <CircleDollarSign />; }
 
 function PublicLanding() {
   const [, navigate] = useLocation();
-  return <main className="auth-landing"><div className="auth-landing-panel"><Logo /><span className="eyebrow">Global creative competition</span><h1>Make your move.<br /><em>Own your VYBE.</em></h1><p>Join creative battles, earn XP, and build a profile that reflects what you can do.</p><div className="auth-actions"><Button onClick={() => navigate("/sign-up")}>Create account <ArrowUpRight /></Button><Button variant="secondary" onClick={() => navigate("/sign-in")}>Sign in</Button></div></div><div className="auth-visual"><div className="auth-orbit orbit-a" /><div className="auth-orbit orbit-b" /><div className="auth-orbit orbit-c" /><div className="auth-visual-mark"><Swords /><span>VYBE</span></div></div></main>;
+  return <main className="auth-landing"><div className="auth-landing-panel"><Logo /><span className="eyebrow">Global creative competition</span><h1>Make your move.<br /><em>Own your VYBE.</em></h1><p>Join creative battles, earn XP, and build a profile that reflects what you can do.</p><div className="auth-actions"><Button onClick={() => navigate("/sign-up")}>Create account <ArrowUpRight /></Button><Button variant="secondary" onClick={() => navigate("/sign-in")}>Sign in</Button></div><a className="auth-privacy-link" href={`${basePath}/privacy`}>Polityka prywatności <ArrowUpRight /></a></div><div className="auth-visual"><div className="auth-orbit orbit-a" /><div className="auth-orbit orbit-b" /><div className="auth-orbit orbit-c" /><div className="auth-visual-mark"><Swords /><span>VYBE</span></div></div></main>;
 }
 
 function SignInPage() {
@@ -604,7 +605,7 @@ function ClerkQueryClientCacheInvalidator() {
 }
 
 function Router() {
-  return <Switch><Route path="/" component={HomeRoute} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route component={ProtectedApplication} /></Switch>;
+  return <Switch><Route path="/" component={HomeRoute} /><Route path="/privacy" component={PrivacyPage} /><Route path="/sign-in/*?" component={SignInPage} /><Route path="/sign-up/*?" component={SignUpPage} /><Route component={ProtectedApplication} /></Switch>;
 }
 
 function ClerkApplication() {
