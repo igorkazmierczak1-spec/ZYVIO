@@ -49,8 +49,9 @@ export default function PrivacyPage() {
 
         <Section title="1. Administrator danych">
           <p>
-            Administratorem danych związanych z korzystaniem z VYBE jest właściciel
-            serwisu VYBE („VYBE”, „my” lub „nas”). W sprawach prywatności możesz
+            Administratorem danych związanych z korzystaniem z VYBE jest Igor Paradowski,
+            osoba fizyczna prowadząca serwis VYBE („VYBE”, „my” lub „nas”). W sprawach
+            prywatności możesz
             skontaktować się z nami pod adresem{" "}
             <a href="mailto:Igor.kazmierczak1@onet.com.pl">Igor.kazmierczak1@onet.com.pl</a>.
           </p>
