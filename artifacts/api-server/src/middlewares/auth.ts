@@ -9,7 +9,7 @@ function usernameFromEmail(email: string, userId: string): string {
       .split("@")[0]
       ?.toLowerCase()
       .replace(/[^a-z0-9._-]/g, "")
-      .slice(0, 24) || "vybe-user";
+      .slice(0, 24) || "zyvio-user";
   return `${base}-${userId.slice(-6).toLowerCase()}`;
 }
 
@@ -79,7 +79,7 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
   const displayName =
     [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim() ||
     primaryEmail.split("@")[0] ||
-    "VYBE Creator";
+    "ZYVIO Creator";
 
   await db.transaction(async (tx) => {
     await tx.insert(profilesTable).values({
@@ -113,7 +113,7 @@ export const requireAuthenticatedUser: RequestHandler = async (req, res, next) =
     const user = await getOrCreateCurrentUser(req);
     const [settings] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.id, "global"));
     if (settings?.maintenanceMode && user.role !== "ADMIN") {
-      res.status(503).json({ error: "VYBE is temporarily in maintenance mode" });
+      res.status(503).json({ error: "ZYVIO is temporarily in maintenance mode" });
       return;
     }
     res.locals.currentUser = user;

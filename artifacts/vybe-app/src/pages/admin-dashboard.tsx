@@ -193,7 +193,7 @@ export function AdminDashboardPage() {
       <aside className="admin-sidebar">
         <div className="admin-brand">
           <div className="admin-brand-mark"><span /></div>
-          <span>VYBE ADMIN</span>
+          <span>ZYVIO ADMIN</span>
         </div>
         <nav className="admin-nav">
           <NavItem icon={LayoutDashboard} label="Overview" isActive={activeTab === "Overview"} onClick={() => setActiveTab("Overview")} />

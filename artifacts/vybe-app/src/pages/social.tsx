@@ -227,7 +227,7 @@ function Composer() {
       onSuccess: () => {
         setBody("");
         void qc.invalidateQueries({ queryKey: ["/api/social/feed"] });
-        toast({ title: "Post published", description: "Your thought is now in the VYBE feed." });
+        toast({ title: "Post published", description: "Your thought is now in the ZYVIO feed." });
       },
       onError: () => toast({ title: "Could not publish post", description: "Add between 1 and 2,000 characters.", variant: "destructive" }),
     },
@@ -254,13 +254,13 @@ export function SocialFeedPage() {
   const profile = useGetProfile({ query: { queryKey: getGetProfileQueryKey(), staleTime: 30_000 } });
   const items = feed.data?.items ?? [];
   return <div className="social-page">
-    <PageHeader eyebrow="Social / live" title="The VYBE feed" description="Find the people, ideas, and works moving the room." action={<Button onClick={() => document.getElementById("social-composer")?.scrollIntoView({ behavior: "smooth" })}><ArrowUpRight /> Share a thought</Button>} />
+    <PageHeader eyebrow="Social / live" title="The ZYVIO feed" description="Find the people, ideas, and works moving the room." action={<Button onClick={() => document.getElementById("social-composer")?.scrollIntoView({ behavior: "smooth" })}><ArrowUpRight /> Share a thought</Button>} />
     <Composer />
     <div id="social-composer" className="social-toolbar">
       <div className="social-filter-tabs">{feedFilters.map((item) => <button key={item.value} className={filter === item.value ? "is-selected" : ""} onClick={() => { setFilter(item.value); setPage(1); }}>{item.label}</button>)}</div>
       <div className="social-category-tabs">{categories.map((item) => <button key={item} className={category === item ? "is-selected" : ""} onClick={() => { setCategory(item); setPage(1); }}>{item}</button>)}</div>
     </div>
-    {feed.isLoading ? <div className="social-feed-list"><LoadingState /></div> : feed.isError ? <ErrorState onRetry={() => void feed.refetch()} /> : items.length === 0 ? <div className="empty-state social-empty"><div className="empty-icon"><MessageCircle /></div><h2>No posts in this lane yet</h2><p>Follow a creator or publish the first signal for this filter.</p><Button onClick={() => document.querySelector<HTMLTextAreaElement>(".social-composer textarea")?.focus()}>Write the first post</Button></div> : <div className="social-feed-layout"><main className="social-feed-list">{items.map((post) => <SocialPostCard key={post.id} post={post} currentProfileId={profile.data?.id} />)}<div className="social-pagination"><Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><ChevronLeft /> Previous</Button><span>Page {feed.data?.page ?? page}</span><Button variant="secondary" size="sm" disabled={!feed.data?.hasMore} onClick={() => setPage((current) => current + 1)}>Next <ChevronRight /></Button></div></main><aside className="social-side-note panel"><span className="eyebrow">Your social loop</span><h2>Stay close to the work.</h2><p>Following keeps your feed focused. Trending shows what the wider VYBE is responding to.</p><button onClick={() => navigate("/leaderboard")}>See the leaderboard <ArrowUpRight /></button></aside></div>}
+    {feed.isLoading ? <div className="social-feed-list"><LoadingState /></div> : feed.isError ? <ErrorState onRetry={() => void feed.refetch()} /> : items.length === 0 ? <div className="empty-state social-empty"><div className="empty-icon"><MessageCircle /></div><h2>No posts in this lane yet</h2><p>Follow a creator or publish the first signal for this filter.</p><Button onClick={() => document.querySelector<HTMLTextAreaElement>(".social-composer textarea")?.focus()}>Write the first post</Button></div> : <div className="social-feed-layout"><main className="social-feed-list">{items.map((post) => <SocialPostCard key={post.id} post={post} currentProfileId={profile.data?.id} />)}<div className="social-pagination"><Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><ChevronLeft /> Previous</Button><span>Page {feed.data?.page ?? page}</span><Button variant="secondary" size="sm" disabled={!feed.data?.hasMore} onClick={() => setPage((current) => current + 1)}>Next <ChevronRight /></Button></div></main><aside className="social-side-note panel"><span className="eyebrow">Your social loop</span><h2>Stay close to the work.</h2><p>Following keeps your feed focused. Trending shows what the wider ZYVIO is responding to.</p><button onClick={() => navigate("/leaderboard")}>See the leaderboard <ArrowUpRight /></button></aside></div>}
   </div>;
 }
 
@@ -270,7 +270,7 @@ export function SocialPostPage() {
   const post = useGetSocialPost(id, { query: { enabled: Boolean(id), queryKey: getGetSocialPostQueryKey(id) } });
   if (post.isLoading) return <LoadingState />;
   if (post.isError || !post.data) return <ErrorState onRetry={() => void post.refetch()} />;
-  return <div className="social-single-page"><PageHeader eyebrow={`${post.data.category} / post`} title="One thought, up close." description="A single post from the VYBE community." /><SocialPostCard post={post.data} /></div>;
+  return <div className="social-single-page"><PageHeader eyebrow={`${post.data.category} / post`} title="One thought, up close." description="A single post from the ZYVIO community." /><SocialPostCard post={post.data} /></div>;
 }
 
 export function SocialProfilePage() {

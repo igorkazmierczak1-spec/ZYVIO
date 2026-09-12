@@ -118,7 +118,7 @@ async function postView(post: typeof postsTable.$inferSelect, currentProfileId: 
     author: author ?? {
       id: post.authorProfileId,
       username: "unknown",
-      displayName: "VYBE Creator",
+      displayName: "ZYVIO Creator",
       avatarUrl: "",
       country: "",
     },

@@ -1,0 +1,17 @@
+{
+  "name": "ZYVIO — Social, Battle & AI",
+  "short_name": "ZYVIO",
+  "description": "A global social platform for creative battles, community, XP and AI-powered ideas.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f5f8",
+  "theme_color": "#16131f",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

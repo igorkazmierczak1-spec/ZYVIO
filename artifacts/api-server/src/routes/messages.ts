@@ -69,7 +69,7 @@ async function messageView(message: typeof messagesTable.$inferSelect) {
     sender: sender ?? {
       id: message.senderProfileId,
       username: "unknown",
-      displayName: "VYBE Creator",
+      displayName: "ZYVIO Creator",
       avatarUrl: "",
     },
     body: message.body,
@@ -97,7 +97,7 @@ async function conversationView(
     otherParticipant: otherParticipant ?? {
       id: otherProfileId,
       username: "unknown",
-      displayName: "VYBE Creator",
+      displayName: "ZYVIO Creator",
       avatarUrl: "",
     },
     lastMessage: lastMessage ? await messageView(lastMessage) : null,

@@ -18,7 +18,7 @@ const planCopy: Record<Plan, { title: string; badge: string; button: string; des
     title: "Premium",
     badge: "Najpopularniejszy",
     button: "Kup Premium",
-    description: "Płatna subskrypcja VYBE z aktywnym statusem Premium i zarządzaniem przez Stripe.",
+    description: "Płatna subskrypcja ZYVIO z aktywnym statusem Premium i zarządzaniem przez Stripe.",
     features: ["Status Premium na profilu", "Wszystkie aktualnie aktywne funkcje Premium", "Stripe Customer Portal"],
   },
   PREMIUM_PRO: {
@@ -62,7 +62,7 @@ export default function PremiumPage() {
 
   return (
     <div className="premium-layout">
-      <PageHeader eyebrow="Cennik VYBE" title="Wybierz swój plan" description="Ceny i dostępność są pobierane z aktywnego katalogu Stripe. Checkout nie powstaje, jeśli cena nie istnieje." />
+      <PageHeader eyebrow="Cennik ZYVIO" title="Wybierz swój plan" description="Ceny i dostępność są pobierane z aktywnego katalogu Stripe. Checkout nie powstaje, jeśli cena nie istnieje." />
       <div className="premium-billing-toggle" aria-label="Okres rozliczeniowy">
         <button className={billingPeriod === "MONTHLY" ? "active" : ""} onClick={() => setBillingPeriod("MONTHLY")}>Miesięcznie</button>
         <button className={billingPeriod === "YEARLY" ? "active" : ""} onClick={() => setBillingPeriod("YEARLY")}>Rocznie <span className="annual-label">korzystniej</span></button>
@@ -87,7 +87,7 @@ export default function PremiumPage() {
           <div className="price">0 zł <small>/ zawsze</small></div>
           <ul className="premium-features">
             <li><Check /> Dostęp do funkcji dostępnych bez subskrypcji</li>
-            <li><Check /> Konto i profil VYBE</li>
+            <li><Check /> Konto i profil ZYVIO</li>
             <li><Check /> Brak płatności</li>
           </ul>
           <button className="premium-checkout-btn secondary" disabled>Twój plan bez subskrypcji</button>
@@ -116,7 +116,7 @@ export default function PremiumPage() {
       <div className="premium-faq">
         <h2>Subskrypcje i płatności</h2>
         <div className="faq-item"><h4>Czy mogę zmienić Premium na Premium Pro?</h4><p>Tak. Przy aktywnej subskrypcji użyj przycisku „Zarządzaj subskrypcją”. Stripe Customer Portal obsługuje zmianę planu bez tworzenia drugiej subskrypcji, jeśli portal ma włączone przełączanie cen.</p></div>
-        <div className="faq-item"><h4>Co dzieje się po anulowaniu?</h4><p>Anulowanie jest obsługiwane przez Stripe. Dostęp pozostaje aktywny do końca opłaconego okresu, a webhook aktualizuje status po stronie VYBE.</p></div>
+        <div className="faq-item"><h4>Co dzieje się po anulowaniu?</h4><p>Anulowanie jest obsługiwane przez Stripe. Dostęp pozostaje aktywny do końca opłaconego okresu, a webhook aktualizuje status po stronie ZYVIO.</p></div>
       </div>
     </div>
   );

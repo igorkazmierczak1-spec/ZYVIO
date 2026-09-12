@@ -124,7 +124,7 @@ async function refreshRanksAndBadges(tx: any, profileIds: string[]) {
     newlyEarned.forEach((badge) => earned.add(badge));
     await tx.update(profilesTable).set({ badges: [...earned], updatedAt: new Date() }).where(eq(profilesTable.id, profileId));
     for (const badge of newlyEarned) {
-      await notify(tx, profileId, "badge", "Badge unlocked", `${badge} is now part of your VYBE profile.`);
+      await notify(tx, profileId, "badge", "Badge unlocked", `${badge} is now part of your ZYVIO profile.`);
     }
   }
 }
@@ -202,7 +202,7 @@ export async function settleBattleInTransaction(
   if (voterProfileId && voterProfileId !== winner.profileId && voterProfileId !== loser.profileId) {
     await addReward(tx, voterProfileId, battleId, "battle-vote", 10, 1);
   }
-  await notify(tx, winner.profileId, "battle", "You won a Battle", "Your result is now part of your VYBE record.");
+  await notify(tx, winner.profileId, "battle", "You won a Battle", "Your result is now part of your ZYVIO record.");
   await notify(tx, loser.profileId, "battle", "Battle completed", "Keep going — your next Battle can move your ranking.");
   await refreshRanksAndBadges(
     tx,

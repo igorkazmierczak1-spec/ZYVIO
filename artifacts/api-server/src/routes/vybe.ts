@@ -330,7 +330,7 @@ router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
       return;
     }
     if (parsed.data.maxParticipants !== 2) {
-      res.status(400).json({ error: "VYBE Battles are limited to 2 participants" });
+      res.status(400).json({ error: "ZYVIO Battles are limited to 2 participants" });
       return;
     }
     const battleId = `battle-${crypto.randomUUID()}`;
@@ -603,7 +603,7 @@ router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
     }
     const profile = currentUserFrom(res);
     const plan = await getUserPlan(profile.id);
-    const prompt = `Generate 5 concise, original VYBE Battle concepts as a JSON array of strings. Topic: ${parsed.data.topic}. Category: ${parsed.data.category ?? "any"}. Do not include markdown or numbering.`;
+    const prompt = `Generate 5 concise, original ZYVIO Battle concepts as a JSON array of strings. Topic: ${parsed.data.topic}. Category: ${parsed.data.category ?? "any"}. Do not include markdown or numbering.`;
     try {
       const reservation = await reserveAiUsage({
         profileId: profile.id,
@@ -643,7 +643,7 @@ router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
             messages: [
               {
                 role: "system",
-                content: "You are VYBE AI, a creative competition producer.",
+                content: "You are ZYVIO AI, a creative competition producer.",
               },
               { role: "user", content: prompt },
             ],
