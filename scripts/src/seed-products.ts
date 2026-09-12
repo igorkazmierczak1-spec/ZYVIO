@@ -7,7 +7,7 @@ async function ensurePlan(plan: "premium" | "premium_pro", name: string, monthly
   const product = products.data.find((p) => p.metadata?.vybe_plan === plan)
     ?? await stripeRequest<Row>("products", "POST", {
       name,
-      description: `${name} membership for VYBE`,
+      description: `${name} membership for ZYVIO`,
       "metadata[vybe_plan]": plan,
     });
   const prices = await stripeRequest<{ data: Row[] }>(`prices?product=${product.id}&active=true&limit=100`);
@@ -39,6 +39,6 @@ async function ensurePlan(plan: "premium" | "premium_pro", name: string, monthly
   console.log(`${name}: ${selected.map((p) => `${p.metadata.billing_period}=${p.id}`).join(" ")}`);
 }
 
-await ensurePlan("premium", "VYBE PREMIUM", 1999, 14999);
-await ensurePlan("premium_pro", "VYBE PREMIUM PRO", 3999, 29999);
-console.log("VYBE billing catalog ready (connector/direct Stripe mode)");
+await ensurePlan("premium", "ZYVIO PREMIUM", 1999, 14999);
+await ensurePlan("premium_pro", "ZYVIO PREMIUM PRO", 3999, 29999);
+console.log("ZYVIO billing catalog ready (connector/direct Stripe mode)");

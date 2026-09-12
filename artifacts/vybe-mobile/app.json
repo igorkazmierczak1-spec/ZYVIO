@@ -4,7 +4,7 @@
     "slug": "vybe-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon_2.png",
+    "icon": "./assets/images/zyvio-icon.png",
     "scheme": "vybe",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -13,17 +13,17 @@
     "android": {
       "package": "com.vybe.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon_2.png",
+        "foregroundImage": "./assets/images/zyvio-icon.png",
         "backgroundColor": "#16131f"
       }
     },
     "splash": {
-      "image": "./assets/images/icon_2.png",
+      "image": "./assets/images/zyvio-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#f6f5f8"
     },
     "web": {
-      "favicon": "./assets/images/icon_2.png"
+      "favicon": "./assets/images/zyvio-icon.png"
     },
     "plugins": [
       "expo-router",
