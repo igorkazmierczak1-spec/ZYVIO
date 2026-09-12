@@ -78,7 +78,7 @@ function ClassicTabLayout() {
             style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingVertical: 4 }}
           >
             <BrandMark size={25} />
-            <Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold', fontSize: 16, letterSpacing: 1.4 }}>VYBE</Text>
+            <Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold', fontSize: 16, letterSpacing: 1.4 }}>ZYVIO</Text>
           </Pressable>
         ),
         tabBarStyle: {

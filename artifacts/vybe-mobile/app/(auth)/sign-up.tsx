@@ -57,9 +57,9 @@ export default function SignUpScreen() {
     <KeyboardAwareScrollViewCompat style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={[uiStyles.screenContent, { paddingTop: 70, paddingBottom: 36 }]} bottomOffset={30}>
       <BrandMark size={54} />
       <View style={{ gap: 7, marginTop: 14 }}>
-        <Text style={[uiStyles.eyebrow, { color: colors.primary }]}>VYBE / JOIN THE LOOP</Text>
+        <Text style={[uiStyles.eyebrow, { color: colors.primary }]}>ZYVIO / JOIN THE LOOP</Text>
         <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 34 }]}>Zbuduj swoją pozycję.</Text>
-        <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>Jedno konto do Battle, profilu, rankingu i społeczności VYBE.</Text>
+        <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>Jedno konto do Battle, profilu, rankingu i społeczności ZYVIO.</Text>
       </View>
       <GoogleAuthButton />
       <View style={{ gap: 13 }}>

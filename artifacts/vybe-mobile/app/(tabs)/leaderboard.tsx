@@ -15,7 +15,7 @@ export default function LeaderboardScreen() {
   const entries = leaderboard.data?.entries ?? [];
   return (
     <AppScreen refreshing={leaderboard.isFetching} onRefresh={() => void leaderboard.refetch()}>
-      <Header eyebrow="VYBE / RANKING" title="Najlepsi na arenie." subtitle="Punkty rankingowe za aktywność, wygrane i konsekwencję." />
+      <Header eyebrow="ZYVIO / RANKING" title="Najlepsi na arenie." subtitle="Punkty rankingowe za aktywność, wygrane i konsekwencję." />
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {(['global', 'country'] as Scope[]).map((item) => <Pressable key={item} onPress={() => setScope(item)} style={{ flex: 1, padding: 11, borderRadius: 12, borderWidth: 1, borderColor: scope === item ? colors.primary : colors.border, backgroundColor: scope === item ? colors.secondary : colors.card }}><Text style={{ textAlign: 'center', color: scope === item ? colors.secondaryForeground : colors.mutedForeground, fontFamily: 'Inter_700Bold', fontSize: 12 }}>{item === 'global' ? 'Globalny' : 'Mój kraj'}</Text></Pressable>)}
       </View>

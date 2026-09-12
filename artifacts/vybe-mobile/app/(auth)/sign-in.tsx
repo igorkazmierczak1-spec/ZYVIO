@@ -62,7 +62,7 @@ export default function SignInScreen() {
     <KeyboardAwareScrollViewCompat style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={[uiStyles.screenContent, { paddingTop: 70, paddingBottom: 36 }]} bottomOffset={30}>
       <BrandMark size={54} />
       <View style={{ gap: 7, marginTop: 14 }}>
-        <Text style={[uiStyles.eyebrow, { color: colors.primary }]}>VYBE / WELCOME BACK</Text>
+        <Text style={[uiStyles.eyebrow, { color: colors.primary }]}>ZYVIO / WELCOME BACK</Text>
         <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 34 }]}>Wróć do swojego rytmu.</Text>
         <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>Zaloguj się, żeby głosować, walczyć i budować swoją pozycję.</Text>
       </View>

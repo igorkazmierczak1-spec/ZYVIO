@@ -23,7 +23,7 @@ export default function NewBattleScreen() {
     create.mutate({ data: { title: title.trim(), category: category.trim(), prompt: prompt.trim(), endsAt: new Date(Date.now() + h * 3600000).toISOString(), maxParticipants: 2 } }, { onSuccess: (battle) => router.replace(`/battles/${battle.id}`), onError: () => setError('Nie udało się utworzyć Battle. Spróbuj ponownie.') });
   };
   const inputStyle = { color: colors.foreground, backgroundColor: colors.input, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 13, fontFamily: 'Inter_400Regular' } as const;
-  return <AppScreen><Header eyebrow="VYBE / NEW BATTLE" title="Otwórz własną arenę." subtitle="Zaproponuj temat i zaproś społeczność do rywalizacji." right={<BackButton />} />
+  return <AppScreen><Header eyebrow="ZYVIO / NEW BATTLE" title="Otwórz własną arenę." subtitle="Zaproponuj temat i zaproś społeczność do rywalizacji." right={<BackButton />} />
     <Card><Text style={[uiStyles.eyebrow, { color: colors.primary }]}>SZCZEGÓŁY</Text>
       <TextInput value={title} onChangeText={setTitle} placeholder="Tytuł Battle" placeholderTextColor={colors.mutedForeground} style={inputStyle} />
       <TextInput value={category} onChangeText={setCategory} placeholder="Kategoria, np. Photo" placeholderTextColor={colors.mutedForeground} style={inputStyle} />

@@ -14,7 +14,7 @@ export default function BattlesScreen() {
   const list = battles.data ?? [];
   return (
     <AppScreen refreshing={battles.isFetching} onRefresh={() => void battles.refetch()}>
-      <Header eyebrow="VYBE / ARENA" title="Znajdź swój Battle." subtitle="Wejdź w prompt, pokaż swój punkt widzenia i zdobądź XP." right={<IconButton icon="plus" label="Utwórz Battle" onPress={() => router.push('/battles/new')} />} />
+      <Header eyebrow="ZYVIO / ARENA" title="Znajdź swój Battle." subtitle="Wejdź w prompt, pokaż swój punkt widzenia i zdobądź XP." right={<IconButton icon="plus" label="Utwórz Battle" onPress={() => router.push('/battles/new')} />} />
       <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
         {filters.map((item) => <Pressable key={item} onPress={() => setCategory(item)} style={{ paddingHorizontal: 13, paddingVertical: 9, borderRadius: 11, backgroundColor: category === item ? colors.secondary : colors.card, borderWidth: 1, borderColor: category === item ? colors.primary : colors.border }}><Text style={{ color: category === item ? colors.secondaryForeground : colors.mutedForeground, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>{item}</Text></Pressable>)}
       </View>

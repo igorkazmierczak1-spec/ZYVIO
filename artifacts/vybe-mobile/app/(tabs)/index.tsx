@@ -129,7 +129,7 @@ export default function HomeScreen() {
   return (
     <AppScreen refreshing={dashboard.isFetching} onRefresh={() => void dashboard.refetch()}>
       <Header
-        eyebrow="VYBE / TODAY"
+        eyebrow="ZYVIO / TODAY"
         title={`Cześć, ${profile.displayName.split(' ')[0]}.`}
         subtitle="Twój kolejny mocny ruch jest bliżej, niż myślisz."
         right={<Avatar name={profile.displayName} size={48} />}
