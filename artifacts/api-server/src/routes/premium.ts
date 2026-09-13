@@ -3,6 +3,7 @@ import { db, profilesTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { stripeRequest } from "../stripeClient";
 import { currentUserFrom, requireAuthenticatedUser } from "../middlewares/auth";
+import { getRevenueCatAccess, hasRevenueCatConfig, type RevenueCatAccess } from "../revenueCatClient";
 
 type PaidPlan = "PREMIUM" | "PREMIUM_PRO";
 type BillingPeriod = "MONTHLY" | "YEARLY";
@@ -90,6 +91,17 @@ async function updateLocalSubscription(profileId: string, subscription: Record<s
   }).where(eq(profilesTable.id, profileId));
 }
 
+async function updateLocalRevenueCatSubscription(profileId: string, access: RevenueCatAccess) {
+  await db.update(profilesTable).set({
+    plan: access.plan,
+    subscriptionStatus: access.status,
+    billingPeriod: null,
+    currentPeriodStart: null,
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
+  }).where(eq(profilesTable.id, profileId));
+}
+
 router.get("/premium/plans", async (_req, res, next): Promise<void> => {
   try {
     const products = await stripeRequest<{ data: Array<Record<string, unknown>> }>("products?active=true&limit=100");
@@ -124,6 +136,21 @@ router.get("/premium/plans", async (_req, res, next): Promise<void> => {
 router.get("/premium/subscription", requireAuthenticatedUser, async (_req, res, next): Promise<void> => {
   try {
     const user = currentUserFrom(res);
+    const revenueCat = hasRevenueCatConfig() ? await getRevenueCatAccess(user.id) : null;
+    if (revenueCat?.status === "active") {
+      await updateLocalRevenueCatSubscription(user.id, revenueCat);
+      res.json({
+        subscription: {
+          provider: "revenuecat",
+          appUserId: revenueCat.appUserId,
+          status: revenueCat.status,
+          entitlements: revenueCat.entitlements,
+          plan: revenueCat.plan,
+        },
+        plan: revenueCat.plan,
+      });
+      return;
+    }
     const result = user.stripeCustomerId
       ? await stripeRequest<{ data: Array<Record<string, unknown>> }>(`subscriptions?customer=${encodeURIComponent(user.stripeCustomerId)}&status=all&limit=10`)
       : { data: [] };
@@ -131,8 +158,49 @@ router.get("/premium/subscription", requireAuthenticatedUser, async (_req, res, 
     const item = ((subscription?.items as Record<string, unknown> | undefined)?.data as Array<Record<string, unknown>> | undefined)?.[0];
     const price = item?.price as Record<string, unknown> | undefined;
      const plan = price ? planFromPrice(price) : null;
-     if (subscription) await updateLocalSubscription(user.id, subscription, plan ?? "FREE");
-    res.json({ subscription: subscription ? { ...subscription, plan } : null, plan: plan ?? user.plan ?? "FREE" });
+    if (subscription) await updateLocalSubscription(user.id, subscription, plan ?? "FREE");
+    else if (revenueCat?.found) await updateLocalRevenueCatSubscription(user.id, revenueCat);
+    res.json({
+      subscription: subscription
+        ? { ...subscription, plan }
+        : revenueCat?.found
+          ? { provider: "revenuecat", appUserId: revenueCat.appUserId, status: revenueCat.status, entitlements: revenueCat.entitlements, plan: "FREE" }
+          : null,
+      plan: plan ?? (revenueCat?.found ? "FREE" : user.plan ?? "FREE"),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/premium/revenuecat/sync", requireAuthenticatedUser, async (_req, res, next): Promise<void> => {
+  try {
+    if (!hasRevenueCatConfig()) {
+      res.status(503).json({ error: "RevenueCat is not configured on the server" });
+      return;
+    }
+    const user = currentUserFrom(res);
+    const access = await getRevenueCatAccess(user.id);
+    if (!access) {
+      res.json({
+        subscription: null,
+        plan: "FREE",
+        synced: false,
+      });
+      return;
+    }
+    await updateLocalRevenueCatSubscription(user.id, access);
+    res.json({
+      subscription: {
+        provider: "revenuecat",
+        appUserId: access.appUserId,
+        status: access.status,
+        entitlements: access.entitlements,
+        plan: access.plan,
+      },
+      plan: access.plan,
+      synced: true,
+    });
   } catch (error) {
     next(error);
   }

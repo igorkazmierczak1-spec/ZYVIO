@@ -786,6 +786,16 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CheckoutResponse" }
+  /premium/revenuecat/sync:
+    post:
+      operationId: syncPremiumRevenueCat
+      tags: [premium]
+      responses:
+        "200":
+          description: RevenueCat access synchronized
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PremiumRevenueCatSyncResponse" }
   /admin/billing/overview:
     get:
       operationId: getAdminBillingOverview
@@ -1452,6 +1462,13 @@ components:
       properties:
         subscription: { type: object, nullable: true, additionalProperties: true }
         plan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
+    PremiumRevenueCatSyncResponse:
+      type: object
+      required: [subscription, plan, synced]
+      properties:
+        subscription: { type: object, nullable: true, additionalProperties: true }
+        plan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
+        synced: { type: boolean }
     AdminBillingOverview:
       type: object
       required: [connected, range, subscriptions, revenue, payments, totalRevenue, revenue30d, mrr, arr, activeSubscriptions, newSubscriptions, cancelledSubscriptions, successfulPayments, failedPayments, premiumCount, conversion, trend]
