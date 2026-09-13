@@ -57,7 +57,7 @@ export default function PremiumScreen() {
       <Text onPress={() => setPeriod('MONTHLY')} style={[toggleStyle, { flex: 1, backgroundColor: period === 'MONTHLY' ? colors.card : 'transparent', color: period === 'MONTHLY' ? colors.foreground : colors.mutedForeground }]}>Miesięcznie</Text>
       <Text onPress={() => setPeriod('YEARLY')} style={[toggleStyle, { flex: 1, backgroundColor: period === 'YEARLY' ? colors.card : 'transparent', color: period === 'YEARLY' ? colors.foreground : colors.mutedForeground }]}>Rocznie</Text>
     </View>
-    {actionError ? <Card accent={colors.danger}><Text style={{ color: colors.danger, fontFamily: 'Inter_600SemiBold' }}>{actionError}</Text></Card> : null}
+    {actionError ? <Card accent="coral"><Text style={{ color: colors.destructive, fontFamily: 'Inter_600SemiBold' }}>{actionError}</Text></Card> : null}
     {active ? <Card accent={colors.accent}>
       <Text style={[uiStyles.eyebrow, { color: colors.primary }]}>AKTYWNY PLAN</Text>
       <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 23 }]}>{currentPlan === 'PREMIUM_PRO' ? 'Premium Pro' : 'Premium'} działa.</Text>
