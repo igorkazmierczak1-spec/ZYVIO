@@ -1531,6 +1531,13 @@ export const CreatePremiumPortalResponse = zod.object({
 })
 
 
+export const SyncPremiumRevenueCatResponse = zod.object({
+  "subscription": zod.record(zod.string(), zod.unknown()).nullable(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "synced": zod.boolean()
+})
+
+
 export const getAdminBillingOverviewQueryRangeDefault = `30d`;
 
 export const GetAdminBillingOverviewQueryParams = zod.object({

@@ -68,6 +68,7 @@ import type {
   OkResponse,
   PremiumCheckoutInput,
   PremiumPlansResponse,
+  PremiumRevenueCatSyncResponse,
   PremiumSubscriptionResponse,
   Profile,
   ProfileUpdate,
@@ -3916,6 +3917,71 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getCreatePremiumPortalMutationOptions(options));
+    }
+
+export const getSyncPremiumRevenueCatUrl = () => {
+
+
+
+
+  return `/api/premium/revenuecat/sync`
+}
+
+export const syncPremiumRevenueCat = async ( options?: Parameters<typeof customFetch>[1]): Promise<PremiumRevenueCatSyncResponse> => {
+
+  return customFetch<PremiumRevenueCatSyncResponse>(getSyncPremiumRevenueCatUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSyncPremiumRevenueCatMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncPremiumRevenueCat>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncPremiumRevenueCat>>, TError,void, TContext> => {
+
+const mutationKey = ['syncPremiumRevenueCat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncPremiumRevenueCat>>, void> = () => {
+
+
+          return  syncPremiumRevenueCat(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncPremiumRevenueCatMutationResult = NonNullable<Awaited<ReturnType<typeof syncPremiumRevenueCat>>>
+
+    export type SyncPremiumRevenueCatMutationError = ErrorType<unknown>
+
+    export const useSyncPremiumRevenueCat = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncPremiumRevenueCat>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncPremiumRevenueCat>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSyncPremiumRevenueCatMutationOptions(options));
     }
 
 export const getGetAdminBillingOverviewUrl = (params?: GetAdminBillingOverviewParams,) => {

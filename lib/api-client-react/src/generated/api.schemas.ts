@@ -728,6 +728,23 @@ export interface PremiumSubscriptionResponse {
   plan: PremiumSubscriptionResponsePlan;
 }
 
+export type PremiumRevenueCatSyncResponseSubscription = { [key: string]: unknown } | null;
+
+export type PremiumRevenueCatSyncResponsePlan = typeof PremiumRevenueCatSyncResponsePlan[keyof typeof PremiumRevenueCatSyncResponsePlan];
+
+
+export const PremiumRevenueCatSyncResponsePlan = {
+  FREE: 'FREE',
+  PREMIUM: 'PREMIUM',
+  PREMIUM_PRO: 'PREMIUM_PRO',
+} as const;
+
+export interface PremiumRevenueCatSyncResponse {
+  subscription: PremiumRevenueCatSyncResponseSubscription;
+  plan: PremiumRevenueCatSyncResponsePlan;
+  synced: boolean;
+}
+
 export type AdminBillingOverviewSubscriptionsItem = { [key: string]: unknown };
 
 export type AdminBillingOverviewTrendItem = { [key: string]: unknown };
