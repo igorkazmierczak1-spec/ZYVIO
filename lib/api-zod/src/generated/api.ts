@@ -1035,11 +1035,12 @@ export const CreateSocialMessageResponse = zod.object({
  * @summary Generate creative battle ideas
  */
 export const generateIdeasBodyTopicMin = 2;
+export const generateIdeasBodyTopicMax = 500;
 
 
 
 export const GenerateIdeasBody = zod.object({
-  "topic": zod.string().min(generateIdeasBodyTopicMin),
+  "topic": zod.string().min(generateIdeasBodyTopicMin).max(generateIdeasBodyTopicMax),
   "category": zod.string().optional()
 })
 

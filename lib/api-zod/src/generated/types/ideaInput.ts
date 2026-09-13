@@ -7,7 +7,10 @@
  */
 
 export interface IdeaInput {
-  /** @minLength 2 */
+  /**
+     * @minLength 2
+     * @maxLength 500
+     */
   topic: string;
   category?: string;
 }
