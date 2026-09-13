@@ -2,7 +2,7 @@ import { revenueCatRequest } from "./revenueCatClient";
 
 const PROJECT_NAME = "ZYVIO";
 const PLAY_STORE_APP_NAME = "ZYVIO Android";
-const PLAY_STORE_PACKAGE_NAME = "com.vybe.app";
+const PLAY_STORE_PACKAGE_NAME = "com.zyvio.app";
 const TEST_STORE_APP_NAME = "ZYVIO Test Store";
 const ENTITLEMENTS = [
   { lookup_key: "premium", display_name: "Premium Access" },
@@ -54,7 +54,7 @@ const PRODUCTS = [
 
 type Collection<T> = { items?: T[] };
 type Project = { id: string; name: string };
-type App = { id: string; name: string; type: string };
+type App = { id: string; name: string; type: string; play_store?: { package_name?: string } };
 type Product = { id: string; app_id: string; store_identifier: string };
 type Entitlement = { id: string; lookup_key: string };
 type Offering = { id: string; lookup_key: string; is_current?: boolean };
@@ -78,6 +78,13 @@ async function createProject(): Promise<Project> {
 async function createApp(projectId: string, type: "test_store" | "play_store", name: string): Promise<App> {
   const apps = await revenueCatRequest<Collection<App>>(`/projects/${projectId}/apps?limit=100`);
   const existing = apps.items?.find((item) => item.type === type);
+  if (existing && type === "play_store" && existing.play_store?.package_name !== PLAY_STORE_PACKAGE_NAME) {
+    return revenueCatRequest<App>(`/projects/${projectId}/apps/${existing.id}`, "POST", {
+      name,
+      type,
+      play_store: { package_name: PLAY_STORE_PACKAGE_NAME },
+    });
+  }
   if (existing) return existing;
   const body = type === "play_store"
     ? { name, type, play_store: { package_name: PLAY_STORE_PACKAGE_NAME } }
