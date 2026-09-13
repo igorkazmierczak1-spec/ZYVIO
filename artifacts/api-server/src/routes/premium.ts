@@ -65,6 +65,10 @@ function activeSubscription(rows: Array<Record<string, unknown>>) {
   return rows.find((row) => row.status === "active" || row.status === "trialing");
 }
 
+function isMissingStripeCustomer(error: unknown): boolean {
+  return error instanceof Error && error.message.startsWith("No such customer:");
+}
+
 function publicAppUrl(pathname: string): string | null {
   const configured = process.env.PUBLIC_APP_URL?.trim();
   if (!configured) return null;
@@ -182,9 +186,20 @@ router.get("/premium/subscription", requireAuthenticatedUser, async (_req, res, 
       });
       return;
     }
-    const result = user.stripeCustomerId
-      ? await stripeRequest<{ data: Array<Record<string, unknown>> }>(`subscriptions?customer=${encodeURIComponent(user.stripeCustomerId)}&status=all&limit=10`)
-      : { data: [] };
+    let result: { data: Array<Record<string, unknown>> } = { data: [] };
+    if (user.stripeCustomerId) {
+      try {
+        result = await stripeRequest<{ data: Array<Record<string, unknown>> }>(
+          `subscriptions?customer=${encodeURIComponent(user.stripeCustomerId)}&status=all&limit=10`,
+        );
+      } catch (error) {
+        if (!isMissingStripeCustomer(error)) throw error;
+        await db
+          .update(profilesTable)
+          .set({ stripeCustomerId: null, plan: "FREE", updatedAt: new Date() })
+          .where(eq(profilesTable.id, user.id));
+      }
+    }
     const subscription = activeSubscription(result.data ?? []) ?? result.data?.[0] ?? null;
     const item = ((subscription?.items as Record<string, unknown> | undefined)?.data as Array<Record<string, unknown>> | undefined)?.[0];
     const price = item?.price as Record<string, unknown> | undefined;

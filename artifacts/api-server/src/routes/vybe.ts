@@ -140,6 +140,7 @@ function profileView(profile: Profile) {
   const totalMatches = profile.wins + profile.losses;
   return {
     ...profile,
+    ...summary(profile),
     winRate: totalMatches ? Math.round((profile.wins / totalMatches) * 100) : 0,
     ...xpProgress(profile.xp),
   };
@@ -554,7 +555,7 @@ router.patch("/profile", async (req, res, next) => {
       .set({ ...parsed.data, updatedAt: new Date() })
       .where(eq(profilesTable.id, profile.id))
       .returning();
-    res.json(UpdateProfileResponse.parse(updated));
+    res.json(UpdateProfileResponse.parse(profileView(updated)));
   } catch (error) {
     next(error);
   }
