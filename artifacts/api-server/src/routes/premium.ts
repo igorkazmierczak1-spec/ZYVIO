@@ -4,6 +4,8 @@ import { eq, sql } from "drizzle-orm";
 import { stripeRequest } from "../stripeClient";
 import { currentUserFrom, requireAuthenticatedUser } from "../middlewares/auth";
 import { getRevenueCatAccess, hasRevenueCatConfig, type RevenueCatAccess } from "../revenueCatClient";
+import { getUserPlan } from "../lib/premium";
+import { PLAN_CONFIG } from "../lib/planConfig";
 
 type PaidPlan = "PREMIUM" | "PREMIUM_PRO";
 type BillingPeriod = "MONTHLY" | "YEARLY";
@@ -127,7 +129,19 @@ router.get("/premium/plans", async (_req, res, next): Promise<void> => {
         });
       }
     }
-    res.json({ plans });
+    res.json({ plans, benefits: Object.values(PLAN_CONFIG) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/premium/benefits", requireAuthenticatedUser, async (_req, res, next): Promise<void> => {
+  try {
+    const currentPlan = await getUserPlan(currentUserFrom(res).id);
+    res.json({
+      currentPlan,
+      plans: Object.values(PLAN_CONFIG),
+    });
   } catch (error) {
     next(error);
   }

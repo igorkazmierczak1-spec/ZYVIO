@@ -1,12 +1,7 @@
 import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
 import { aiUsageTable, db } from "@workspace/db";
 import type { VybePlan } from "./premium";
-
-const AI_USAGE_LIMITS: Record<VybePlan, number> = {
-  FREE: 3,
-  PREMIUM: 30,
-  PREMIUM_PRO: 100,
-};
+import { planConfigFor } from "./planConfig";
 
 export class AiUsageLimitError extends Error {
   readonly plan: VybePlan;
@@ -14,7 +9,7 @@ export class AiUsageLimitError extends Error {
   readonly limit: number;
 
   constructor(plan: VybePlan, used: number) {
-    const limit = AI_USAGE_LIMITS[plan];
+    const limit = planConfigFor(plan).limits.aiDaily;
     super(`Daily AI usage limit reached for ${plan}`);
     this.name = "AiUsageLimitError";
     this.plan = plan;
@@ -28,7 +23,7 @@ function utcDayStart(now = new Date()) {
 }
 
 export function aiUsageLimitFor(plan: VybePlan) {
-  return AI_USAGE_LIMITS[plan];
+  return planConfigFor(plan).limits.aiDaily;
 }
 
 export async function reserveAiUsage(input: {

@@ -52,6 +52,8 @@ import {
   completeAiUsage,
   reserveAiUsage,
 } from "../lib/aiUsage";
+import { planConfigFor } from "../lib/planConfig";
+import { sendPlanQuotaError, assertDailyPlanQuota } from "../lib/planQuota";
 
 const router: IRouter = Router();
 
@@ -107,6 +109,8 @@ function summary(profile: Profile) {
     losses: profile.losses,
     winRate: totalMatches ? Math.round((profile.wins / totalMatches) * 100) : 0,
     rankingPoints: profile.rankingPoints,
+    plan: profile.plan,
+    planBadge: planConfigFor(profile.plan === "PREMIUM_PRO" ? "PREMIUM_PRO" : profile.plan === "PREMIUM" ? "PREMIUM" : "FREE").badge,
   };
 }
 
@@ -324,6 +328,8 @@ router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
       return;
     }
     const profile = currentUserFrom(res);
+    const plan = await getUserPlan(profile.id);
+    await assertDailyPlanQuota(profile.id, plan, "battleCreate");
     const endsAt = new Date(parsed.data.endsAt);
     if (!Number.isFinite(endsAt.getTime()) || endsAt.getTime() <= Date.now()) {
       res.status(400).json({ error: "Battle end time must be in the future" });
@@ -361,6 +367,7 @@ router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
       CreateBattleResponse.parse(await serializeBattle(battle, profile.id)),
     );
   } catch (error) {
+    if (sendPlanQuotaError(error, res)) return;
     next(error);
   }
 });
@@ -404,6 +411,8 @@ router.post("/battles/:battleId", battleJoinRateLimit, async (req, res, next) =>
       return;
     }
     const profile = currentUserFrom(res);
+    const plan = await getUserPlan(profile.id);
+    await assertDailyPlanQuota(profile.id, plan, "battleJoin");
     const battle = await db.transaction(async (tx) => {
       await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${parsed.data.battleId} for update`);
       const [lockedBattle] = await tx.select().from(battlesTable).where(and(eq(battlesTable.id, parsed.data.battleId), eq(battlesTable.contentStatus, "ACTIVE")));
@@ -434,6 +443,7 @@ router.post("/battles/:battleId", battleJoinRateLimit, async (req, res, next) =>
       JoinBattleResponse.parse(await serializeBattle(battle.battle, profile.id)),
     );
   } catch (error) {
+    if (sendPlanQuotaError(error, res)) return;
     next(error);
   }
 });
@@ -451,6 +461,8 @@ router.post("/battles/:battleId/vote", battleVoteRateLimit, async (req, res, nex
       return;
     }
     const profile = currentUserFrom(res);
+    const plan = await getUserPlan(profile.id);
+    await assertDailyPlanQuota(profile.id, plan, "battleVote");
     try {
       const result = await db.transaction(async (tx) => {
         await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${params.data.battleId} for update`);
@@ -498,6 +510,7 @@ router.post("/battles/:battleId/vote", battleVoteRateLimit, async (req, res, nex
       throw error;
     }
   } catch (error) {
+    if (sendPlanQuotaError(error, res)) return;
     next(error);
   }
 });
@@ -603,6 +616,7 @@ router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
     }
     const profile = currentUserFrom(res);
     const plan = await getUserPlan(profile.id);
+    const planSettings = planConfigFor(plan);
     const prompt = `Generate 5 concise, original ZYVIO Battle concepts as a JSON array of strings. Topic: ${parsed.data.topic}. Category: ${parsed.data.category ?? "any"}. Do not include markdown or numbering.`;
     try {
       const reservation = await reserveAiUsage({
@@ -643,7 +657,7 @@ router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
             messages: [
               {
                 role: "system",
-                content: "You are ZYVIO AI, a creative competition producer.",
+                content: `You are ZYVIO AI, a creative competition producer. Response priority: ${planSettings.aiPriority}.`,
               },
               { role: "user", content: prompt },
             ],
