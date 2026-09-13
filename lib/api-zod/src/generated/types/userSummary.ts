@@ -5,6 +5,7 @@
  * ZYVIO global social, Battle and AI platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { UserSummaryPlan } from './userSummaryPlan';
 
 export interface UserSummary {
   id: string;
@@ -17,4 +18,6 @@ export interface UserSummary {
   losses: number;
   winRate: number;
   rankingPoints: number;
+  plan: UserSummaryPlan;
+  planBadge: string;
 }

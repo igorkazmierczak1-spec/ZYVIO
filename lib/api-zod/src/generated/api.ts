@@ -31,7 +31,9 @@ export const GetDashboardResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }).and(zod.object({
   "email": zod.string().email(),
   "role": zod.enum(['USER', 'ADMIN']),
@@ -69,7 +71,9 @@ export const GetDashboardResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -103,7 +107,9 @@ export const GetDashboardResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -129,7 +135,9 @@ export const GetDashboardResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "xp": zod.number().int(),
   "wins": zod.number().int(),
@@ -182,7 +190,9 @@ export const ListBattlesResponseItem = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -238,7 +248,9 @@ export const CreateBattleResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -281,7 +293,9 @@ export const GetBattleResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -324,7 +338,9 @@ export const JoinBattleResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -371,7 +387,9 @@ export const VoteBattleResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "submissionLabel": zod.string(),
   "score": zod.number().int(),
@@ -400,7 +418,9 @@ export const GetProfileResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }).and(zod.object({
   "email": zod.string().email(),
   "role": zod.enum(['USER', 'ADMIN']),
@@ -454,7 +474,9 @@ export const UpdateProfileResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }).and(zod.object({
   "email": zod.string().email(),
   "role": zod.enum(['USER', 'ADMIN']),
@@ -500,7 +522,9 @@ export const GetLeaderboardResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "xp": zod.number().int(),
   "wins": zod.number().int(),
@@ -522,7 +546,9 @@ export const GetLeaderboardResponse = zod.object({
   "wins": zod.number().int(),
   "losses": zod.number().int(),
   "winRate": zod.number().int(),
-  "rankingPoints": zod.number().int()
+  "rankingPoints": zod.number().int(),
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "planBadge": zod.string()
 }),
   "xp": zod.number().int(),
   "wins": zod.number().int(),

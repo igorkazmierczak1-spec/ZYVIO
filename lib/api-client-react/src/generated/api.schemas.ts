@@ -147,6 +147,15 @@ export interface SocialMessagePage {
   hasMore: boolean;
 }
 
+export type UserSummaryPlan = typeof UserSummaryPlan[keyof typeof UserSummaryPlan];
+
+
+export const UserSummaryPlan = {
+  FREE: 'FREE',
+  PREMIUM: 'PREMIUM',
+  PREMIUM_PRO: 'PREMIUM_PRO',
+} as const;
+
 export interface UserSummary {
   id: string;
   username: string;
@@ -158,6 +167,8 @@ export interface UserSummary {
   losses: number;
   winRate: number;
   rankingPoints: number;
+  plan: UserSummaryPlan;
+  planBadge: string;
 }
 
 export type ProfileRole = typeof ProfileRole[keyof typeof ProfileRole];

@@ -133,4 +133,5 @@ export * from './socialPostInputMediaType';
 export * from './socialProfile';
 export * from './timeSeriesPoint';
 export * from './userSummary';
+export * from './userSummaryPlan';
 export * from './voteInput';
