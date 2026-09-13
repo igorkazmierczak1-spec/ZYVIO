@@ -3,6 +3,7 @@ import {
   useListPremiumPlans,
   useCreatePremiumCheckout,
   useGetPremiumSubscription,
+  useGetPremiumBenefits,
   useCreatePremiumPortal,
 } from "@workspace/api-client-react";
 import { PageHeader, LoadingState, ErrorState } from "../App";
@@ -34,6 +35,7 @@ export default function PremiumPage() {
   const [billingPeriod, setBillingPeriod] = useState<Period>("MONTHLY");
   const { data: plansData, isLoading: plansLoading, isError: plansError, refetch: plansRefetch } = useListPremiumPlans();
   const { data: subData, isLoading: subLoading, isError: subError, refetch: subRefetch } = useGetPremiumSubscription();
+  const { data: benefitsData, isLoading: benefitsLoading, isError: benefitsError, refetch: benefitsRefetch } = useGetPremiumBenefits();
   const checkoutMut = useCreatePremiumCheckout({
     mutation: {
       onSuccess: (res) => res.url ? window.location.assign(res.url) : toast({ title: "Błąd płatności", description: "Stripe nie zwrócił adresu Checkout.", variant: "destructive" }),
@@ -47,10 +49,11 @@ export default function PremiumPage() {
     },
   });
 
-  if (plansLoading || subLoading) return <LoadingState />;
-  if (plansError || subError) return <ErrorState onRetry={() => { plansRefetch(); subRefetch(); }} />;
+  if (plansLoading || subLoading || benefitsLoading) return <LoadingState />;
+  if (plansError || subError || benefitsError) return <ErrorState onRetry={() => { plansRefetch(); subRefetch(); benefitsRefetch(); }} />;
 
   const plans = (plansData?.plans ?? []) as Array<any>;
+  const benefitPlans = (benefitsData?.plans ?? plansData?.benefits ?? []) as Array<any>;
   const subscription = (subData?.subscription ?? null) as any;
   const currentPlan = ((subData as any)?.plan ?? subscription?.plan ?? "FREE") as string;
   const hasActiveSub = subscription && ["active", "trialing", "past_due"].includes(subscription.status);
@@ -58,7 +61,13 @@ export default function PremiumPage() {
   const formatPrice = (price: any) => price?.unit_amount == null
     ? "Niedostępne"
     : new Intl.NumberFormat("pl-PL", { style: "currency", currency: String(price.currency ?? "PLN").toUpperCase() }).format(Number(price.unit_amount) / 100);
-  const planCards = (["PREMIUM", "PREMIUM_PRO"] as Plan[]).map((plan) => ({ plan, price: priceFor(plan), copy: planCopy[plan] }));
+  const planCards = (["PREMIUM", "PREMIUM_PRO"] as Plan[]).map((plan) => ({
+    plan,
+    price: priceFor(plan),
+    copy: planCopy[plan],
+    benefits: benefitPlans.find((item) => item.plan === plan),
+  }));
+  const freeBenefits = benefitPlans.find((item) => item.plan === "FREE");
 
   return (
     <div className="premium-layout">
@@ -86,9 +95,9 @@ export default function PremiumPage() {
           <h3>Free</h3>
           <div className="price">0 zł <small>/ zawsze</small></div>
           <ul className="premium-features">
-            <li><Check /> Dostęp do funkcji dostępnych bez subskrypcji</li>
-            <li><Check /> Konto i profil ZYVIO</li>
-            <li><Check /> Brak płatności</li>
+            <li><Check /> {freeBenefits?.limits?.battleCreateDaily ?? 1} Battle dziennie</li>
+            <li><Check /> {freeBenefits?.limits?.battleVoteDaily ?? 10} głosów dziennie</li>
+            <li><Check /> {freeBenefits?.limits?.aiDaily ?? 3} użycia AI dziennie</li>
           </ul>
           <button className="premium-checkout-btn secondary" disabled>Twój plan bez subskrypcji</button>
         </div>
@@ -99,7 +108,14 @@ export default function PremiumPage() {
             <div className="price">{formatPrice(price)} <small>/ {billingPeriod === "YEARLY" ? "rok" : "miesiąc"}</small></div>
             {billingPeriod === "YEARLY" && <div className="annual-savings">Plan roczny — korzystniejsza cena</div>}
             <p className="plan-description">{copy.description}</p>
-            <ul className="premium-features">{copy.features.map((feature) => <li key={feature}><Check /> {feature}</li>)}</ul>
+            <ul className="premium-features">
+              {copy.features.map((feature) => <li key={feature}><Check /> {feature}</li>)}
+              <li><Check /> {benefits?.limits?.battleCreateDaily} Battle / dzień</li>
+              <li><Check /> {benefits?.limits?.battleVoteDaily} głosów / dzień</li>
+              <li><Check /> {benefits?.limits?.aiDaily} użyć AI / dzień</li>
+              <li><Check /> {benefits?.limits?.postCreateDaily} postów i {benefits?.limits?.commentCreateDaily} komentarzy / dzień</li>
+              <li><Check /> XP ×{benefits?.xpMultiplier}</li>
+            </ul>
             <button
               className="premium-checkout-btn primary"
               disabled={checkoutMut.isPending || !price || Boolean(hasActiveSub)}
@@ -112,6 +128,25 @@ export default function PremiumPage() {
           </div>
         ))}
       </div>
+
+      <section className="premium-benefit-matrix">
+        <div>
+          <span className="plan-badge">PORÓWNANIE PLANÓW</span>
+          <h2>Limity i funkcje są jasne</h2>
+          <p>Uprawnienia są sprawdzane po stronie ZYVIO. Premium zwiększa możliwości, ale nie zmienia siły głosu ani wyniku Battle.</p>
+        </div>
+        <div className="premium-benefit-grid">
+          {benefitPlans.map((benefit) => (
+            <article key={benefit.plan}>
+              <strong>{benefit.badge}</strong>
+              <span>{benefit.statsTier === "pro" ? "Zaawansowane statystyki Pro" : benefit.statsTier === "advanced" ? "Zaawansowane statystyki" : "Podstawowe statystyki"}</span>
+              <span>AI: {benefit.aiFeatures.join(" · ")}</span>
+              <span>{benefit.profileCustomization.join(" · ")}</span>
+              {benefit.exclusiveChallenges ? <span>Ekskluzywne wyzwania Pro</span> : null}
+            </article>
+          ))}
+        </div>
+      </section>
 
       <div className="premium-faq">
         <h2>Subskrypcje i płatności</h2>

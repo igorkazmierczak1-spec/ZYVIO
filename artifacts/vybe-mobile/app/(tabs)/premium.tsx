@@ -5,6 +5,7 @@ import { Text, View } from 'react-native';
 import { AppScreen, Card, ErrorState, Header, LoadingState, PrimaryButton, uiStyles } from '@/components/ui';
 import { useColors } from '@/hooks/useColors';
 import { packageForPeriod, useSubscription } from '@/lib/revenuecat';
+import { useGetPremiumBenefits } from '@workspace/api-client-react';
 
 type Period = 'MONTHLY' | 'YEARLY';
 
@@ -12,6 +13,7 @@ export default function PremiumScreen() {
   const colors = useColors();
   const [period, setPeriod] = useState<Period>('MONTHLY');
   const [actionError, setActionError] = useState<string | null>(null);
+  const benefitsQuery = useGetPremiumBenefits();
   const {
     setupError,
     offerings,
@@ -79,6 +81,21 @@ export default function PremiumScreen() {
       <PrimaryButton onPress={() => proPackage && void run(() => purchase(proPackage))} disabled={active || isPurchasing || !proPackage}>{isPurchasing ? 'Przetwarzanie…' : 'Kup Premium Pro'}</PrimaryButton>
     </Card>
     <PrimaryButton secondary onPress={() => void run(restore)}>Przywróć zakupy{isRestoring ? '…' : ''}</PrimaryButton>
+    {benefitsQuery.data?.plans.map((benefit) => <Card key={benefit.plan}>
+      <Text style={[uiStyles.eyebrow, { color: colors.primary }]}>{benefit.badge}</Text>
+      <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 18 }]}>{benefit.title}</Text>
+      <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>
+        Battle: {benefit.limits.battleCreateDaily} utworzysz / {benefit.limits.battleJoinDaily} dołączysz · Głosy: {benefit.limits.battleVoteDaily}
+      </Text>
+      <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>
+        AI: {benefit.limits.aiDaily}/dzień · Posty: {benefit.limits.postCreateDaily} · Komentarze: {benefit.limits.commentCreateDaily}
+      </Text>
+      <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>
+        XP ×{benefit.xpMultiplier} · Statystyki: {benefit.statsTier === 'pro' ? 'Pro' : benefit.statsTier === 'advanced' ? 'zaawansowane' : 'podstawowe'}
+      </Text>
+      <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>{benefit.aiFeatures.join(' · ')}</Text>
+      {benefit.exclusiveChallenges ? <Text style={{ color: colors.primary, fontFamily: 'Inter_700Bold', fontSize: 12 }}>Ekskluzywne wyzwania Pro</Text> : null}
+    </Card>)}
   </AppScreen>;
 }
 
