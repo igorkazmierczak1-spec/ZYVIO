@@ -56,6 +56,7 @@ import {
 } from "../lib/aiUsage";
 import { planConfigFor } from "../lib/planConfig";
 import { sendPlanQuotaError, assertDailyPlanQuota } from "../lib/planQuota";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -66,6 +67,25 @@ const battleCreateRateLimit = rateLimit({ name: "battle-create", windowMs: 10 * 
 const battleJoinRateLimit = rateLimit({ name: "battle-join", windowMs: 5 * 60_000, max: 10 });
 const battleVoteRateLimit = rateLimit({ name: "battle-vote", windowMs: 60_000, max: 10 });
 const aiRateLimit = rateLimit({ name: "ai-ideas", windowMs: 10 * 60_000, max: 5 });
+const clientErrorRateLimit = rateLimit({ name: "client-errors", windowMs: 10 * 60_000, max: 10 });
+
+router.post("/client-errors", clientErrorRateLimit, (req, res) => {
+  const body = req.body && typeof req.body === "object"
+    ? req.body as Record<string, unknown>
+    : {};
+  const text = (value: unknown, limit: number) =>
+    typeof value === "string" ? value.slice(0, limit) : undefined;
+
+  logger.warn({
+    clientError: {
+      name: text(body.name, 100),
+      message: text(body.message, 800),
+      componentStack: text(body.componentStack, 4_000),
+      path: text(body.path, 300),
+    },
+  }, "Web client render error");
+  res.status(204).end();
+});
 
 router.post("/reports", reportRateLimit, async (req, res, next) => {
   try {

@@ -75,11 +75,24 @@ export class ErrorBoundary extends Component<
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo): void {
+    const normalizedError = toError(error);
     console.error(
       'ErrorBoundary caught an error:',
-      toError(error),
+      normalizedError,
       info.componentStack,
     );
+    void fetch('/api/client-errors', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: normalizedError.name,
+        message: normalizedError.message,
+        componentStack: info.componentStack,
+        path: window.location.pathname,
+      }),
+      keepalive: true,
+    }).catch(() => undefined);
   }
 
   componentDidUpdate(prevProps: ErrorBoundaryProps): void {

@@ -193,16 +193,20 @@ const clerkAppearance = {
 const categoryFilters = ["All", "Photo", "Creativity", "Text", "AI", "Music"];
 
 function initials(name: string) {
-  return name
+  return String(name ?? "")
     .split(" ")
+    .filter(Boolean)
     .map((part) => part[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || "ZY";
 }
 
-function formatTimeLeft(endsAt: string) {
-  const hours = Math.max(0, Math.round((new Date(endsAt).getTime() - Date.now()) / 3600000));
+function formatTimeLeft(endsAt: string | null | undefined) {
+  if (!endsAt) return "Open now";
+  const endTime = new Date(endsAt).getTime();
+  if (!Number.isFinite(endTime)) return "Open now";
+  const hours = Math.max(0, Math.round((endTime - Date.now()) / 3600000));
   if (hours < 1) return "ending soon";
   if (hours < 24) return `${hours}h left`;
   return `${Math.round(hours / 24)}d left`;
@@ -244,7 +248,8 @@ function AppShell({ children }: { children: ReactNode }) {
       staleTime: 30_000,
     },
   });
-  const hasUnreadNotifications = notifications?.some((notification) => !notification.read) ?? false;
+  const hasUnreadNotifications = Array.isArray(notifications)
+    && notifications.some((notification) => notification && !notification.read);
   const navItems = [
     { href: "/feed", label: "Feed", icon: MessageCircle },
     { href: "/messages", label: "Messages", icon: Send },
@@ -292,9 +297,9 @@ function AppShell({ children }: { children: ReactNode }) {
          <div className="season-card">
           <div className="season-orbit"><Sparkles /></div>
            <span className="eyebrow">Your momentum</span>
-           <strong>{profile ? `${profile.streak} day streak` : "Loading your streak"}</strong>
-           <span className="season-meta">{profile ? `${profile.xp.toLocaleString()} XP · level ${profile.level}` : "Loading your progress"}</span>
-           <div className="season-progress"><span style={{ width: `${profile?.progress ?? 0}%` }} /></div>
+           <strong>{profile ? `${safeNumber(profile.streak)} day streak` : "Loading your streak"}</strong>
+           <span className="season-meta">{profile ? `${safeNumber(profile.xp).toLocaleString()} XP · level ${safeNumber(profile.level, 1)}` : "Loading your progress"}</span>
+           <div className="season-progress"><span style={{ width: `${Math.max(0, Math.min(100, safeNumber(profile?.progress)))}%` }} /></div>
         </div>
         <button className="sidebar-profile" onClick={() => navigate("/profile")}>
           <Avatar name={profile?.displayName ?? "ZYVIO User"} size="sm" />
@@ -372,9 +377,9 @@ function DashboardPage() {
   const data = dashboard.data as Dashboard;
   const profile = data.profile ?? ({} as Dashboard["profile"]);
   const stats = data.stats ?? ({} as Dashboard["stats"]);
-  const featuredBattles = data.featuredBattles ?? [];
-  const activity = data.activity ?? [];
-  const leaderboardPreview = data.leaderboardPreview ?? [];
+  const featuredBattles = Array.isArray(data.featuredBattles) ? data.featuredBattles : [];
+  const activity = Array.isArray(data.activity) ? data.activity : [];
+  const leaderboardPreview = Array.isArray(data.leaderboardPreview) ? data.leaderboardPreview : [];
   const displayName = String(profile.displayName ?? "Creator");
   const xp = safeNumber(profile.xp);
   const xpForNextLevel = safeNumber(profile.xpForNextLevel);
