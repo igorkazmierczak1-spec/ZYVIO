@@ -1,0 +1,29 @@
+kind = "video"
+previewPath = "/zyvio-launch-ad/"
+title = "ZYVIO — Coming Soon on Google Play"
+description = "A 15-second vertical English launch advertisement for ZYVIO, promoting creative Battles, AI ideas, XP progression, and the upcoming Google Play release."
+version = "1.0.0"
+id = "artifacts/zyvio-launch-ad"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/zyvio-launch-ad/" ]
+localPort = 25915
+
+[services.development]
+run = "pnpm --filter @workspace/zyvio-launch-ad run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/zyvio-launch-ad", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/zyvio-launch-ad/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25915"
+BASE_PATH = "/zyvio-launch-ad/"
+videoAspectRatio = "9:16"

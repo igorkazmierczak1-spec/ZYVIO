@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "2kg0VkXZ3fIN9-G9e2C6H"
+uri = "file://artifacts/zyvio-launch-ad/public/audio/bg_music.mp3"
+type = "audio"
+title = "ZYVIO launch music"
+description = "Generated music: Energetic future-pop and nu-disco instrumental background music scoring a 15-second social app launch video. Punchy electronic drums, bright synth bass, playful plucks, 118 BPM, yout…"

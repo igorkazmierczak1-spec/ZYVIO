@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+@import 'tailwindcss';
+
+:root {
+  --color-ink: #16131F;
+  --color-violet: #7357FF;
+  --color-lime: #C9F967;
+  --color-coral: #FF7D67;
+  --color-cyan: #8AE8E4;
+  --color-soft: #F6F5F8;
+
+  --color-primary: var(--color-lime);
+  --color-secondary: var(--color-violet);
+  --color-accent: var(--color-cyan);
+
+  --color-bg-light: var(--color-soft);
+  --color-bg-dark: var(--color-ink);
+  --color-bg-muted: #252233;
+
+  --color-text-primary: var(--color-ink);
+  --color-text-secondary: var(--color-soft);
+  --color-text-muted: #888;
+  --color-text-inverse: var(--color-soft);
+
+  --color-success: var(--color-lime);
+  --color-warning: var(--color-coral);
+  --color-error: #ef4444;
+
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --color-bg-light: var(--color-bg-light);
+  --color-bg-dark: var(--color-bg-dark);
+  --color-bg-muted: var(--color-bg-muted);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-inverse: var(--color-text-inverse);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+  
+  --color-ink: var(--color-ink);
+  --color-violet: var(--color-violet);
+  --color-lime: var(--color-lime);
+  --color-coral: var(--color-coral);
+  --color-cyan: var(--color-cyan);
+  --color-soft: var(--color-soft);
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.video-media-frame {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.video-media-frame > :is(img, video) {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+}
+
+.video-media-frame[data-media-fit='contain'] > :is(img, video) {
+  object-fit: contain;
+}
+
+.video-media-frame[data-media-position='top'] > :is(img, video) {
+  object-position: top;
+}
+
+.video-media-frame[data-media-position='right'] > :is(img, video) {
+  object-position: right;
+}
+
+.video-media-frame[data-media-position='bottom'] > :is(img, video) {
+  object-position: bottom;
+}
+
+.video-media-frame[data-media-position='left'] > :is(img, video) {
+  object-position: left;
+}
+
+.text-stroke {
+  -webkit-text-stroke: 1px var(--color-soft);
+  color: transparent;
+}
+.text-stroke-ink {
+  -webkit-text-stroke: 1.5px var(--color-ink);
+  color: transparent;
+}
+.text-shadow-hard {
+  text-shadow: 4px 4px 0 var(--color-ink);
+}
