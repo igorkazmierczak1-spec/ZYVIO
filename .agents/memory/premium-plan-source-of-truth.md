@@ -8,3 +8,9 @@ Plan limits and benefits belong in one backend configuration. API enforcement, p
 **Why:** Separate frontend/backend values make subscription changes appear active while old limits remain enforced, especially across Stripe web and RevenueCat mobile paths.
 
 **How to apply:** Add new plan benefits to the central backend config first, expose them through a typed endpoint, regenerate OpenAPI clients, then update web and mobile consumers.
+
+Premium access is granted only for Stripe subscription statuses `active` and `trialing`; `past_due` is treated as unpaid and must resolve to `FREE`.
+
+**Why:** A `past_due` subscription represents a failed payment and should not continue granting paid benefits indefinitely.
+
+**How to apply:** Keep this rule consistent in webhook synchronization, subscription reads, server-side plan resolution, and client display state.
