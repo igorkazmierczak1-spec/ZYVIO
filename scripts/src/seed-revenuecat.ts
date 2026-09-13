@@ -130,7 +130,7 @@ async function createEntitlement(projectId: string, lookupKey: string, displayNa
 
 async function attachProductsToEntitlement(projectId: string, entitlementId: string, productIds: string[]) {
   try {
-    await revenueCatRequest(`/projects/${projectId}/entitlements/${entitlementId}/products`, "POST", {
+    await revenueCatRequest(`/projects/${projectId}/entitlements/${entitlementId}/actions/attach_products`, "POST", {
       product_ids: productIds,
     });
   } catch (error) {
@@ -166,7 +166,7 @@ async function createPackage(projectId: string, offeringId: string, lookupKey: s
 
 async function attachProductToPackage(projectId: string, packageId: string, productIds: string[]) {
   try {
-    await revenueCatRequest(`/projects/${projectId}/packages/${packageId}/products`, "POST", {
+    await revenueCatRequest(`/projects/${projectId}/packages/${packageId}/actions/attach_products`, "POST", {
       products: productIds.map((product_id) => ({ product_id, eligibility_criteria: "all" })),
     });
   } catch (error) {
