@@ -13,6 +13,8 @@ import {
 } from "@workspace/db";
 import { currentUserFrom, requireAuthenticatedUser } from "../middlewares/auth";
 import { rateLimit } from "../middlewares/rateLimit";
+import { getUserPlan } from "../lib/premium";
+import { assertDailyPlanQuota, sendPlanQuotaError } from "../lib/planQuota";
 
 const router: IRouter = Router();
 router.use(requireAuthenticatedUser);
@@ -200,6 +202,8 @@ router.get("/social/posts/:postId", async (req, res, next) => {
 router.post("/social/posts", createPostRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
+    const plan = await getUserPlan(profile.id);
+    await assertDailyPlanQuota(profile.id, plan, "postCreate");
     const parsed = parsePostBody(req.body);
     if (!parsed.data) {
       res.status(400).json({ error: parsed.error });
@@ -212,6 +216,7 @@ router.post("/social/posts", createPostRateLimit, async (req, res, next) => {
     }).returning();
     res.status(201).json(await postView(post, profile.id));
   } catch (error) {
+    if (sendPlanQuotaError(error, res)) return;
     next(error);
   }
 });
@@ -325,6 +330,8 @@ router.get("/social/posts/:postId/comments", async (req, res, next) => {
 router.post("/social/posts/:postId/comments", commentRateLimit, async (req, res, next) => {
   try {
     const profile = currentUserFrom(res);
+    const plan = await getUserPlan(profile.id);
+    await assertDailyPlanQuota(profile.id, plan, "commentCreate");
     const post = await getPostForUser(routeParam(req.params.postId), profile.id);
     const parsed = parseCommentBody(req.body);
     if (!post) {
@@ -346,6 +353,7 @@ router.post("/social/posts/:postId/comments", commentRateLimit, async (req, res,
     }
     res.status(201).json(comment);
   } catch (error) {
+    if (sendPlanQuotaError(error, res)) return;
     next(error);
   }
 });
