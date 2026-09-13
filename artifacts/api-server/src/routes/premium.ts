@@ -194,13 +194,14 @@ router.get("/premium/subscription", requireAuthenticatedUser, async (_req, res, 
       : null;
     if (subscription) await updateLocalSubscription(user.id, subscription, plan ?? "FREE");
     else if (revenueCat?.found) await updateLocalRevenueCatSubscription(user.id, revenueCat);
+    const resolvedPlan = plan ?? (revenueCat?.found ? "FREE" : await getUserPlan(user.id));
     res.json({
       subscription: subscription
         ? { ...subscription, plan }
         : revenueCat?.found
           ? { provider: "revenuecat", appUserId: revenueCat.appUserId, status: revenueCat.status, entitlements: revenueCat.entitlements, plan: "FREE" }
           : null,
-      plan: plan ?? (revenueCat?.found ? "FREE" : user.plan ?? "FREE"),
+      plan: resolvedPlan,
     });
   } catch (error) {
     next(error);
