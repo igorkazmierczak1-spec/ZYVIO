@@ -16,6 +16,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { SubscriptionProvider } from '@/lib/revenuecat';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -59,7 +60,9 @@ export default function RootLayout() {
             <QueryClientProvider client={queryClient}>
               <GestureHandlerRootView style={{ flex: 1 }}>
                 <KeyboardProvider>
-                  <RootLayoutNav />
+                  <SubscriptionProvider>
+                    <RootLayoutNav />
+                  </SubscriptionProvider>
                 </KeyboardProvider>
               </GestureHandlerRootView>
             </QueryClientProvider>
