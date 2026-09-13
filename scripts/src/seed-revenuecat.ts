@@ -143,14 +143,13 @@ async function createOffering(projectId: string): Promise<Offering> {
   const existing = offerings.items?.find((item) => item.lookup_key === "default");
   if (existing) {
     if (!existing.is_current) {
-      await revenueCatRequest(`/projects/${projectId}/offerings/${existing.id}`, "PATCH", { is_current: true });
+        await revenueCatRequest(`/projects/${projectId}/offerings/${existing.id}`, "POST", { is_current: true });
     }
     return existing;
   }
   return revenueCatRequest<Offering>(`/projects/${projectId}/offerings`, "POST", {
     lookup_key: "default",
     display_name: "ZYVIO Plans",
-    is_current: true,
   });
 }
 
