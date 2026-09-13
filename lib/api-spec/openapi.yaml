@@ -1589,7 +1589,7 @@ components:
       type: object
       required: [topic]
       properties:
-        topic: { type: string, minLength: 2 }
+        topic: { type: string, minLength: 2, maxLength: 500 }
         category: { type: string }
     IdeaResponse:
       type: object
