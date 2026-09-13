@@ -36,7 +36,7 @@ function isAllowedOrigin(origin: string) {
   return false;
 }
 
-app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+app.post("/api/stripe/webhook", express.raw({ type: "application/json", limit: "1mb" }), async (req, res) => {
   const signature = req.headers["stripe-signature"];
   if (!signature || Array.isArray(signature)) {
     res.status(400).json({ error: "Missing or invalid stripe-signature" });

@@ -456,7 +456,7 @@ function ProfilePage() {
 
   const sub = subData?.subscription as any;
   const currentPlan = (subData as any)?.plan ?? sub?.plan ?? "FREE";
-  const hasActiveSub = sub && ['active', 'trialing', 'past_due'].includes(sub.status);
+  const hasActiveSub = sub && ['active', 'trialing'].includes(sub.status);
   const winRate = Math.round(data.wins / Math.max(1, data.wins + data.losses) * 100);
 
   return <div>

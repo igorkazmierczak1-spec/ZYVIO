@@ -188,7 +188,10 @@ router.get("/premium/subscription", requireAuthenticatedUser, async (_req, res, 
     const subscription = activeSubscription(result.data ?? []) ?? result.data?.[0] ?? null;
     const item = ((subscription?.items as Record<string, unknown> | undefined)?.data as Array<Record<string, unknown>> | undefined)?.[0];
     const price = item?.price as Record<string, unknown> | undefined;
-     const plan = price ? planFromPrice(price) : null;
+    const detectedPlan = price ? planFromPrice(price) : null;
+    const plan = subscription && ["active", "trialing"].includes(String(subscription.status))
+      ? detectedPlan
+      : null;
     if (subscription) await updateLocalSubscription(user.id, subscription, plan ?? "FREE");
     else if (revenueCat?.found) await updateLocalRevenueCatSubscription(user.id, revenueCat);
     res.json({

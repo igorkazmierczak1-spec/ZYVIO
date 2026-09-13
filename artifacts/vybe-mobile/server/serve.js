@@ -109,6 +109,11 @@ function serveStaticFile(urlPath, res) {
     res.end('Bad Request');
     return;
   }
+  if (decodedPath.includes('\0')) {
+    res.writeHead(400);
+    res.end('Bad Request');
+    return;
+  }
 
   const filePath = path.resolve(STATIC_ROOT, `.${decodedPath}`);
   const relativePath = path.relative(STATIC_ROOT, filePath);

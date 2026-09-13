@@ -56,7 +56,7 @@ export default function PremiumPage() {
   const benefitPlans = (benefitsData?.plans ?? plansData?.benefits ?? []) as Array<any>;
   const subscription = (subData?.subscription ?? null) as any;
   const currentPlan = ((subData as any)?.plan ?? subscription?.plan ?? "FREE") as string;
-  const hasActiveSub = subscription && ["active", "trialing", "past_due"].includes(subscription.status);
+  const hasActiveSub = subscription && ["active", "trialing"].includes(subscription.status);
   const priceFor = (plan: Plan) => plans.find((p) => p.plan === plan && ((p.recurring?.interval === "year") === (billingPeriod === "YEARLY")));
   const annualSavingsFor = (plan: Plan) => {
     const monthly = plans.find((p) => p.plan === plan && p.recurring?.interval === "month")?.unit_amount;
