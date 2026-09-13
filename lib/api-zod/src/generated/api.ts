@@ -1023,6 +1023,23 @@ export const GenerateIdeasResponse = zod.object({
 
 
 /**
+ * @summary Get the current user's AI usage history
+ */
+export const GetAiUsageResponse = zod.object({
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "usedToday": zod.number().int(),
+  "limitToday": zod.number().int(),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "feature": zod.string(),
+  "status": zod.enum(['reserved', 'success', 'provider_error']),
+  "promptCharacters": zod.number().int(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
  * @summary Submit a moderation report
  */
 export const createReportBodyReasonMin = 3;
@@ -1506,6 +1523,52 @@ export const ListPremiumPlansResponse = zod.object({
   "currency": zod.string(),
   "recurring": zod.record(zod.string(), zod.unknown()).nullish(),
   "metadata": zod.record(zod.string(), zod.unknown()).optional()
+})),
+  "benefits": zod.array(zod.object({
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "title": zod.string(),
+  "badge": zod.string(),
+  "limits": zod.object({
+  "aiDaily": zod.number().int(),
+  "battleCreateDaily": zod.number().int(),
+  "battleJoinDaily": zod.number().int(),
+  "battleVoteDaily": zod.number().int(),
+  "postCreateDaily": zod.number().int(),
+  "commentCreateDaily": zod.number().int()
+}),
+  "xpMultiplier": zod.number(),
+  "aiPriority": zod.enum(['standard', 'priority', 'highest']),
+  "aiFeatures": zod.array(zod.string()),
+  "statsTier": zod.enum(['basic', 'advanced', 'pro']),
+  "profileCustomization": zod.array(zod.string()),
+  "exclusiveChallenges": zod.boolean()
+})).optional()
+})
+
+
+/**
+ * @summary Get plan benefits and limits for the current user
+ */
+export const GetPremiumBenefitsResponse = zod.object({
+  "currentPlan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "plans": zod.array(zod.object({
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "title": zod.string(),
+  "badge": zod.string(),
+  "limits": zod.object({
+  "aiDaily": zod.number().int(),
+  "battleCreateDaily": zod.number().int(),
+  "battleJoinDaily": zod.number().int(),
+  "battleVoteDaily": zod.number().int(),
+  "postCreateDaily": zod.number().int(),
+  "commentCreateDaily": zod.number().int()
+}),
+  "xpMultiplier": zod.number(),
+  "aiPriority": zod.enum(['standard', 'priority', 'highest']),
+  "aiFeatures": zod.array(zod.string()),
+  "statsTier": zod.enum(['basic', 'advanced', 'pro']),
+  "profileCustomization": zod.array(zod.string()),
+  "exclusiveChallenges": zod.boolean()
 }))
 })
 

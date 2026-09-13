@@ -5,8 +5,10 @@
  * ZYVIO global social, Battle and AI platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { PlanBenefits } from './planBenefits';
 import type { PremiumPlan } from './premiumPlan';
 
 export interface PremiumPlansResponse {
   plans: PremiumPlan[];
+  benefits?: PlanBenefits[];
 }

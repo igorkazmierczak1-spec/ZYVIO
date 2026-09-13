@@ -683,8 +683,72 @@ export interface PremiumPlan {
   metadata?: PremiumPlanMetadata;
 }
 
+export type PlanBenefitsPlan = typeof PlanBenefitsPlan[keyof typeof PlanBenefitsPlan];
+
+
+export const PlanBenefitsPlan = {
+  FREE: 'FREE',
+  PREMIUM: 'PREMIUM',
+  PREMIUM_PRO: 'PREMIUM_PRO',
+} as const;
+
+export type PlanBenefitsAiPriority = typeof PlanBenefitsAiPriority[keyof typeof PlanBenefitsAiPriority];
+
+
+export const PlanBenefitsAiPriority = {
+  standard: 'standard',
+  priority: 'priority',
+  highest: 'highest',
+} as const;
+
+export type PlanBenefitsStatsTier = typeof PlanBenefitsStatsTier[keyof typeof PlanBenefitsStatsTier];
+
+
+export const PlanBenefitsStatsTier = {
+  basic: 'basic',
+  advanced: 'advanced',
+  pro: 'pro',
+} as const;
+
+export type PlanBenefitsLimits = {
+  aiDaily: number;
+  battleCreateDaily: number;
+  battleJoinDaily: number;
+  battleVoteDaily: number;
+  postCreateDaily: number;
+  commentCreateDaily: number;
+};
+
+export interface PlanBenefits {
+  plan: PlanBenefitsPlan;
+  title: string;
+  badge: string;
+  limits: PlanBenefitsLimits;
+  xpMultiplier: number;
+  aiPriority: PlanBenefitsAiPriority;
+  aiFeatures: string[];
+  statsTier: PlanBenefitsStatsTier;
+  profileCustomization: string[];
+  exclusiveChallenges: boolean;
+}
+
 export interface PremiumPlansResponse {
   plans: PremiumPlan[];
+  benefits?: PlanBenefits[];
+}
+
+export type PremiumBenefitsResponseCurrentPlan = typeof PremiumBenefitsResponseCurrentPlan[keyof typeof PremiumBenefitsResponseCurrentPlan];
+
+
+export const PremiumBenefitsResponseCurrentPlan = {
+  FREE: 'FREE',
+  PREMIUM: 'PREMIUM',
+  PREMIUM_PRO: 'PREMIUM_PRO',
+} as const;
+
+export interface PremiumBenefitsResponse {
+  currentPlan: PremiumBenefitsResponseCurrentPlan;
+  plans: PlanBenefits[];
 }
 
 export type PremiumCheckoutInputPlan = typeof PremiumCheckoutInputPlan[keyof typeof PremiumCheckoutInputPlan];
@@ -743,6 +807,39 @@ export interface PremiumRevenueCatSyncResponse {
   subscription: PremiumRevenueCatSyncResponseSubscription;
   plan: PremiumRevenueCatSyncResponsePlan;
   synced: boolean;
+}
+
+export type AiUsageHistoryItemStatus = typeof AiUsageHistoryItemStatus[keyof typeof AiUsageHistoryItemStatus];
+
+
+export const AiUsageHistoryItemStatus = {
+  reserved: 'reserved',
+  success: 'success',
+  provider_error: 'provider_error',
+} as const;
+
+export interface AiUsageHistoryItem {
+  id: string;
+  feature: string;
+  status: AiUsageHistoryItemStatus;
+  promptCharacters: number;
+  createdAt: string;
+}
+
+export type AiUsageHistoryResponsePlan = typeof AiUsageHistoryResponsePlan[keyof typeof AiUsageHistoryResponsePlan];
+
+
+export const AiUsageHistoryResponsePlan = {
+  FREE: 'FREE',
+  PREMIUM: 'PREMIUM',
+  PREMIUM_PRO: 'PREMIUM_PRO',
+} as const;
+
+export interface AiUsageHistoryResponse {
+  plan: AiUsageHistoryResponsePlan;
+  usedToday: number;
+  limitToday: number;
+  items: AiUsageHistoryItem[];
 }
 
 export type AdminBillingOverviewSubscriptionsItem = { [key: string]: unknown };

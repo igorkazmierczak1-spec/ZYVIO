@@ -1467,6 +1467,36 @@ components:
       required: [plans]
       properties:
         plans: { type: array, items: { $ref: "#/components/schemas/PremiumPlan" } }
+        benefits: { type: array, items: { $ref: "#/components/schemas/PlanBenefits" } }
+    PlanBenefits:
+      type: object
+      required: [plan, title, badge, limits, xpMultiplier, aiPriority, aiFeatures, statsTier, profileCustomization, exclusiveChallenges]
+      properties:
+        plan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
+        title: { type: string }
+        badge: { type: string }
+        limits:
+          type: object
+          required: [aiDaily, battleCreateDaily, battleJoinDaily, battleVoteDaily, postCreateDaily, commentCreateDaily]
+          properties:
+            aiDaily: { type: integer }
+            battleCreateDaily: { type: integer }
+            battleJoinDaily: { type: integer }
+            battleVoteDaily: { type: integer }
+            postCreateDaily: { type: integer }
+            commentCreateDaily: { type: integer }
+        xpMultiplier: { type: number }
+        aiPriority: { type: string, enum: [standard, priority, highest] }
+        aiFeatures: { type: array, items: { type: string } }
+        statsTier: { type: string, enum: [basic, advanced, pro] }
+        profileCustomization: { type: array, items: { type: string } }
+        exclusiveChallenges: { type: boolean }
+    PremiumBenefitsResponse:
+      type: object
+      required: [currentPlan, plans]
+      properties:
+        currentPlan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
+        plans: { type: array, items: { $ref: "#/components/schemas/PlanBenefits" } }
     PremiumCheckoutInput:
       type: object
       required: [plan, billingPeriod]
@@ -1491,6 +1521,23 @@ components:
         subscription: { type: object, nullable: true, additionalProperties: true }
         plan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
         synced: { type: boolean }
+    AiUsageHistoryItem:
+      type: object
+      required: [id, feature, status, promptCharacters, createdAt]
+      properties:
+        id: { type: string }
+        feature: { type: string }
+        status: { type: string, enum: [reserved, success, provider_error] }
+        promptCharacters: { type: integer }
+        createdAt: { type: string, format: date-time }
+    AiUsageHistoryResponse:
+      type: object
+      required: [plan, usedToday, limitToday, items]
+      properties:
+        plan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
+        usedToday: { type: integer }
+        limitToday: { type: integer }
+        items: { type: array, items: { $ref: "#/components/schemas/AiUsageHistoryItem" } }
     AdminBillingOverview:
       type: object
       required: [connected, range, subscriptions, revenue, payments, totalRevenue, revenue30d, mrr, arr, activeSubscriptions, newSubscriptions, cancelledSubscriptions, successfulPayments, failedPayments, premiumCount, conversion, trend]

@@ -42,6 +42,7 @@ import type {
   AdminUserDetail,
   AdminUserPage,
   AdminUserUpdate,
+  AiUsageHistoryResponse,
   Battle,
   BattleInput,
   BlockState,
@@ -66,6 +67,7 @@ import type {
   MarkAllNotificationsRead200,
   Notification,
   OkResponse,
+  PremiumBenefitsResponse,
   PremiumCheckoutInput,
   PremiumPlansResponse,
   PremiumRevenueCatSyncResponse,
@@ -2483,6 +2485,83 @@ export const useGenerateIdeas = <TError = ErrorType<unknown>,
       return useMutation(getGenerateIdeasMutationOptions(options));
     }
 
+export const getGetAiUsageUrl = () => {
+
+
+
+
+  return `/api/ai/usage`
+}
+
+/**
+ * @summary Get the current user's AI usage history
+ */
+export const getAiUsage = async ( options?: Parameters<typeof customFetch>[1]): Promise<AiUsageHistoryResponse> => {
+
+  return customFetch<AiUsageHistoryResponse>(getGetAiUsageUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAiUsageQueryKey = () => {
+    return [
+    `/api/ai/usage`
+    ] as const;
+    }
+
+
+export const getGetAiUsageQueryOptions = <TData = Awaited<ReturnType<typeof getAiUsage>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAiUsage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAiUsageQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAiUsage>>> = ({ signal }) => getAiUsage({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAiUsage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAiUsageQueryResult = NonNullable<Awaited<ReturnType<typeof getAiUsage>>>
+export type GetAiUsageQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the current user's AI usage history
+ */
+
+export function useGetAiUsage<TData = Awaited<ReturnType<typeof getAiUsage>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAiUsage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAiUsageQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getCreateReportUrl = () => {
 
 
@@ -3706,6 +3785,83 @@ export function useListPremiumPlans<TData = Awaited<ReturnType<typeof listPremiu
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListPremiumPlansQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPremiumBenefitsUrl = () => {
+
+
+
+
+  return `/api/premium/benefits`
+}
+
+/**
+ * @summary Get plan benefits and limits for the current user
+ */
+export const getPremiumBenefits = async ( options?: Parameters<typeof customFetch>[1]): Promise<PremiumBenefitsResponse> => {
+
+  return customFetch<PremiumBenefitsResponse>(getGetPremiumBenefitsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPremiumBenefitsQueryKey = () => {
+    return [
+    `/api/premium/benefits`
+    ] as const;
+    }
+
+
+export const getGetPremiumBenefitsQueryOptions = <TData = Awaited<ReturnType<typeof getPremiumBenefits>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPremiumBenefits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPremiumBenefitsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPremiumBenefits>>> = ({ signal }) => getPremiumBenefits({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPremiumBenefits>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPremiumBenefitsQueryResult = NonNullable<Awaited<ReturnType<typeof getPremiumBenefits>>>
+export type GetPremiumBenefitsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get plan benefits and limits for the current user
+ */
+
+export function useGetPremiumBenefits<TData = Awaited<ReturnType<typeof getPremiumBenefits>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPremiumBenefits>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPremiumBenefitsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
