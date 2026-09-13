@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
+import type { PurchasesPackage } from 'react-native-purchases';
 import { AppScreen, Card, ErrorState, Header, LoadingState, PrimaryButton, uiStyles } from '@/components/ui';
 import { useColors } from '@/hooks/useColors';
 import { packageForPeriod, useSubscription } from '@/lib/revenuecat';
@@ -42,6 +43,16 @@ export default function PremiumScreen() {
 
   const premiumPackage = packageForPeriod(offerings, 'PREMIUM', period);
   const proPackage = packageForPeriod(offerings, 'PREMIUM_PRO', period);
+  const premiumMonthly = packageForPeriod(offerings, 'PREMIUM', 'MONTHLY');
+  const premiumYearly = packageForPeriod(offerings, 'PREMIUM', 'YEARLY');
+  const proMonthly = packageForPeriod(offerings, 'PREMIUM_PRO', 'MONTHLY');
+  const proYearly = packageForPeriod(offerings, 'PREMIUM_PRO', 'YEARLY');
+  const annualSavings = (monthly?: PurchasesPackage, yearly?: PurchasesPackage) => {
+    const monthlyPrice = monthly?.product.price;
+    const yearlyPrice = yearly?.product.price;
+    if (typeof monthlyPrice !== 'number' || typeof yearlyPrice !== 'number' || monthlyPrice <= 0) return null;
+    return Math.max(0, Math.round((1 - yearlyPrice / (monthlyPrice * 12)) * 100));
+  };
   const active = currentPlan !== 'FREE';
   const run = async (action: () => Promise<unknown>) => {
     setActionError(null);
@@ -71,6 +82,7 @@ export default function PremiumScreen() {
       <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 24 }]}>{premiumPackage?.product.title ?? 'Premium'}</Text>
       <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>{premiumPackage?.product.description ?? 'Więcej ZYVIO na co dzień.'}</Text>
       <Text style={{ color: colors.foreground, fontFamily: 'Inter_600SemiBold' }}>{premiumPackage?.product.priceString ?? 'Niedostępne'}</Text>
+      {period === 'YEARLY' && annualSavings(premiumMonthly, premiumYearly) !== null ? <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Inter_700Bold' }}>Oszczędzasz {annualSavings(premiumMonthly, premiumYearly)}% rocznie</Text> : null}
       <PrimaryButton onPress={() => premiumPackage && void run(() => purchase(premiumPackage))} disabled={active || isPurchasing || !premiumPackage}>{isPurchasing ? 'Przetwarzanie…' : 'Kup Premium'}</PrimaryButton>
     </Card>
     <Card accent={colors.accent}>
@@ -78,6 +90,7 @@ export default function PremiumScreen() {
       <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 24 }]}>{proPackage?.product.title ?? 'Premium Pro'}</Text>
       <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>{proPackage?.product.description ?? 'Wyższe limity AI i pełna kontrola uprawnień.'}</Text>
       <Text style={{ color: colors.foreground, fontFamily: 'Inter_600SemiBold' }}>{proPackage?.product.priceString ?? 'Niedostępne'}</Text>
+      {period === 'YEARLY' && annualSavings(proMonthly, proYearly) !== null ? <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Inter_700Bold' }}>Oszczędzasz {annualSavings(proMonthly, proYearly)}% rocznie</Text> : null}
       <PrimaryButton onPress={() => proPackage && void run(() => purchase(proPackage))} disabled={active || isPurchasing || !proPackage}>{isPurchasing ? 'Przetwarzanie…' : 'Kup Premium Pro'}</PrimaryButton>
     </Card>
     <PrimaryButton secondary onPress={() => void run(restore)}>Przywróć zakupy{isRestoring ? '…' : ''}</PrimaryButton>

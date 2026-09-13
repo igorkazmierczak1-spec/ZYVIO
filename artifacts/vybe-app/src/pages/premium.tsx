@@ -58,6 +58,12 @@ export default function PremiumPage() {
   const currentPlan = ((subData as any)?.plan ?? subscription?.plan ?? "FREE") as string;
   const hasActiveSub = subscription && ["active", "trialing", "past_due"].includes(subscription.status);
   const priceFor = (plan: Plan) => plans.find((p) => p.plan === plan && ((p.recurring?.interval === "year") === (billingPeriod === "YEARLY")));
+  const annualSavingsFor = (plan: Plan) => {
+    const monthly = plans.find((p) => p.plan === plan && p.recurring?.interval === "month")?.unit_amount;
+    const yearly = plans.find((p) => p.plan === plan && p.recurring?.interval === "year")?.unit_amount;
+    if (typeof monthly !== "number" || typeof yearly !== "number" || monthly <= 0) return null;
+    return Math.max(0, Math.round((1 - yearly / (monthly * 12)) * 100));
+  };
   const formatPrice = (price: any) => price?.unit_amount == null
     ? "Niedostępne"
     : new Intl.NumberFormat("pl-PL", { style: "currency", currency: String(price.currency ?? "PLN").toUpperCase() }).format(Number(price.unit_amount) / 100);
@@ -106,7 +112,7 @@ export default function PremiumPage() {
             <div className="plan-badge">{copy.badge}</div>
             <div className="plan-title-row"><h3>{plan === "PREMIUM_PRO" ? "👑 " : ""}{copy.title}</h3></div>
             <div className="price">{formatPrice(price)} <small>/ {billingPeriod === "YEARLY" ? "rok" : "miesiąc"}</small></div>
-            {billingPeriod === "YEARLY" && <div className="annual-savings">Plan roczny — korzystniejsza cena</div>}
+            {billingPeriod === "YEARLY" && <div className="annual-savings">{annualSavingsFor(plan) == null ? "Plan roczny" : `Oszczędzasz ${annualSavingsFor(plan)}% względem płatności miesięcznej`}</div>}
             <p className="plan-description">{copy.description}</p>
             <ul className="premium-features">
               {copy.features.map((feature) => <li key={feature}><Check /> {feature}</li>)}
