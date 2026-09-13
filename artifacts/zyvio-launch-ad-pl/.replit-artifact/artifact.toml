@@ -1,0 +1,29 @@
+kind = "video"
+videoAspectRatio = "9:16"
+previewPath = "/zyvio-launch-ad-pl/"
+title = "ZYVIO — Wkrótce w Google Play"
+description = "Polska wersja 15-sekundowej pionowej reklamy ZYVIO, promująca Battle 1v1, pomysły AI, zdobywanie XP i nadchodzącą premierę w Google Play."
+version = "1.0.0"
+id = "artifacts/zyvio-launch-ad-pl"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/zyvio-launch-ad-pl/" ]
+localPort = 25508
+
+[services.development]
+run = "pnpm --filter @workspace/zyvio-launch-ad-pl run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/zyvio-launch-ad-pl", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/zyvio-launch-ad-pl/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25508"
+BASE_PATH = "/zyvio-launch-ad-pl/"

@@ -7,3 +7,11 @@ uri = "file://artifacts/zyvio-launch-ad/public/audio/bg_music.mp3"
 type = "audio"
 title = "ZYVIO launch music"
 description = "Generated music: Energetic future-pop and nu-disco instrumental background music scoring a 15-second social app launch video. Punchy electronic drums, bright synth bass, playful plucks, 118 BPM, yout…"
+logical_id = "d5fcc4d6-5082-42be-9923-db42001d9451"
+
+[[outputs]]
+id = "yjaBRt2M9_G6uMYYGNKE5"
+uri = "file://artifacts/zyvio-launch-ad-pl/public/audio/bg_music_2.mp3"
+type = "audio"
+title = "muzyka polskiej reklamy ZYVIO"
+description = "Generated music: Energetic future-pop and nu-disco instrumental background music scoring a 15-second Polish social app launch video. Punchy electronic drums, bright synth bass, playful plucks, 118 BP…"
