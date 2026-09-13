@@ -514,6 +514,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IdeaResponse"
+  /ai/usage:
+    get:
+      operationId: getAiUsage
+      tags: [ai]
+      summary: Get the current user's AI usage history
+      responses:
+        "200":
+          description: AI usage history and daily allowance
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiUsageHistoryResponse" }
   /reports:
     post:
       operationId: createReport
@@ -751,6 +762,17 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PremiumPlansResponse" }
+  /premium/benefits:
+    get:
+      operationId: getPremiumBenefits
+      tags: [premium]
+      summary: Get plan benefits and limits for the current user
+      responses:
+        "200":
+          description: Plan benefits
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PremiumBenefitsResponse" }
   /premium/subscription:
     get:
       operationId: getPremiumSubscription
