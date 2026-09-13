@@ -7,3 +7,4 @@
 - [Mobile preview CORS](mobile-preview-cors.md) — Expo preview requests need REPLIT_EXPO_DEV_DOMAIN in the API CORS allowlist during development.
 - [Expo build Metro port](expo-build-metro-port.md) — static Expo builds use a separate configurable Metro port so they do not collide with the mockup sandbox.
 - [Stripe production prerequisite](stripe-production-prerequisite.md) — production webhooks require an active public deployment and an attached Stripe integration; do not fabricate either.
+- [RevenueCat relationship mutations](revenuecat-relationship-mutations.md) — RevenueCat v2 attaches products through action endpoints, not the collection routes.
