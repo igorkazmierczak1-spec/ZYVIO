@@ -80,6 +80,9 @@ export default function PremiumScreen() {
     <Card accent={colors.primary}>
       <Text style={[uiStyles.eyebrow, { color: colors.primary }]}>PREMIUM</Text>
       <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 24 }]}>{premiumPackage?.product.title ?? 'Premium'}</Text>
+      <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>
+        Więcej możliwości w aplikacji: więcej Battle, głosów, użyć AI, postów i komentarzy. Otrzymujesz zaawansowane statystyki, priorytet AI, badge Premium oraz dodatkową personalizację profilu.
+      </Text>
       <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>{premiumPackage?.product.description ?? 'Więcej ZYVIO na co dzień.'}</Text>
       <Text style={{ color: colors.foreground, fontFamily: 'Inter_600SemiBold' }}>{premiumPackage?.product.priceString ?? 'Niedostępne'}</Text>
       {period === 'YEARLY' && annualSavings(premiumMonthly, premiumYearly) !== null ? <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Inter_700Bold' }}>Oszczędzasz {annualSavings(premiumMonthly, premiumYearly)}% rocznie</Text> : null}
@@ -88,6 +91,9 @@ export default function PremiumScreen() {
     <Card accent={colors.accent}>
       <Text style={[uiStyles.eyebrow, { color: colors.primary }]}>PREMIUM PRO</Text>
       <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 24 }]}>{proPackage?.product.title ?? 'Premium Pro'}</Text>
+      <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>
+        Pełny pakiet dla najbardziej aktywnych: najwyższe limity Battle, głosów, AI, postów i komentarzy, najwyższy priorytet AI, więcej XP, statystyki Pro, wyróżniony profil i ekskluzywne wyzwania.
+      </Text>
       <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>{proPackage?.product.description ?? 'Wyższe limity AI i pełna kontrola uprawnień.'}</Text>
       <Text style={{ color: colors.foreground, fontFamily: 'Inter_600SemiBold' }}>{proPackage?.product.priceString ?? 'Niedostępne'}</Text>
       {period === 'YEARLY' && annualSavings(proMonthly, proYearly) !== null ? <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Inter_700Bold' }}>Oszczędzasz {annualSavings(proMonthly, proYearly)}% rocznie</Text> : null}
