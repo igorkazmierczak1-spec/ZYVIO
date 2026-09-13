@@ -10,3 +10,4 @@
 - [RevenueCat relationship mutations](revenuecat-relationship-mutations.md) — RevenueCat v2 attaches products through action endpoints, not the collection routes.
 - [Premium plan source of truth](premium-plan-source-of-truth.md) — backend plan config drives enforcement, AI, XP, and web/mobile benefit displays.
 - [Clerk profile reprovisioning](clerk-profile-reprovisioning.md) — recreated Clerk users must reclaim an existing profile by verified email instead of failing uniqueness checks.
+- [React Query singleton](react-query-singleton.md) — Vite apps consuming the workspace API client must dedupe React Query so hooks and providers share one context.
