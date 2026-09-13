@@ -3,7 +3,7 @@ import { hasDirectStripeCredentials, stripeRequest } from "../stripeClient";
 import { requireAuthenticatedUser, requireAdmin } from "../middlewares/auth";
 
 const router: IRouter = Router();
-router.use(requireAuthenticatedUser, requireAdmin);
+router.use("/admin/billing", requireAuthenticatedUser, requireAdmin);
 const rangeSince = (range: string) => range === "all" ? new Date(0) : new Date(Date.now() - ({ "24h": 864e5, "7d": 7 * 864e5, "30d": 30 * 864e5, "90d": 90 * 864e5 }[range] ?? 30 * 864e5));
 const csv = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""').replaceAll(/\r?\n/g, " ")}"`;
 const planFor = (row: Record<string, unknown>) => {
