@@ -81,7 +81,6 @@ async function createApp(projectId: string, type: "test_store" | "play_store", n
   if (existing && type === "play_store" && existing.play_store?.package_name !== PLAY_STORE_PACKAGE_NAME) {
     return revenueCatRequest<App>(`/projects/${projectId}/apps/${existing.id}`, "POST", {
       name,
-      type,
       play_store: { package_name: PLAY_STORE_PACKAGE_NAME },
     });
   }
