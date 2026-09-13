@@ -101,7 +101,7 @@ export default function PremiumPage() {
           </ul>
           <button className="premium-checkout-btn secondary" disabled>Twój plan bez subskrypcji</button>
         </div>
-        {planCards.map(({ plan, price, copy }) => (
+        {planCards.map(({ plan, price, copy, benefits }) => (
           <div key={plan} className={`premium-plan-card ${plan === "PREMIUM_PRO" ? "is-pro" : "is-premium"}`}>
             <div className="plan-badge">{copy.badge}</div>
             <div className="plan-title-row"><h3>{plan === "PREMIUM_PRO" ? "👑 " : ""}{copy.title}</h3></div>
