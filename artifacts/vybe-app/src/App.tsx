@@ -339,6 +339,11 @@ export function StatCard({ icon: Icon, label, value, detail, accent }: { icon: t
   return <div className={`stat-card stat-${accent}`}><div className="stat-icon"><Icon /></div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>;
 }
 
+function safeNumber(value: unknown, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function BattleCard({ battle, compact = false }: { battle: Battle; compact?: boolean }) {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
@@ -348,7 +353,7 @@ function BattleCard({ battle, compact = false }: { battle: Battle; compact?: boo
     <div className="battle-card-glow" />
     <div className="battle-card-top"><span className="category-pill">{battle.category}</span><span className={`status-pill status-${battle.status}`}>{battle.status === "live" ? "Live now" : battle.status}</span></div>
     <div className="battle-card-copy"><h3>{battle.title}</h3><p>{battle.prompt}</p></div>
-    <div className="battle-card-bottom"><div className="stacked-avatars">{battle.participants.slice(0, 3).map((participant, index) => <Avatar key={participant.id} name={participant.user.displayName} size="sm" accent={index === 1 ? "coral" : index === 2 ? "cyan" : "violet"} />)}<span className="participant-count">{battle.participantCount}/{battle.maxParticipants}</span></div><span className="battle-time"><Clock3 /> {formatTimeLeft(battle.endsAt)}</span></div>
+    <div className="battle-card-bottom"><div className="stacked-avatars">{(battle.participants ?? []).slice(0, 3).map((participant, index) => <Avatar key={participant.id} name={participant.user?.displayName ?? "Creator"} size="sm" accent={index === 1 ? "coral" : index === 2 ? "cyan" : "violet"} />)}<span className="participant-count">{safeNumber(battle.participantCount)}/{safeNumber(battle.maxParticipants, 2)}</span></div><span className="battle-time"><Clock3 /> {formatTimeLeft(battle.endsAt)}</span></div>
     <div className="battle-card-footer"><span><Zap /> +{battle.rewardXp ?? 250} XP</span>{!compact && <Button size="sm" variant={battle.isJoined ? "secondary" : "default"} disabled={battle.isJoined || isBusy} onClick={(event) => { event.stopPropagation(); if (!battle.isJoined) join.mutate({ battleId: battle.id }); }}>{isBusy ? <Loader2 className="spin" /> : battle.isJoined ? <><Check /> Joined</> : <>Join battle <ArrowUpRight /></>}</Button>}</div>
   </article>;
 }
@@ -365,21 +370,28 @@ function DashboardPage() {
   if (dashboard.isLoading) return <LoadingState />;
   if (dashboard.isError || !dashboard.data) return <ErrorState onRetry={() => void dashboard.refetch()} />;
   const data = dashboard.data as Dashboard;
-  const profile = data.profile;
-  const levelProgress = Math.max(0, Math.min(100, profile.progress));
+  const profile = data.profile ?? ({} as Dashboard["profile"]);
+  const stats = data.stats ?? ({} as Dashboard["stats"]);
+  const featuredBattles = data.featuredBattles ?? [];
+  const activity = data.activity ?? [];
+  const leaderboardPreview = data.leaderboardPreview ?? [];
+  const displayName = String(profile.displayName ?? "Creator");
+  const xp = safeNumber(profile.xp);
+  const xpForNextLevel = safeNumber(profile.xpForNextLevel);
+  const levelProgress = Math.max(0, Math.min(100, safeNumber(profile.progress)));
   return <div className="dashboard-page">
-     <div className="welcome-row"><div><span className="eyebrow">{new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</span><h1>Good evening, {profile.displayName.split(" ")[0]}<span className="title-dot">.</span></h1><p>Your next great ZYVIO is closer than you think.</p></div><Button className="create-cta" onClick={() => navigate("/battles/new")}><Plus /> Create battle</Button></div>
+     <div className="welcome-row"><div><span className="eyebrow">{new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long" }).format(new Date())}</span><h1>Good evening, {displayName.split(" ")[0] || "Creator"}<span className="title-dot">.</span></h1><p>Your next great ZYVIO is closer than you think.</p></div><Button className="create-cta" onClick={() => navigate("/battles/new")}><Plus /> Create battle</Button></div>
     <section className="hero-card">
-       <div className="hero-copy"><span className="eyebrow">Your momentum</span><h2>Keep the streak<br /><em>alive.</em></h2><p>{profile.streak > 0 ? `${profile.streak} day streak. ` : "Start your streak today. "}{profile.xpForNextLevel.toLocaleString()} XP to the next level.</p><Button variant="secondary" onClick={() => navigate("/battles")}>Find your next battle <ArrowUpRight /></Button></div>
+       <div className="hero-copy"><span className="eyebrow">Your momentum</span><h2>Keep the streak<br /><em>alive.</em></h2><p>{safeNumber(profile.streak) > 0 ? `${safeNumber(profile.streak)} day streak. ` : "Start your streak today. "}{xpForNextLevel.toLocaleString()} XP to the next level.</p><Button variant="secondary" onClick={() => navigate("/battles")}>Find your next battle <ArrowUpRight /></Button></div>
       <div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" /><div className="hero-orbit orbit-three" />
-       <div className="level-card"><div className="level-ring"><strong>{profile.level}</strong><span>level</span></div><div><span className="eyebrow">{profile.league} league</span><strong>{profile.xp.toLocaleString()} XP</strong><div className="level-bar"><span style={{ width: `${levelProgress}%` }} /></div><small>{profile.xpForNextLevel.toLocaleString()} XP to next level</small></div></div>
+       <div className="level-card"><div className="level-ring"><strong>{safeNumber(profile.level, 1)}</strong><span>level</span></div><div><span className="eyebrow">{String(profile.league ?? "Bronze")} league</span><strong>{xp.toLocaleString()} XP</strong><div className="level-bar"><span style={{ width: `${levelProgress}%` }} /></div><small>{xpForNextLevel.toLocaleString()} XP to next level</small></div></div>
     </section>
-     <div className="stats-grid"><StatCard icon={Swords} label="Active battles" value={data.stats.activeBattles} detail="From your dashboard" accent="violet" /><StatCard icon={Zap} label="Weekly XP" value={data.stats.weeklyXp.toLocaleString()} detail="Earned this week" accent="lime" /><StatCard icon={Target} label="Win rate" value={`${data.stats.winRate}%`} detail={`${profile.wins} wins · ${profile.losses} losses`} accent="coral" /><StatCard icon={Trophy} label="Global rank" value={`#${data.stats.globalRank}`} detail={`${profile.rankingPoints.toLocaleString()} ranking points`} accent="cyan" /></div>
+     <div className="stats-grid"><StatCard icon={Swords} label="Active battles" value={safeNumber(stats.activeBattles)} detail="From your dashboard" accent="violet" /><StatCard icon={Zap} label="Weekly XP" value={safeNumber(stats.weeklyXp).toLocaleString()} detail="Earned this week" accent="lime" /><StatCard icon={Target} label="Win rate" value={`${safeNumber(stats.winRate)}%`} detail={`${safeNumber(profile.wins)} wins · ${safeNumber(profile.losses)} losses`} accent="coral" /><StatCard icon={Trophy} label="Global rank" value={`#${safeNumber(stats.globalRank) || "—"}`} detail={`${safeNumber(profile.rankingPoints).toLocaleString()} ranking points`} accent="cyan" /></div>
      <div className="section-heading"><div><span className="eyebrow">Picked for you</span><h2>Featured battles</h2></div><button className="text-button" onClick={() => navigate("/battles")}>View all <ArrowUpRight /></button></div>
-     {data.featuredBattles.length === 0 ? <div className="empty-state"><div className="empty-icon"><Compass /></div><h2>No active battles yet</h2><p>Start a 1v1 battle and invite a creator to make the next move.</p><Button onClick={() => navigate("/battles/new")}><Plus /> Create battle</Button></div> : <div className="battle-grid">{data.featuredBattles.map((battle) => <BattleCard key={battle.id} battle={battle} />)}</div>}
+     {featuredBattles.length === 0 ? <div className="empty-state"><div className="empty-icon"><Compass /></div><h2>No active battles yet</h2><p>Start a 1v1 battle and invite a creator to make the next move.</p><Button onClick={() => navigate("/battles/new")}><Plus /> Create battle</Button></div> : <div className="battle-grid">{featuredBattles.filter(Boolean).map((battle) => <BattleCard key={battle.id} battle={battle} />)}</div>}
     <div className="dashboard-lower">
-       <section className="panel activity-panel"><div className="panel-heading"><div><span className="eyebrow">Your loop</span><h2>Recent activity</h2></div><IconButton label="Activity options"><Settings2 /></IconButton></div>{data.activity.length === 0 ? <div className="mini-empty">Your next vote or battle will appear here.</div> : data.activity.map((item) => <div className="activity-row" key={item.id}><div className={`activity-mark mark-${item.kind}`}><Zap /></div><div><strong>{item.text}</strong><small>{item.time}</small></div><ChevronRight /></div>)}</section>
-       <section className="panel ranking-panel"><div className="panel-heading"><div><span className="eyebrow">This week</span><h2>Leaderboard</h2></div><button className="text-button" onClick={() => navigate("/leaderboard")}>Full ranking <ArrowUpRight /></button></div>{data.leaderboardPreview.length === 0 ? <div className="mini-empty">No ranking entries yet.</div> : data.leaderboardPreview.map((entry, index) => <div className="rank-row" key={entry.user.id}><span className={`rank-number ${index < 3 ? "top-rank" : ""}`}>{String(entry.position).padStart(2, "0")}</span><Avatar name={entry.user.displayName} size="sm" accent={index === 1 ? "coral" : index === 2 ? "cyan" : "violet"} /><div><strong>{entry.user.displayName}</strong><small>Level {entry.user.level} · {entry.league}</small></div><span className="rank-xp">{entry.xp.toLocaleString()} <small>XP</small></span></div>)}</section>
+       <section className="panel activity-panel"><div className="panel-heading"><div><span className="eyebrow">Your loop</span><h2>Recent activity</h2></div><IconButton label="Activity options"><Settings2 /></IconButton></div>{activity.length === 0 ? <div className="mini-empty">Your next vote or battle will appear here.</div> : activity.filter(Boolean).map((item) => <div className="activity-row" key={item.id}><div className={`activity-mark mark-${item.kind ?? "activity"}`}><Zap /></div><div><strong>{item.text ?? "Activity"}</strong><small>{item.time ?? ""}</small></div><ChevronRight /></div>)}</section>
+       <section className="panel ranking-panel"><div className="panel-heading"><div><span className="eyebrow">This week</span><h2>Leaderboard</h2></div><button className="text-button" onClick={() => navigate("/leaderboard")}>Full ranking <ArrowUpRight /></button></div>{leaderboardPreview.length === 0 ? <div className="mini-empty">No ranking entries yet.</div> : leaderboardPreview.filter((entry) => Boolean(entry?.user)).map((entry, index) => <div className="rank-row" key={entry.user.id}><span className={`rank-number ${index < 3 ? "top-rank" : ""}`}>{String(safeNumber(entry.position, index + 1)).padStart(2, "0")}</span><Avatar name={entry.user.displayName ?? "Creator"} size="sm" accent={index === 1 ? "coral" : index === 2 ? "cyan" : "violet"} /><div><strong>{entry.user.displayName ?? "Creator"}</strong><small>Level {safeNumber(entry.user.level, 1)} · {entry.league ?? "Bronze"}</small></div><span className="rank-xp">{safeNumber(entry.xp).toLocaleString()} <small>XP</small></span></div>)}</section>
     </div>
   </div>;
 }
