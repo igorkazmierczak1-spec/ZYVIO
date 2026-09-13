@@ -93,8 +93,8 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb", strict: true }));
+app.use(express.urlencoded({ extended: true, limit: "100kb", parameterLimit: 100 }));
 app.use(
   clerkMiddleware((req) => ({
     publishableKey: publishableKeyFromHost(

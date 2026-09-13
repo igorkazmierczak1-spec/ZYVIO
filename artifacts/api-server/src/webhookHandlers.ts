@@ -43,7 +43,7 @@ async function syncSubscription(subscription: any, fallbackUserId?: string | nul
   const profile = await findProfile(customerId, fallbackUserId);
   if (!profile) return;
   const status = statusOverride ?? String(subscription.status ?? "unknown");
-  const active = ["active", "trialing", "past_due"].includes(status);
+  const active = ["active", "trialing"].includes(status);
   await db.update(profilesTable).set({
     stripeCustomerId: customerId ?? profile.stripeCustomerId,
     stripeSubscriptionId: subscription.id ?? profile.stripeSubscriptionId,

@@ -62,7 +62,24 @@ async function findPrice(plan: PaidPlan, period: BillingPeriod) {
 }
 
 function activeSubscription(rows: Array<Record<string, unknown>>) {
-  return rows.find((row) => row.status === "active" || row.status === "trialing" || row.status === "past_due");
+  return rows.find((row) => row.status === "active" || row.status === "trialing");
+}
+
+function publicAppUrl(pathname: string): string | null {
+  const configured = process.env.PUBLIC_APP_URL?.trim();
+  if (!configured) return null;
+  try {
+    const url = new URL(configured);
+    if (url.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && url.protocol === "http:")) {
+      return null;
+    }
+    url.pathname = `${url.pathname.replace(/\/+$/, "")}${pathname}`;
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 async function updateLocalSubscription(profileId: string, subscription: Record<string, unknown> | null, plan: PaidPlan | "FREE" = "FREE") {
@@ -228,13 +245,17 @@ router.post("/premium/checkout", requireAuthenticatedUser, async (req, res, next
       res.status(400).json({ error: "A valid plan and billingPeriod are required" });
       return;
     }
+    const checkoutBaseUrl = publicAppUrl("/premium");
+    if (!checkoutBaseUrl) {
+      res.status(503).json({ error: "Premium checkout is not configured with a valid PUBLIC_APP_URL" });
+      return;
+    }
     const user = currentUserFrom(res);
     const price = await findPrice(plan, period);
     if (!price?.id) {
       res.status(503).json({ error: `${plan} ${period} price is not configured in Stripe` });
       return;
     }
-    const base = `${req.protocol}://${req.get("host")}`;
     const session = await db.transaction(async (tx) => {
       // The lock covers customer resolution, the active-subscription check, and
       // the open-session lookup so concurrent checkout clicks cannot create
@@ -287,8 +308,8 @@ router.post("/premium/checkout", requireAuthenticatedUser, async (req, res, next
         mode: "subscription",
         "line_items[0][price]": String(price.id),
         "line_items[0][quantity]": 1,
-        success_url: `${base}/premium?checkout=success&plan=${plan}`,
-        cancel_url: `${base}/premium?checkout=cancel&plan=${plan}`,
+        success_url: `${checkoutBaseUrl}?checkout=success&plan=${plan}`,
+        cancel_url: `${checkoutBaseUrl}?checkout=cancel&plan=${plan}`,
         "metadata[vybeUserId]": lockedProfile.id,
         "metadata[vybePlan]": plan,
         "subscription_data[metadata][vybeUserId]": lockedProfile.id,
@@ -349,9 +370,14 @@ router.post("/premium/portal", requireAuthenticatedUser, async (req, res, next):
       res.status(400).json({ error: "No Stripe customer exists" });
       return;
     }
+    const returnUrl = publicAppUrl("/premium");
+    if (!returnUrl) {
+      res.status(503).json({ error: "Premium portal is not configured with a valid PUBLIC_APP_URL" });
+      return;
+    }
     const session = await stripeRequest<{ url: string }>("billing_portal/sessions", "POST", {
       customer: user.stripeCustomerId,
-      return_url: `${req.protocol}://${req.get("host")}/premium`,
+      return_url: returnUrl,
     });
     res.json({ url: session.url });
   } catch (error) {

@@ -179,11 +179,10 @@ async function attachProductToPackage(projectId: string, packageId: string, prod
   }
 }
 
-async function publicApiKey(projectId: string, appId: string): Promise<string> {
+async function ensurePublicApiKey(projectId: string, appId: string): Promise<void> {
   const keys = await revenueCatRequest<Collection<{ key: string }>>(`/projects/${projectId}/apps/${appId}/public_api_keys`);
   const key = keys.items?.[0]?.key;
   if (!key) throw new Error(`No public API key found for RevenueCat app ${appId}`);
-  return key;
 }
 
 async function main() {
@@ -215,12 +214,17 @@ async function main() {
     packages.set(item.packageLookupKey, { packageId: pkg.id, productIds });
   }
 
+  await Promise.all([
+    ensurePublicApiKey(project.id, testStore.id),
+    ensurePublicApiKey(project.id, playStore.id),
+  ]);
+
   console.log(JSON.stringify({
     projectId: project.id,
     testStoreAppId: testStore.id,
     playStoreAppId: playStore.id,
-    testStoreApiKey: await publicApiKey(project.id, testStore.id),
-    playStoreApiKey: await publicApiKey(project.id, playStore.id),
+    testStoreApiKeyConfigured: true,
+    playStoreApiKeyConfigured: true,
     entitlementIds: Object.fromEntries([...entitlements.entries()].map(([key, value]) => [key, value.id])),
     packages: Object.fromEntries(packages.entries()),
     productsByPlan: Object.fromEntries(productsByPlan.entries()),
