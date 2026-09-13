@@ -9,6 +9,7 @@ import {
   notificationsTable,
   moderationReportsTable,
   appSettingsTable,
+  aiUsageTable,
   profilesTable,
   votesTable,
   userActivityEventsTable,
@@ -49,6 +50,7 @@ import { settleBattleInTransaction, xpProgress } from "../viralCore";
 import { getUserPlan } from "../lib/premium";
 import {
   AiUsageLimitError,
+  aiUsageLimitFor,
   completeAiUsage,
   reserveAiUsage,
 } from "../lib/aiUsage";
@@ -707,6 +709,38 @@ router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
       if (usageId) await completeAiUsage(usageId, "provider_error").catch(() => undefined);
       throw error;
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/ai/usage", async (_req, res, next) => {
+  try {
+    const profile = currentUserFrom(res);
+    const plan = await getUserPlan(profile.id);
+    const since = new Date();
+    since.setUTCHours(0, 0, 0, 0);
+    const [today, history] = await Promise.all([
+      db.select().from(aiUsageTable)
+        .where(and(eq(aiUsageTable.profileId, profile.id), gte(aiUsageTable.createdAt, since)))
+        .orderBy(desc(aiUsageTable.createdAt)),
+      db.select().from(aiUsageTable)
+        .where(eq(aiUsageTable.profileId, profile.id))
+        .orderBy(desc(aiUsageTable.createdAt))
+        .limit(30),
+    ]);
+    res.json({
+      plan,
+      usedToday: today.filter((item) => item.status === "reserved" || item.status === "success").length,
+      limitToday: aiUsageLimitFor(plan),
+      items: history.map((item) => ({
+        id: item.id,
+        feature: item.feature,
+        status: item.status,
+        promptCharacters: item.promptCharacters,
+        createdAt: item.createdAt,
+      })),
+    });
   } catch (error) {
     next(error);
   }
