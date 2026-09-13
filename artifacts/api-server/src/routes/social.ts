@@ -15,6 +15,7 @@ import { currentUserFrom, requireAuthenticatedUser } from "../middlewares/auth";
 import { rateLimit } from "../middlewares/rateLimit";
 import { getUserPlan } from "../lib/premium";
 import { assertDailyPlanQuota, sendPlanQuotaError } from "../lib/planQuota";
+import { planConfigFor } from "../lib/planConfig";
 
 const router: IRouter = Router();
 router.use(requireAuthenticatedUser);
@@ -445,6 +446,7 @@ router.get("/social/users/:profileId", async (req, res, next) => {
       league: profilesTable.league,
       streak: profilesTable.streak,
       badges: profilesTable.badges,
+      plan: profilesTable.plan,
     }).from(profilesTable).where(and(eq(profilesTable.id, targetProfileId), eq(profilesTable.status, "ACTIVE"))).limit(1);
     if (!target) {
       res.status(404).json({ error: "Profile not found" });
@@ -457,6 +459,7 @@ router.get("/social/users/:profileId", async (req, res, next) => {
     ]);
     res.json({
       ...target,
+      planBadge: planConfigFor(target.plan === "PREMIUM_PRO" ? "PREMIUM_PRO" : target.plan === "PREMIUM" ? "PREMIUM" : "FREE").badge,
       winRate: target.wins + target.losses ? Math.round((target.wins / (target.wins + target.losses)) * 100) : 0,
       followerCount: Number(followers?.count ?? 0),
       followingCount: Number(following?.count ?? 0),

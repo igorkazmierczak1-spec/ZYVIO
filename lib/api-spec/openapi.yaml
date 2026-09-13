@@ -1039,7 +1039,7 @@ components:
         hasMore: { type: boolean }
     UserSummary:
       type: object
-      required: [id, username, displayName, country, avatarUrl, level, wins, losses, winRate, rankingPoints]
+      required: [id, username, displayName, country, avatarUrl, level, wins, losses, winRate, rankingPoints, plan, planBadge]
       properties:
         id: { type: string }
         username: { type: string }
@@ -1051,6 +1051,8 @@ components:
         losses: { type: integer }
         winRate: { type: integer }
         rankingPoints: { type: integer }
+        plan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
+        planBadge: { type: string }
     Profile:
       allOf:
         - $ref: "#/components/schemas/UserSummary"
