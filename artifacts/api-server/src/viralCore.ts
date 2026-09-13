@@ -9,6 +9,7 @@ import {
   votesTable,
   viralRewardEventsTable,
 } from "@workspace/db";
+import { planConfigFor } from "./lib/planConfig";
 
 const XP_PER_LEVEL = 320;
 
@@ -52,6 +53,14 @@ async function addReward(
   xp: number,
   rankingPoints: number,
 ) {
+  const [profile] = await tx.select().from(profilesTable).where(eq(profilesTable.id, profileId));
+  if (!profile) return false;
+  const normalizedPlan = profile.plan === "PREMIUM_PRO"
+    ? "PREMIUM_PRO"
+    : profile.plan === "PREMIUM"
+      ? "PREMIUM"
+      : "FREE";
+  const rewardedXp = Math.round(xp * planConfigFor(normalizedPlan).xpMultiplier);
   const [event] = await tx
     .insert(viralRewardEventsTable)
     .values({
@@ -59,16 +68,14 @@ async function addReward(
       profileId,
       battleId,
       kind,
-      xp,
+      xp: rewardedXp,
       rankingPoints,
     })
     .onConflictDoNothing()
     .returning();
   if (!event) return false;
 
-  const [profile] = await tx.select().from(profilesTable).where(eq(profilesTable.id, profileId));
-  if (!profile) return false;
-  const nextXp = profile.xp + xp;
+  const nextXp = profile.xp + rewardedXp;
   const nextPoints = profile.rankingPoints + rankingPoints;
   const progress = xpProgress(nextXp);
   await tx
