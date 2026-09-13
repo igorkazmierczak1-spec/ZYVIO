@@ -1,0 +1,80 @@
+Rozbuduj system PREMIUM i PREMIUM PRO w ZYVIO tak, aby subskrypcja była naprawdę atrakcyjna i przekonywała użytkownika do zakupu.
+
+NIE usuwaj obecnych funkcji. Rozbuduj istniejący system profesjonalnie.
+
+FREE — 0 zł
+- 3 generacje ZYVIO AI dziennie
+- podstawowe Battle
+- podstawowe głosowanie
+- podstawowe statystyki
+- podstawowy profil
+- podstawowy ranking
+- standardowe limity
+
+PREMIUM — 19,99 zł/mies. lub 199,99 zł/rok
+Użytkownik otrzymuje:
+- 30 generacji AI dziennie
+- priorytet AI względem użytkowników Free
+- dodatkowe funkcje AI niedostępne dla Free
+- zwiększone limity Battle
+- więcej głosów dziennie
+- możliwość wyróżnienia profilu
+- Premium badge na profilu
+- dodatkowe statystyki Battle
+- szczegółowe statystyki wyników
+- więcej możliwości personalizacji profilu
+- ekskluzywne elementy profilu
+- dodatkowe XP za aktywność
+- większe limity tworzenia treści
+- brak reklam, gdy reklamy zostaną wdrożone
+- historię wykorzystania AI
+- priorytetowy dostęp do nowych funkcji
+
+PREMIUM PRO — 39,99 zł/mies. lub 399,99 zł/rok
+Użytkownik otrzymuje WSZYSTKO z PREMIUM oraz:
+- 100 generacji AI dziennie
+- najwyższy priorytet AI
+- jeszcze większe limity Battle
+- jeszcze więcej głosów dziennie
+- PRO badge + korona
+- mocniejsze wyróżnienie profilu
+- ekskluzywne efekty profilu
+- zaawansowane statystyki Battle
+- szczegółowe statystyki profilu
+- dodatkowe narzędzia AI
+- większe bonusy XP
+- ekskluzywne wyzwania/Battle dla PRO
+- wcześniejszy dostęp do nowych funkcji
+- brak reklam
+- najwyższy poziom personalizacji
+- priorytetowe funkcje i benefity dla najbardziej aktywnych użytkowników
+
+WAŻNE:
+Nie dawaj płatnym użytkownikom nieuczciwej przewagi w głosowaniu ani możliwości kupowania zwycięstw w Battle. Premium ma dawać więcej możliwości, statystyk, personalizacji, AI i wygody, ale wynik Battle nadal ma zależeć od użytkowników.
+
+DODAJ PROFESJONALNY EKRAN PREMIUM:
+- pokaż Free / Premium / Premium Pro obok siebie
+- wyraźnie zaznacz „NAJPOPULARNIEJSZY” przy Premium
+- pokaż miesięczną i roczną opcję
+- przy planie rocznym pokaż oszczędność względem miesięcznego
+- dodaj przyciski „Wybierz Premium” i „Wybierz Premium Pro”
+- dodaj atrakcyjne ikony i animacje, ale bez przesady
+- jasno pokaż użytkownikowi, co zyskuje po zakupie
+- nie stosuj fałszywych liczników, fałszywych opinii ani sztucznej presji
+
+DODAJ CENTRALNY SYSTEM LIMITÓW:
+Wszystkie limity Premium i Premium Pro mają być kontrolowane przez backend i zapisane w jednej konfiguracji, żeby można było je później łatwo zmieniać bez przebudowy aplikacji.
+
+DODAJ OCHRONĘ:
+- użytkownik Free nie może korzystać z funkcji Premium
+- użytkownik Premium nie może korzystać z funkcji Pro
+- backend musi sprawdzać aktywny plan
+- nie ufaj wartościom przesyłanym z frontendu
+- Stripe/Google Play mają być źródłem statusu płatnej subskrypcji
+- po anulowaniu lub wygaśnięciu subskrypcji odpowiednie benefity muszą zostać odebrane
+- zachowaj istniejącą integrację Clerk i Stripe
+
+NAJWAŻNIEJSZE:
+Nie rób tylko zmian wizualnych. Wszystkie wymienione benefity, które można technicznie wdrożyć, mają faktycznie działać w aplikacji.
+
+Najpierw przeanalizuj obecny kod Premium/Premium Pro, następnie rozbuduj system bez niszczenia istniejących funkcji. Na końcu wykonaj testy i sprawdź działanie Free → Premium → Premium Pro.
