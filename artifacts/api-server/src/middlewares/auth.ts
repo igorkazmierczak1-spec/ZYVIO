@@ -68,12 +68,28 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
   const [settings] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.id, "global"));
   if (settings && !settings.registrationsEnabled) throw new Error("REGISTRATIONS_DISABLED");
   const clerkUser = await clerkClient.users.getUser(userId);
-  const primaryEmail =
+  const primaryEmailRecord =
     clerkUser.emailAddresses.find(
       (item) => item.id === clerkUser.primaryEmailAddressId,
-    )?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress;
-  if (!primaryEmail) {
+    ) ?? clerkUser.emailAddresses[0];
+  const primaryEmail = primaryEmailRecord?.emailAddress;
+  if (!primaryEmail || primaryEmailRecord.verification?.status !== "verified") {
     throw new Error("AUTH_EMAIL_REQUIRED");
+  }
+  const normalizedEmail = primaryEmail.toLowerCase();
+
+  // A Clerk user can be deleted and recreated with the same verified email,
+  // which produces a new Clerk user ID. Preserve the existing ZYVIO profile
+  // instead of failing its unique email constraint.
+  const [existingByEmail] = await db
+    .select()
+    .from(profilesTable)
+    .where(eq(profilesTable.email, normalizedEmail));
+  if (existingByEmail) {
+    if (existingByEmail.status === "BLOCKED" || existingByEmail.status === "DELETED") {
+      throw new Error(`ACCOUNT_${existingByEmail.status}`);
+    }
+    return existingByEmail;
   }
 
   const displayName =
@@ -81,10 +97,10 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
     primaryEmail.split("@")[0] ||
     "ZYVIO Creator";
 
-  await db.transaction(async (tx) => {
-    await tx.insert(profilesTable).values({
+  const created = await db.transaction(async (tx) => {
+    const [inserted] = await tx.insert(profilesTable).values({
       id: userId,
-      email: primaryEmail.toLowerCase(),
+      email: normalizedEmail,
       username: usernameFromEmail(primaryEmail, userId),
       displayName,
       country: "PL",
@@ -94,18 +110,29 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
       streak: 1,
       bestStreak: 1,
       activeDays: 1,
-    }).onConflictDoNothing();
-    await tx.insert(userActivityEventsTable).values({ id: `activity-${crypto.randomUUID()}`, profileId: userId });
+    }).onConflictDoNothing().returning();
+    if (inserted) {
+      await tx.insert(userActivityEventsTable).values({
+        id: `activity-${crypto.randomUUID()}`,
+        profileId: inserted.id,
+      });
+    }
+    return inserted;
   });
+  if (created) return created;
 
-  const [created] = await db
+  // Resolve a rare concurrent provisioning race by either unique key.
+  const [createdById] = await db
     .select()
     .from(profilesTable)
     .where(eq(profilesTable.id, userId));
-  if (!created) {
-    throw new Error("LOCAL_USER_PROVISION_FAILED");
-  }
-  return created;
+  if (createdById) return createdById;
+  const [createdByEmail] = await db
+    .select()
+    .from(profilesTable)
+    .where(eq(profilesTable.email, normalizedEmail));
+  if (createdByEmail) return createdByEmail;
+  throw new Error("LOCAL_USER_PROVISION_FAILED");
 }
 
 export const requireAuthenticatedUser: RequestHandler = async (req, res, next) => {

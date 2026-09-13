@@ -9,3 +9,4 @@
 - [Stripe production prerequisite](stripe-production-prerequisite.md) — production webhooks require an active public deployment and an attached Stripe integration; do not fabricate either.
 - [RevenueCat relationship mutations](revenuecat-relationship-mutations.md) — RevenueCat v2 attaches products through action endpoints, not the collection routes.
 - [Premium plan source of truth](premium-plan-source-of-truth.md) — backend plan config drives enforcement, AI, XP, and web/mobile benefit displays.
+- [Clerk profile reprovisioning](clerk-profile-reprovisioning.md) — recreated Clerk users must reclaim an existing profile by verified email instead of failing uniqueness checks.
