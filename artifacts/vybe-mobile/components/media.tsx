@@ -125,20 +125,28 @@ export function MediaPickerUpload({
     unclaimedAttachmentId.current = null;
   };
 
-  const pick = async () => {
+  const pick = async (source: 'camera' | 'library') => {
     setError('');
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permission = source === 'camera'
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setError('Zezwól na dostęp do zdjęć i filmów, aby dodać załącznik.');
+      setError(source === 'camera'
+        ? 'Zezwól na dostęp do aparatu, aby zrobić zdjęcie lub nagrać film.'
+        : 'Zezwól na dostęp do zdjęć i filmów, aby dodać załącznik.');
       return;
     }
     const mediaTypes: ImagePicker.MediaType[] = mode === 'image' ? ['images'] : mode === 'video' ? ['videos'] : ['images', 'videos'];
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const pickerOptions = {
       mediaTypes,
       allowsEditing: mode === 'image',
       quality: 0.9,
       selectionLimit: 1,
-    });
+      ...(mode === 'video' ? { videoMaxDuration: 120 } : {}),
+    } satisfies ImagePicker.ImagePickerOptions;
+    const result = source === 'camera'
+      ? await ImagePicker.launchCameraAsync(pickerOptions)
+      : await ImagePicker.launchImageLibraryAsync(pickerOptions);
     if (result.canceled || !result.assets?.[0]) return;
 
     const asset = result.assets[0];
@@ -223,6 +231,8 @@ export function MediaPickerUpload({
     }
   };
 
+  const cameraLabel = mode === 'image' ? 'Zrób zdjęcie' : mode === 'video' ? 'Nagraj film' : 'Zrób zdjęcie / nagraj film';
+  const galleryLabel = mode === 'image' ? 'Wybierz zdjęcie' : mode === 'video' ? 'Wybierz film' : 'Wybierz z galerii';
   const displayUri = previewUri || value?.url;
   const displayType = previewType || value?.mediaType;
   return (
@@ -241,17 +251,30 @@ export function MediaPickerUpload({
           ) : null}
         </View>
       ) : null}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={labelForMode(mode)}
-        testID={`add-media-${mode}`}
-        onPress={pick}
-        disabled={busy}
-        style={({ pressed }) => [styles.picker, { borderColor: colors.border, backgroundColor: colors.input, opacity: busy ? 0.55 : pressed ? 0.75 : 1 }, compact && styles.pickerCompact]}
-      >
-        <Ionicons name={mode === 'image' ? 'image-outline' : mode === 'video' ? 'videocam-outline' : 'images-outline'} size={18} color={colors.primary} />
-        <Text style={{ color: colors.foreground, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>{labelForMode(mode)}</Text>
-      </Pressable>
+      <View style={styles.sourceActions}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={cameraLabel}
+          testID={`capture-media-${mode}`}
+          onPress={() => void pick('camera')}
+          disabled={busy}
+          style={({ pressed }) => [styles.picker, styles.sourceButton, { borderColor: colors.primary, backgroundColor: `${colors.primary}12`, opacity: busy ? 0.55 : pressed ? 0.75 : 1 }, compact && styles.pickerCompact]}
+        >
+          <Ionicons name={mode === 'image' ? 'camera-outline' : mode === 'video' ? 'videocam-outline' : 'camera-outline'} size={18} color={colors.primary} />
+          <Text style={{ color: colors.foreground, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>{cameraLabel}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={galleryLabel}
+          testID={`add-media-${mode}`}
+          onPress={() => void pick('library')}
+          disabled={busy}
+          style={({ pressed }) => [styles.picker, styles.sourceButton, { borderColor: colors.border, backgroundColor: colors.input, opacity: busy ? 0.55 : pressed ? 0.75 : 1 }, compact && styles.pickerCompact]}
+        >
+          <Ionicons name={mode === 'image' ? 'image-outline' : mode === 'video' ? 'film-outline' : 'images-outline'} size={18} color={colors.primary} />
+          <Text style={{ color: colors.foreground, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>{galleryLabel}</Text>
+        </Pressable>
+      </View>
       {error ? <Text style={[styles.error, { color: colors.destructive }]}>{error}</Text> : null}
     </View>
   );
@@ -313,6 +336,8 @@ const styles = StyleSheet.create({
   remove: { position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   progress: { position: 'absolute', left: 8, right: 8, bottom: 8, minHeight: 38, borderRadius: 10, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   picker: { minHeight: 42, borderWidth: 1, borderRadius: 12, borderStyle: 'dashed', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  sourceActions: { flexDirection: 'row', gap: 8 },
+  sourceButton: { flex: 1, borderStyle: 'solid' },
   pickerCompact: { alignSelf: 'flex-start', paddingHorizontal: 10 },
   error: { fontSize: 12, lineHeight: 17, fontFamily: 'Inter_600SemiBold' },
 });
