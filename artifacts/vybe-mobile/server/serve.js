@@ -14,6 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const STATIC_ROOT = path.resolve(__dirname, '..', 'static-build');
+const STATIC_ROOT_REAL = fs.realpathSync(STATIC_ROOT);
 const TEMPLATE_PATH = path.resolve(__dirname, 'templates', 'landing-page.html');
 const basePath = (process.env.BASE_PATH || '/').replace(/\/+$/, '');
 
@@ -73,6 +74,13 @@ function serveManifest(platform, res) {
     );
     return;
   }
+  const manifestRealPath = fs.realpathSync(manifestPath);
+  const manifestRelativePath = path.relative(STATIC_ROOT_REAL, manifestRealPath);
+  if (manifestRelativePath.startsWith('..') || path.isAbsolute(manifestRelativePath)) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
 
   const manifest = fs.readFileSync(manifestPath, 'utf-8');
   res.writeHead(200, {
@@ -130,9 +138,17 @@ function serveStaticFile(urlPath, res) {
     return;
   }
 
-  const ext = path.extname(filePath).toLowerCase();
+   const realFilePath = fs.realpathSync(filePath);
+   const realRelativePath = path.relative(STATIC_ROOT_REAL, realFilePath);
+   if (realRelativePath.startsWith('..') || path.isAbsolute(realRelativePath)) {
+     res.writeHead(403);
+     res.end('Forbidden');
+     return;
+   }
+
+   const ext = path.extname(realFilePath).toLowerCase();
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-  const content = fs.readFileSync(filePath);
+   const content = fs.readFileSync(realFilePath);
   res.writeHead(200, { 'content-type': contentType });
   res.end(content);
 }
