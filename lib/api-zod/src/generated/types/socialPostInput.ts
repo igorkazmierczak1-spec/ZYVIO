@@ -5,7 +5,6 @@
  * ZYVIO global social, Battle and AI platform API
  * OpenAPI spec version: 0.1.0
  */
-import type { SocialPostInputMediaType } from './socialPostInputMediaType';
 
 export interface SocialPostInput {
   /**
@@ -13,8 +12,6 @@ export interface SocialPostInput {
      * @maxLength 2000
      */
   body: string;
-  mediaUrl?: string | null;
-  mediaType?: SocialPostInputMediaType;
   attachmentId?: string | null;
   category?: string;
 }

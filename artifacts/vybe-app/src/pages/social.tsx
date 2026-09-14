@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   ArrowUpRight,
   Check,
@@ -182,6 +182,12 @@ function SocialPostCard({ post, currentProfileId }: { post: SocialPost; currentP
       onError: () => toast({ title: "Could not update post", description: "Check the post text and try again.", variant: "destructive" }),
     },
   });
+  useEffect(() => {
+    if (!editing) {
+      setEditBody(post.body);
+      setEditCategory(post.category);
+    }
+  }, [editing, post.body, post.category]);
   const remove = useDeleteSocialPost({
     mutation: {
       onSuccess: () => {
@@ -294,12 +300,19 @@ export function SocialProfilePage() {
   const qc = useQueryClient();
   const profile = useGetSocialProfile(profileId, { query: { enabled: Boolean(profileId), queryKey: getGetSocialProfileQueryKey(profileId), refetchOnWindowFocus: true } });
   const [blocked, setBlocked] = useState(false);
+  const blockedProfileId = useRef<string | null>(null);
+  useEffect(() => {
+    if (profile.data && blockedProfileId.current !== profile.data.id) {
+      setBlocked(profile.data.isBlocked);
+      blockedProfileId.current = profile.data.id;
+    }
+  }, [profile.data]);
   const follow = useFollowSocialProfile({ mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetSocialProfileQueryKey(profileId) }); void qc.invalidateQueries({ queryKey: ["/api/social/feed"] }); } } });
   const unfollow = useUnfollowSocialProfile({ mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetSocialProfileQueryKey(profileId) }); void qc.invalidateQueries({ queryKey: ["/api/social/feed"] }); } } });
-  const block = useBlockSocialProfile({ mutation: { onSuccess: () => { setBlocked(true); toast({ title: "Profile blocked", description: "You will no longer see this creator in your social loop." }); } } });
-  const unblock = useUnblockSocialProfile({ mutation: { onSuccess: () => { setBlocked(false); toast({ title: "Profile unblocked", description: "This creator can appear in your feed again." }); } } });
+  const block = useBlockSocialProfile({ mutation: { onSuccess: (state) => { setBlocked(state.blocked); void qc.invalidateQueries({ queryKey: getGetSocialProfileQueryKey(profileId) }); void qc.invalidateQueries({ queryKey: ["/api/social/feed"] }); void profile.refetch(); toast({ title: "Profile blocked", description: "You will no longer see this creator in your social loop." }); } } });
+  const unblock = useUnblockSocialProfile({ mutation: { onSuccess: (state) => { setBlocked(state.blocked); void qc.invalidateQueries({ queryKey: getGetSocialProfileQueryKey(profileId) }); void qc.invalidateQueries({ queryKey: ["/api/social/feed"] }); void profile.refetch(); toast({ title: "Profile unblocked", description: "This creator can appear in your feed again." }); } } });
   if (profile.isLoading) return <LoadingState />;
-  if (profile.isError || !profile.data) return <ErrorState onRetry={() => void profile.refetch()} />;
+  if ((profile.isError && !profile.data) || !profile.data) return <ErrorState onRetry={() => void profile.refetch()} />;
   const data = profile.data;
   return <div className="social-profile-page"><button className="social-back-button" onClick={() => navigate("/feed")}><ChevronLeft /> Back to feed</button><section className="social-profile-hero panel"><SocialAvatar name={data.displayName} avatarUrl={data.avatarUrl} size="lg" /><div className="social-profile-copy"><span className="eyebrow">@{data.username}</span><h1>{data.displayName}</h1><p>{data.bio || "This creator has not added a bio yet."}</p><div className="social-profile-stats"><span><strong>{data.followerCount}</strong> followers</span><span><strong>{data.followingCount}</strong> following</span><span><strong>{data.rankingPoints.toLocaleString()}</strong> points</span></div></div><div className="social-profile-actions"><Button onClick={() => navigate(`/messages?profile=${encodeURIComponent(profileId)}`)}><Send /> Message</Button><Button onClick={() => (data.isFollowing ? unfollow.mutate({ profileId }) : follow.mutate({ profileId }))} disabled={follow.isPending || unfollow.isPending}>{data.isFollowing ? <Check /> : <UserPlus />} {data.isFollowing ? "Unfollow" : "Follow"}</Button><Button variant="secondary" onClick={() => { if (window.confirm(`${blocked ? "Unblock" : "Block"} @${data.username}?`)) (blocked ? unblock : block).mutate({ profileId }); }} disabled={block.isPending || unblock.isPending}><Shield /> {blocked ? "Unblock" : "Block"}</Button></div></section><div className="social-profile-grid"><div className="social-profile-stat panel"><span className="eyebrow">Creator level</span><strong>{data.level}</strong><small>{data.league} league · {data.winRate}% win rate</small></div><div className="social-profile-stat panel"><span className="eyebrow">Momentum</span><strong>{data.streak} days</strong><small>{data.wins} wins · {data.losses} losses</small></div></div></div>;
 }

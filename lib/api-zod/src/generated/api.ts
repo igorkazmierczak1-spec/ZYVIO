@@ -736,6 +736,8 @@ export const ListNotificationsResponseItem = zod.object({
   "kind": zod.string(),
   "title": zod.string(),
   "body": zod.string(),
+  "targetType": zod.string().nullable(),
+  "targetId": zod.string().nullable(),
   "createdAt": zod.coerce.date(),
   "read": zod.boolean()
 })
@@ -754,6 +756,8 @@ export const MarkNotificationReadResponse = zod.object({
   "kind": zod.string(),
   "title": zod.string(),
   "body": zod.string(),
+  "targetType": zod.string().nullable(),
+  "targetId": zod.string().nullable(),
   "createdAt": zod.coerce.date(),
   "read": zod.boolean()
 })
@@ -823,8 +827,6 @@ export const createSocialPostBodyCategoryDefault = `General`;
 
 export const CreateSocialPostBody = zod.object({
   "body": zod.string().min(1).max(createSocialPostBodyBodyMax),
-  "mediaUrl": zod.string().nullish(),
-  "mediaType": zod.enum(['image', 'video']).nullish(),
   "attachmentId": zod.string().nullish(),
   "category": zod.string().default(createSocialPostBodyCategoryDefault)
 })
@@ -901,8 +903,6 @@ export const updateSocialPostBodyCategoryDefault = `General`;
 
 export const UpdateSocialPostBody = zod.object({
   "body": zod.string().min(1).max(updateSocialPostBodyBodyMax),
-  "mediaUrl": zod.string().nullish(),
-  "mediaType": zod.enum(['image', 'video']).nullish(),
   "attachmentId": zod.string().nullish(),
   "category": zod.string().default(updateSocialPostBodyCategoryDefault)
 })
@@ -1109,7 +1109,8 @@ export const GetSocialProfileResponse = zod.object({
   "winRate": zod.number().int(),
   "followerCount": zod.number().int(),
   "followingCount": zod.number().int(),
-  "isFollowing": zod.boolean()
+  "isFollowing": zod.boolean(),
+  "isBlocked": zod.boolean()
 })
 
 

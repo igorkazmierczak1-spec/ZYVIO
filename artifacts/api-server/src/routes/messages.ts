@@ -17,6 +17,11 @@ router.use(requireAuthenticatedUser);
 
 const messageRateLimit = rateLimit({ name: "social-message-create", windowMs: 5 * 60_000, max: 40 });
 
+function parseMessagePage(value: unknown) {
+  const page = typeof value === "string" ? Number(value) : 1;
+  return Number.isInteger(page) && page >= 1 && page <= 1000 ? page : null;
+}
+
 function routeParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
@@ -170,14 +175,19 @@ router.get("/social/conversations/:conversationId/messages", async (req, res, ne
       res.status(404).json({ error: "Conversation not found" });
       return;
     }
+    const page = parseMessagePage(req.query.page);
+    if (!page) {
+      res.status(400).json({ error: "Invalid message page" });
+      return;
+    }
     const pageSize = 100;
     const rows = await db.select().from(messagesTable).where(and(
       eq(messagesTable.conversationId, conversation.id),
       eq(messagesTable.contentStatus, "ACTIVE"),
-    )).orderBy(desc(messagesTable.createdAt)).limit(pageSize + 1);
+    )).orderBy(desc(messagesTable.createdAt)).limit(pageSize + 1).offset((page - 1) * pageSize);
     const hasMore = rows.length > pageSize;
     const items = await Promise.all(rows.slice(0, pageSize).reverse().map(messageView));
-    res.json({ items, page: 1, hasMore });
+    res.json({ items, page, hasMore });
   } catch (error) {
     next(error);
   }
@@ -204,9 +214,15 @@ router.post("/social/conversations/:conversationId/messages", messageRateLimit, 
       return;
     }
     const body = parsed.body;
-    const [message] = await db.transaction(async (tx) => {
+    let message: typeof messagesTable.$inferSelect | undefined;
+    try {
+      [message] = await db.transaction(async (tx) => {
+      const messageId = `message-${crypto.randomUUID()}`;
+      if (parsed.attachmentId) {
+        await claimAttachment(parsed.attachmentId, profile.id, "MESSAGE", messageId, tx);
+      }
       const [created] = await tx.insert(messagesTable).values({
-        id: `message-${crypto.randomUUID()}`,
+        id: messageId,
         conversationId: conversation.id,
         senderProfileId: profile.id,
         body,
@@ -219,20 +235,21 @@ router.post("/social/conversations/:conversationId/messages", messageRateLimit, 
         kind: "message",
         title: "New message",
         body: `${profile.displayName} sent you a message.`,
+          targetType: "MESSAGE",
+          targetId: messageId,
       });
-      return [created];
-    });
-    if (!message) {
-      res.status(500).json({ error: "Message could not be created" });
-      return;
-    }
-    if (parsed.attachmentId) {
-      try {
-        await claimAttachment(parsed.attachmentId, profile.id, "MESSAGE", message.id);
-      } catch {
+        return [created];
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "MEDIA_ATTACHMENT_NOT_OWNED") {
         res.status(400).json({ error: "Invalid media attachment" });
         return;
       }
+      throw error;
+    }
+    if (!message) {
+      res.status(500).json({ error: "Message could not be created" });
+      return;
     }
     res.status(201).json(await messageView(message));
   } catch (error) {

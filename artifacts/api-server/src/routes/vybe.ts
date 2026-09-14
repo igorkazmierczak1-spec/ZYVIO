@@ -393,6 +393,9 @@ router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
       }
     }
     const battle = await db.transaction(async (tx) => {
+      if (parsed.data.attachmentId) {
+        await claimAttachment(parsed.data.attachmentId, profile.id, "BATTLE", battleId, tx);
+      }
       const [created] = await tx
         .insert(battlesTable)
         .values({
@@ -413,16 +416,13 @@ router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
         submissionLabel: "Host entry",
       });
       return created;
-    });
-    if (!battle) throw new Error("Battle creation failed");
-    try {
-      await claimAttachment(parsed.data.attachmentId, profile.id, "BATTLE", battle.id);
-    } catch (error) {
-      if (error instanceof Error && error.message === "MEDIA_ATTACHMENT_NOT_OWNED") {
-        res.status(400).json({ error: "Invalid media attachment" });
-        return;
-      }
+    }).catch((error) => {
+      if (error instanceof Error && error.message === "MEDIA_ATTACHMENT_NOT_OWNED") return undefined;
       throw error;
+    });
+    if (!battle) {
+      res.status(400).json({ error: "Invalid media attachment" });
+      return;
     }
     res.status(201).json(
       CreateBattleResponse.parse(await serializeBattle(battle, profile.id)),
@@ -524,12 +524,17 @@ router.post("/battles/:battleId/vote", battleVoteRateLimit, async (req, res, nex
         await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${params.data.battleId} for update`);
         const [activeBattle] = await tx.select().from(battlesTable).where(and(eq(battlesTable.id, params.data.battleId), eq(battlesTable.contentStatus, "ACTIVE")));
         if (!activeBattle) return { error: "Battle not found", status: 404 as const };
-        if (activeBattle.status !== "open" && activeBattle.status !== "live") {
+        if (activeBattle.status !== "live") {
           return { error: "Battle is closed", status: 409 as const };
         }
         if (activeBattle.endsAt.getTime() <= Date.now()) {
           return { error: "Battle has ended", status: 409 as const };
         }
+        const entries = await tx
+          .select()
+          .from(battleParticipantsTable)
+          .where(eq(battleParticipantsTable.battleId, activeBattle.id));
+        if (entries.length !== 2) return { error: "Voting requires exactly two participants", status: 409 as const };
         const [participant] = await tx
           .select()
           .from(battleParticipantsTable)

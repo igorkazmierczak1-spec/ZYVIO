@@ -138,7 +138,6 @@ export * from './socialMessagePage';
 export * from './socialParticipant';
 export * from './socialPost';
 export * from './socialPostInput';
-export * from './socialPostInputMediaType';
 export * from './socialProfile';
 export * from './timeSeriesPoint';
 export * from './userSummary';

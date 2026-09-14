@@ -18,8 +18,13 @@ export function serializeAttachment(attachment: typeof attachmentsTable.$inferSe
   };
 }
 
-export async function attachmentsFor(targetType: MediaTarget, targetId: string) {
-  const rows = await db.select().from(attachmentsTable).where(and(
+type MediaExecutor = {
+  select: typeof db.select;
+  update: typeof db.update;
+};
+
+export async function attachmentsFor(targetType: MediaTarget, targetId: string, executor: MediaExecutor = db) {
+  const rows = await executor.select().from(attachmentsTable).where(and(
     eq(attachmentsTable.targetType, targetType),
     eq(attachmentsTable.targetId, targetId),
     eq(attachmentsTable.uploadStatus, "uploaded"),
@@ -37,9 +42,10 @@ export async function claimAttachment(
   ownerProfileId: string,
   targetType: MediaTarget,
   targetId: string,
+  executor: MediaExecutor = db,
 ) {
   if (!attachmentId) return null;
-  const [attachment] = await db.select().from(attachmentsTable).where(and(
+  const [attachment] = await executor.select().from(attachmentsTable).where(and(
     eq(attachmentsTable.id, attachmentId),
     eq(attachmentsTable.ownerProfileId, ownerProfileId),
     eq(attachmentsTable.uploadStatus, "uploaded"),
@@ -48,7 +54,7 @@ export async function claimAttachment(
     throw new Error("MEDIA_ATTACHMENT_NOT_OWNED");
   }
   if (!attachment.targetType) {
-    const [claimed] = await db.update(attachmentsTable).set({
+    const [claimed] = await executor.update(attachmentsTable).set({
       targetType,
       targetId,
       updatedAt: new Date(),
@@ -66,8 +72,9 @@ export async function claimAttachment(
 export async function currentAttachment(
   targetType: MediaTarget,
   targetId: string,
+  executor: MediaExecutor = db,
 ) {
-  const [attachment] = await db.select().from(attachmentsTable).where(and(
+  const [attachment] = await executor.select().from(attachmentsTable).where(and(
     eq(attachmentsTable.targetType, targetType),
     eq(attachmentsTable.targetId, targetId),
     eq(attachmentsTable.uploadStatus, "uploaded"),

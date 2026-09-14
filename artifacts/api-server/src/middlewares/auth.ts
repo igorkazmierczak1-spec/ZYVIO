@@ -89,6 +89,12 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
     if (existingByEmail.status === "BLOCKED" || existingByEmail.status === "DELETED") {
       throw new Error(`ACCOUNT_${existingByEmail.status}`);
     }
+    // Email is a recovery hint, not an identity binding. A new Clerk subject
+    // must not inherit an existing profile merely because it controls the
+    // same address; require an explicit, audited account-linking flow instead.
+    if (existingByEmail.id !== userId) {
+      throw new Error("ACCOUNT_LINK_REQUIRED");
+    }
     return existingByEmail;
   }
 
@@ -126,12 +132,23 @@ export async function getOrCreateCurrentUser(req: Request): Promise<Profile> {
     .select()
     .from(profilesTable)
     .where(eq(profilesTable.id, userId));
-  if (createdById) return createdById;
+  if (createdById) {
+    if (createdById.status === "BLOCKED" || createdById.status === "DELETED") {
+      throw new Error(`ACCOUNT_${createdById.status}`);
+    }
+    return createdById;
+  }
   const [createdByEmail] = await db
     .select()
     .from(profilesTable)
     .where(eq(profilesTable.email, normalizedEmail));
-  if (createdByEmail) return createdByEmail;
+  if (createdByEmail) {
+    if (createdByEmail.status === "BLOCKED" || createdByEmail.status === "DELETED") {
+      throw new Error(`ACCOUNT_${createdByEmail.status}`);
+    }
+    if (createdByEmail.id !== userId) throw new Error("ACCOUNT_LINK_REQUIRED");
+    return createdByEmail;
+  }
   throw new Error("LOCAL_USER_PROVISION_FAILED");
 }
 
@@ -156,6 +173,10 @@ export const requireAuthenticatedUser: RequestHandler = async (req, res, next) =
     }
     if (error instanceof Error && (error.message === "ACCOUNT_BLOCKED" || error.message === "ACCOUNT_DELETED")) {
       res.status(403).json({ error: "Account is not active" });
+      return;
+    }
+    if (error instanceof Error && error.message === "ACCOUNT_LINK_REQUIRED") {
+      res.status(409).json({ error: "This verified email is already linked to another account" });
       return;
     }
     if (error instanceof Error && error.message === "REGISTRATIONS_DISABLED") {

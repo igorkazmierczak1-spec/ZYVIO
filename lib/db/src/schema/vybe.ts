@@ -137,6 +137,8 @@ export const notificationsTable = pgTable(
     kind: text("kind").notNull(),
     title: text("title").notNull(),
     body: text("body").notNull(),
+    targetType: text("target_type"),
+    targetId: text("target_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     read: boolean("read").notNull().default(false),
   },
@@ -237,7 +239,16 @@ export const appSettingsTable = pgTable("vybe_app_settings", {
 export const stripeWebhookEventsTable = pgTable("vybe_stripe_webhook_events", {
   id: text("id").primaryKey(),
   type: text("type").notNull(),
-  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+  // Keep the state separate from timestamps so a failed delivery is durable
+  // and can be retried without looking like a successful delivery.
+  status: text("status").notNull().default("processed"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  firstReceivedAt: timestamp("first_received_at", { withTimezone: true }).notNull().defaultNow(),
+  lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  failedAt: timestamp("failed_at", { withTimezone: true }),
+  errorSummary: text("error_summary"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const postsTable = pgTable(
@@ -390,8 +401,9 @@ export const battleResultsTable = pgTable(
   {
     id: text("id").primaryKey(),
     battleId: text("battle_id").notNull(),
-    winnerParticipantId: text("winner_participant_id").notNull(),
-    loserParticipantId: text("loser_participant_id").notNull(),
+    // Completed Battles can be draws/no-contests, represented by null winners.
+    winnerParticipantId: text("winner_participant_id"),
+    loserParticipantId: text("loser_participant_id"),
     completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({

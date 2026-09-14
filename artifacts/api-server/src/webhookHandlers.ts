@@ -1,9 +1,14 @@
 import Stripe from "stripe";
 import { db, profilesTable, stripeWebhookEventsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { stripeRequest } from "./stripeClient";
 
 type Plan = "FREE" | "PREMIUM" | "PREMIUM_PRO";
+type DatabaseExecutor = Pick<typeof db, "select" | "update">;
+
+export class WebhookSignatureError extends Error {
+  readonly statusCode = 400;
+}
 
 function planFromPrice(price: any): Plan {
   const id = typeof price === "string" ? price : price?.id;
@@ -19,32 +24,37 @@ function periodFromPrice(price: any) {
   return "MONTHLY";
 }
 
-async function findProfile(customerId: string | null | undefined, userId?: string | null) {
+async function findProfile(executor: DatabaseExecutor, customerId: string | null | undefined, userId?: string | null) {
   if (userId) {
-    const [byUser] = await db.select().from(profilesTable).where(eq(profilesTable.id, userId));
+    const [byUser] = await executor.select().from(profilesTable).where(eq(profilesTable.id, userId));
     if (byUser) {
       if (customerId && byUser.stripeCustomerId && byUser.stripeCustomerId !== customerId) return undefined;
       return byUser;
     }
   }
   if (customerId) {
-    const [byCustomer] = await db.select().from(profilesTable).where(eq(profilesTable.stripeCustomerId, customerId));
+    const [byCustomer] = await executor.select().from(profilesTable).where(eq(profilesTable.stripeCustomerId, customerId));
     if (byCustomer && userId && byCustomer.id !== userId) return undefined;
     return byCustomer;
   }
   return undefined;
 }
 
-async function syncSubscription(subscription: any, fallbackUserId?: string | null, statusOverride?: string) {
+async function syncSubscription(
+  executor: DatabaseExecutor,
+  subscription: any,
+  fallbackUserId?: string | null,
+  statusOverride?: string,
+) {
   const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer?.id;
   const item = subscription.items?.data?.[0];
   const price = item?.price;
   const plan = planFromPrice(price);
-  const profile = await findProfile(customerId, fallbackUserId);
+  const profile = await findProfile(executor, customerId, fallbackUserId);
   if (!profile) return;
   const status = statusOverride ?? String(subscription.status ?? "unknown");
   const active = ["active", "trialing"].includes(status);
-  await db.update(profilesTable).set({
+  await executor.update(profilesTable).set({
     stripeCustomerId: customerId ?? profile.stripeCustomerId,
     stripeSubscriptionId: subscription.id ?? profile.stripeSubscriptionId,
     stripePriceId: price?.id ?? profile.stripePriceId,
@@ -57,47 +67,94 @@ async function syncSubscription(subscription: any, fallbackUserId?: string | nul
   }).where(eq(profilesTable.id, profile.id));
 }
 
+function errorSummary(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.slice(0, 1_000);
+}
+
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!secret) throw new Error("Stripe webhook is not configured");
-    const event = Stripe.webhooks.constructEvent(payload, signature, secret);
-    const [inserted] = await db.insert(stripeWebhookEventsTable)
-      .values({ id: event.id, type: event.type })
-      .onConflictDoNothing()
-      .returning({ id: stripeWebhookEventsTable.id });
-    if (!inserted) return;
-
+    let event: Stripe.Event;
     try {
-      const data: any = event.data.object;
-      if (event.type === "checkout.session.completed") {
-        const userId = data.metadata?.vybeUserId ?? data.subscription_details?.metadata?.vybeUserId;
-        if (data.subscription) {
-          const subscription = await stripeRequest<any>(`subscriptions/${String(data.subscription)}`);
-          await syncSubscription(subscription, userId);
-        }
-        return;
-      }
-      if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
-        await syncSubscription(data, data.metadata?.vybeUserId);
-        return;
-      }
-      if (event.type === "customer.subscription.deleted") {
-        await syncSubscription(data, data.metadata?.vybeUserId, "canceled");
-        return;
-      }
-      if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
-        const subscriptionId = typeof data.subscription === "string" ? data.subscription : data.subscription?.id;
-        if (subscriptionId) {
-          const subscription = await stripeRequest<any>(`subscriptions/${subscriptionId}`);
-          await syncSubscription(subscription, undefined, event.type === "invoice.payment_failed" ? "past_due" : undefined);
-        }
-      }
+      event = Stripe.webhooks.constructEvent(payload, signature, secret);
     } catch (error) {
-      // Do not leave a failed event permanently marked as processed. Stripe
-      // must be able to retry after a transient API/database failure.
-      await db.delete(stripeWebhookEventsTable).where(eq(stripeWebhookEventsTable.id, event.id));
-      throw error;
+      throw new WebhookSignatureError(error instanceof Error ? error.message : "Invalid Stripe webhook");
+    }
+
+    // The transaction-scoped advisory lock makes a duplicate wait for the
+    // first delivery to finish instead of observing its optimistic insert.
+    // This is intentionally keyed by the Stripe event ID, not the event type.
+    const result = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${event.id}, 0))`);
+      await tx.insert(stripeWebhookEventsTable)
+        .values({ id: event.id, type: event.type, status: "pending" })
+        .onConflictDoNothing();
+
+      const [stored] = await tx
+        .select()
+        .from(stripeWebhookEventsTable)
+        .where(eq(stripeWebhookEventsTable.id, event.id));
+      if (!stored) throw new Error("Stripe webhook event could not be recorded");
+      if (stored.status === "processed") return { processed: true };
+
+      const now = new Date();
+      await tx.update(stripeWebhookEventsTable).set({
+        status: "pending",
+        attemptCount: sql`${stripeWebhookEventsTable.attemptCount} + 1`,
+        lastAttemptAt: now,
+        failedAt: null,
+        errorSummary: null,
+        updatedAt: now,
+      }).where(eq(stripeWebhookEventsTable.id, event.id));
+
+      try {
+        const data: any = event.data.object;
+        if (event.type === "checkout.session.completed") {
+          const userId = data.metadata?.vybeUserId ?? data.subscription_details?.metadata?.vybeUserId;
+          if (data.subscription) {
+            const subscription = await stripeRequest<any>(`subscriptions/${String(data.subscription)}`);
+            await syncSubscription(tx, subscription, userId);
+          }
+        } else if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
+          await syncSubscription(tx, data, data.metadata?.vybeUserId);
+        } else if (event.type === "customer.subscription.deleted") {
+          await syncSubscription(tx, data, data.metadata?.vybeUserId, "canceled");
+        } else if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
+          const subscriptionId = typeof data.subscription === "string" ? data.subscription : data.subscription?.id;
+          if (subscriptionId) {
+            const subscription = await stripeRequest<any>(`subscriptions/${subscriptionId}`);
+            await syncSubscription(tx, subscription, undefined, event.type === "invoice.payment_failed" ? "past_due" : undefined);
+          }
+        }
+        const processedAt = new Date();
+        await tx.update(stripeWebhookEventsTable).set({
+          status: "processed",
+          processedAt,
+          failedAt: null,
+          errorSummary: null,
+          updatedAt: processedAt,
+        }).where(eq(stripeWebhookEventsTable.id, event.id));
+        return { processed: true };
+      } catch (error) {
+        // Commit the failure state before rethrowing outside the transaction.
+        // The next Stripe delivery can then retry this event, while a
+        // concurrent delivery waits on the advisory lock and sees this state.
+        const failedAt = new Date();
+        await tx.update(stripeWebhookEventsTable).set({
+          status: "failed",
+          processedAt: null,
+          failedAt,
+          errorSummary: errorSummary(error),
+          updatedAt: failedAt,
+        }).where(eq(stripeWebhookEventsTable.id, event.id));
+        return { processed: false, error };
+      }
+    });
+
+    if (!result.processed) {
+      throw result.error;
     }
   }
 }

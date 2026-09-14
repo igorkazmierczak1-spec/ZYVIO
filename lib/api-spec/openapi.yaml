@@ -570,6 +570,7 @@ paths:
       summary: List messages for a conversation the user belongs to
       parameters:
         - { name: conversationId, in: path, required: true, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
       responses:
         "200":
           description: Conversation messages
@@ -1073,8 +1074,6 @@ components:
       required: [body]
       properties:
         body: { type: string, minLength: 1, maxLength: 2000 }
-        mediaUrl: { type: string, nullable: true }
-        mediaType: { type: string, enum: [image, video], nullable: true }
         attachmentId: { type: string, nullable: true }
         category: { type: string, default: General }
     SocialComment:
@@ -1095,7 +1094,7 @@ components:
         attachmentId: { type: string, nullable: true }
     SocialProfile:
       type: object
-      required: [id, username, displayName, avatarUrl, bio, country, level, xp, rankingPoints, wins, losses, rank, league, streak, badges, winRate, followerCount, followingCount, isFollowing]
+      required: [id, username, displayName, avatarUrl, bio, country, level, xp, rankingPoints, wins, losses, rank, league, streak, badges, winRate, followerCount, followingCount, isFollowing, isBlocked]
       properties:
         id: { type: string }
         username: { type: string }
@@ -1118,6 +1117,7 @@ components:
         followerCount: { type: integer }
         followingCount: { type: integer }
         isFollowing: { type: boolean }
+        isBlocked: { type: boolean }
     FollowState:
       type: object
       required: [following]
@@ -1303,12 +1303,14 @@ components:
         currentUser: { $ref: "#/components/schemas/LeaderboardEntry" }
     Notification:
       type: object
-      required: [id, kind, title, body, createdAt, read]
+      required: [id, kind, title, body, createdAt, read, targetType, targetId]
       properties:
         id: { type: string }
         kind: { type: string }
         title: { type: string }
         body: { type: string }
+        targetType: { type: string, nullable: true }
+        targetId: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
         read: { type: boolean }
     Activity:

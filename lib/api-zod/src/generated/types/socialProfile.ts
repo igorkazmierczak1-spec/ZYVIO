@@ -26,4 +26,5 @@ export interface SocialProfile {
   followerCount: number;
   followingCount: number;
   isFollowing: boolean;
+  isBlocked: boolean;
 }

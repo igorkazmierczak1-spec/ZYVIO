@@ -11,7 +11,7 @@ import {
   postsTable,
   profilesTable,
 } from "@workspace/db";
-import { attachmentsFor, claimAttachment, mediaUrl } from "../lib/media";
+import { attachmentsFor, claimAttachment } from "../lib/media";
 import { currentUserFrom, requireAuthenticatedUser } from "../middlewares/auth";
 import { rateLimit } from "../middlewares/rateLimit";
 import { getUserPlan } from "../lib/premium";
@@ -28,8 +28,6 @@ type FeedQuery = {
 };
 type PostInput = {
   body: string;
-  mediaUrl?: string | null;
-  mediaType?: "image" | "video" | null;
   attachmentId?: string | null;
   category: string;
 };
@@ -57,23 +55,18 @@ function parseFeedQuery(input: Record<string, unknown>): { data?: FeedQuery; err
 function parsePostBody(input: unknown): { data?: PostInput; error?: string } {
   if (!input || typeof input !== "object") return { error: "Post body is required" };
   const value = input as Record<string, unknown>;
+  if ("mediaUrl" in value || "mediaType" in value) return { error: "External media fields are not accepted" };
   const body = typeof value.body === "string" ? value.body.trim() : "";
   const category = typeof value.category === "string" && value.category.trim()
     ? value.category.trim()
     : "General";
-  const mediaUrl = value.mediaUrl === null || value.mediaUrl === undefined
-    ? null
-    : typeof value.mediaUrl === "string" && /^https?:\/\//.test(value.mediaUrl) ? value.mediaUrl : undefined;
-  const mediaType = value.mediaType === null || value.mediaType === undefined
-    ? null
-    : value.mediaType === "image" || value.mediaType === "video" ? value.mediaType : undefined;
   const attachmentId = value.attachmentId === null || value.attachmentId === undefined
     ? null
     : typeof value.attachmentId === "string" ? value.attachmentId : undefined;
-  if (body.length < 1 || body.length > 2000 || category.length > 40 || mediaUrl === undefined || mediaType === undefined || attachmentId === undefined) {
+  if (body.length < 1 || body.length > 2000 || category.length > 40 || attachmentId === undefined) {
     return { error: "Invalid post body" };
   }
-  return { data: { body, category, mediaUrl, mediaType, attachmentId } };
+  return { data: { body, category, attachmentId } };
 }
 
 function parseCommentBody(input: unknown): { data?: { body: string; attachmentId?: string | null }; error?: string } {
@@ -101,13 +94,22 @@ async function blockedProfileIds(profileId: string) {
   return [...new Set([...outgoing, ...incoming].map((row) => row.id))];
 }
 
-async function notify(profileId: string, kind: string, title: string, body: string) {
-  await db.insert(notificationsTable).values({
+async function notify(
+  profileId: string,
+  kind: string,
+  title: string,
+  body: string,
+  target?: { targetType: string; targetId: string },
+  executor: any = db,
+) {
+  await executor.insert(notificationsTable).values({
     id: `notification-${crypto.randomUUID()}`,
     profileId,
     kind,
     title,
     body,
+    targetType: target?.targetType,
+    targetId: target?.targetId,
   });
 }
 
@@ -124,6 +126,7 @@ async function postView(post: typeof postsTable.$inferSelect, currentProfileId: 
     db.select({ count: count() }).from(commentsTable).where(and(eq(commentsTable.postId, post.id), eq(commentsTable.contentStatus, "ACTIVE"))),
     db.select({ id: postLikesTable.id }).from(postLikesTable).where(and(eq(postLikesTable.postId, post.id), eq(postLikesTable.profileId, currentProfileId))).limit(1),
   ]);
+  const attachments = await attachmentsFor("POST", post.id);
   return {
     id: post.id,
     author: author ?? {
@@ -134,15 +137,15 @@ async function postView(post: typeof postsTable.$inferSelect, currentProfileId: 
       country: "",
     },
     body: post.body,
-    mediaUrl: post.mediaUrl,
-    mediaType: post.mediaType,
+    mediaUrl: attachments[0]?.url ?? null,
+    mediaType: attachments[0]?.mediaType ?? null,
     category: post.category,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
     likeCount: Number(likes?.count ?? 0),
     commentCount: Number(comments?.count ?? 0),
     liked: Boolean(liked),
-    attachments: await attachmentsFor("POST", post.id),
+    attachments,
   };
 }
 
@@ -220,26 +223,22 @@ router.post("/social/posts", createPostRateLimit, async (req, res, next) => {
       return;
     }
     const { attachmentId, ...postFields } = parsed.data;
-    let [post] = await db.insert(postsTable).values({
-      id: `post-${crypto.randomUUID()}`,
-      authorProfileId: profile.id,
-      ...postFields,
-    }).returning();
-    if (post && attachmentId) {
-      try {
-        const attachment = await claimAttachment(attachmentId, profile.id, "POST", post.id);
-        if (attachment) {
-          const [updated] = await db.update(postsTable).set({
-            mediaUrl: mediaUrl(attachment.objectPath),
-            mediaType: attachment.mediaType,
-            updatedAt: new Date(),
-          }).where(eq(postsTable.id, post.id)).returning();
-          if (updated) post = updated;
-        }
-      } catch {
-        res.status(400).json({ error: "Invalid media attachment" });
-        return;
-      }
+    const post = await db.transaction(async (tx) => {
+      const postId = `post-${crypto.randomUUID()}`;
+      if (attachmentId) await claimAttachment(attachmentId, profile.id, "POST", postId, tx);
+      const [created] = await tx.insert(postsTable).values({
+        id: postId,
+        authorProfileId: profile.id,
+        ...postFields,
+      }).returning();
+      return created;
+    }).catch((error) => {
+      if (error instanceof Error && error.message === "MEDIA_ATTACHMENT_NOT_OWNED") return undefined;
+      throw error;
+    });
+    if (!post) {
+      res.status(400).json({ error: "Invalid media attachment" });
+      return;
     }
     res.status(201).json(await postView(post, profile.id));
   } catch (error) {
@@ -257,30 +256,33 @@ router.patch("/social/posts/:postId", createPostRateLimit, async (req, res, next
       return;
     }
     const { attachmentId, ...postFields } = parsed.data;
-    let [post] = await db.update(postsTable).set({
-      ...postFields,
-      updatedAt: new Date(),
-    }).where(and(eq(postsTable.id, routeParam(req.params.postId)), eq(postsTable.authorProfileId, profile.id), eq(postsTable.contentStatus, "ACTIVE"))).returning();
-    if (!post) {
+    const postId = routeParam(req.params.postId);
+    const result = await db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(postsTable).where(and(
+        eq(postsTable.id, postId),
+        eq(postsTable.authorProfileId, profile.id),
+        eq(postsTable.contentStatus, "ACTIVE"),
+      )).limit(1);
+      if (!existing) return { missing: true as const };
+      if (attachmentId) await claimAttachment(attachmentId, profile.id, "POST", existing.id, tx);
+      const [updated] = await tx.update(postsTable).set({
+        ...postFields,
+        updatedAt: new Date(),
+      }).where(eq(postsTable.id, existing.id)).returning();
+      return { post: updated };
+    }).catch((error) => {
+      if (error instanceof Error && error.message === "MEDIA_ATTACHMENT_NOT_OWNED") return { invalid: true as const };
+      throw error;
+    });
+    if ("missing" in result) {
       res.status(404).json({ error: "Post not found or not owned by you" });
       return;
     }
-    if (attachmentId) {
-      try {
-        const attachment = await claimAttachment(attachmentId, profile.id, "POST", post.id);
-        if (attachment) {
-          const [updated] = await db.update(postsTable).set({
-            mediaUrl: mediaUrl(attachment.objectPath),
-            mediaType: attachment.mediaType,
-            updatedAt: new Date(),
-          }).where(eq(postsTable.id, post.id)).returning();
-          if (updated) post = updated;
-        }
-      } catch {
-        res.status(400).json({ error: "Invalid media attachment" });
-        return;
-      }
+    if ("invalid" in result || !result.post) {
+      res.status(400).json({ error: "Invalid media attachment" });
+      return;
     }
+    const post = result.post;
     res.json(await postView(post, profile.id));
   } catch (error) {
     next(error);
@@ -316,7 +318,10 @@ router.post("/social/posts/:postId/like", likeRateLimit, async (req, res, next) 
       profileId: profile.id,
     }).onConflictDoNothing().returning();
     if (like && post.authorProfileId !== profile.id) {
-      await notify(post.authorProfileId, "like", "Someone liked your post", `${profile.displayName} liked your post.`);
+      await notify(post.authorProfileId, "like", "Someone liked your post", `${profile.displayName} liked your post.`, {
+        targetType: "POST",
+        targetId: post.id,
+      });
     }
     res.json(await postView(post, profile.id));
   } catch (error) {
@@ -394,26 +399,31 @@ router.post("/social/posts/:postId/comments", commentRateLimit, async (req, res,
       res.status(400).json({ error: parsed.error });
       return;
     }
-    const [comment] = await db.insert(commentsTable).values({
-      id: `comment-${crypto.randomUUID()}`,
-      postId: post.id,
-      authorProfileId: profile.id,
-      body: parsed.data.body,
-    }).returning();
-    if (!comment) {
-      res.status(500).json({ error: "Comment could not be created" });
-      return;
-    }
-    if (parsed.data.attachmentId) {
-      try {
-        await claimAttachment(parsed.data.attachmentId, profile.id, "COMMENT", comment.id);
-      } catch {
-        res.status(400).json({ error: "Invalid media attachment" });
-        return;
+    const commentInput = parsed.data;
+    const comment = await db.transaction(async (tx) => {
+      const commentId = `comment-${crypto.randomUUID()}`;
+      if (commentInput.attachmentId) await claimAttachment(commentInput.attachmentId, profile.id, "COMMENT", commentId, tx);
+      const [created] = await tx.insert(commentsTable).values({
+        id: commentId,
+        postId: post.id,
+        authorProfileId: profile.id,
+        body: commentInput.body,
+      }).returning();
+      if (!created) throw new Error("Comment could not be created");
+      if (post.authorProfileId !== profile.id) {
+        await notify(post.authorProfileId, "comment", "New comment on your post", `${profile.displayName} commented on your post.`, {
+          targetType: "POST",
+          targetId: post.id,
+        }, tx);
       }
-    }
-    if (post.authorProfileId !== profile.id) {
-      await notify(post.authorProfileId, "comment", "New comment on your post", `${profile.displayName} commented on your post.`);
+      return created;
+    }).catch((error) => {
+      if (error instanceof Error && error.message === "MEDIA_ATTACHMENT_NOT_OWNED") return undefined;
+      throw error;
+    });
+    if (!comment) {
+      res.status(400).json({ error: "Invalid media attachment" });
+      return;
     }
     const attachments = await attachmentsFor("COMMENT", comment.id);
     res.status(201).json({
@@ -475,7 +485,10 @@ router.post("/social/users/:profileId/follow", followRateLimit, async (req, res,
       followingProfileId: target.id,
     }).onConflictDoNothing().returning();
     if (follow) {
-      await notify(target.id, "follow", "New follower", `${profile.displayName} started following you.`);
+       await notify(target.id, "follow", "New follower", `${profile.displayName} started following you.`, {
+         targetType: "PROFILE",
+         targetId: profile.id,
+       });
     }
     res.json({ following: true });
   } catch (error) {
@@ -529,10 +542,11 @@ router.get("/social/users/:profileId", async (req, res, next) => {
       res.status(404).json({ error: "Profile not found" });
       return;
     }
-    const [[followers], [following], [isFollowing]] = await Promise.all([
+    const [[followers], [following], [isFollowing], [isBlocked]] = await Promise.all([
       db.select({ count: count() }).from(followsTable).where(eq(followsTable.followingProfileId, target.id)),
       db.select({ count: count() }).from(followsTable).where(eq(followsTable.followerProfileId, target.id)),
       db.select({ id: followsTable.id }).from(followsTable).where(and(eq(followsTable.followerProfileId, profile.id), eq(followsTable.followingProfileId, target.id))).limit(1),
+      db.select({ id: blocksTable.id }).from(blocksTable).where(and(eq(blocksTable.blockerProfileId, profile.id), eq(blocksTable.blockedProfileId, target.id))).limit(1),
     ]);
     res.json({
       ...target,
@@ -541,6 +555,7 @@ router.get("/social/users/:profileId", async (req, res, next) => {
       followerCount: Number(followers?.count ?? 0),
       followingCount: Number(following?.count ?? 0),
       isFollowing: Boolean(isFollowing),
+      isBlocked: Boolean(isBlocked),
     });
   } catch (error) {
     next(error);

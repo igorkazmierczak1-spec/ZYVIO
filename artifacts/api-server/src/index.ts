@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { runMigrations } from "stripe-replit-sync";
 import { getStripeSync, hasDirectStripeCredentials } from "./stripeClient";
+import { settleExpiredBattles } from "./viralCore";
 
 const rawPort = process.env["PORT"];
 
@@ -31,6 +32,10 @@ async function initStripe(): Promise<void> {
 }
 
 await initStripe();
+const settleExpired = () => settleExpiredBattles().catch((error) => logger.warn({ err: error }, "Battle expiry settlement failed"));
+void settleExpired();
+const battleSettlementTimer = setInterval(settleExpired, 60_000);
+battleSettlementTimer.unref();
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");

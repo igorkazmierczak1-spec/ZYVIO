@@ -96,22 +96,12 @@ export interface SocialFeed {
   hasMore: boolean;
 }
 
-export type SocialPostInputMediaType = typeof SocialPostInputMediaType[keyof typeof SocialPostInputMediaType] | null;
-
-
-export const SocialPostInputMediaType = {
-  image: 'image',
-  video: 'video',
-} as const;
-
 export interface SocialPostInput {
   /**
      * @minLength 1
      * @maxLength 2000
      */
   body: string;
-  mediaUrl?: string | null;
-  mediaType?: SocialPostInputMediaType;
   attachmentId?: string | null;
   category?: string;
 }
@@ -152,6 +142,7 @@ export interface SocialProfile {
   followerCount: number;
   followingCount: number;
   isFollowing: boolean;
+  isBlocked: boolean;
 }
 
 export interface FollowState {
@@ -359,6 +350,8 @@ export interface Notification {
   kind: string;
   title: string;
   body: string;
+  targetType: string | null;
+  targetId: string | null;
   createdAt: string;
   read: boolean;
 }

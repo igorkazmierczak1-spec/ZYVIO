@@ -10,7 +10,7 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
-import { WebhookHandlers } from "./webhookHandlers";
+import { WebhookHandlers, WebhookSignatureError } from "./webhookHandlers";
 
 const app: Express = express();
 
@@ -51,7 +51,13 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json", limit: "
     res.status(200).json({ received: true });
   } catch (error) {
     logger.warn({ err: error }, "Stripe webhook rejected");
-    res.status(400).json({ error: "Webhook processing error" });
+    if (error instanceof WebhookSignatureError) {
+      res.status(400).json({ error: "Webhook signature verification failed" });
+      return;
+    }
+    // Stripe retries non-2xx responses. Processing/database/Stripe API
+    // failures must therefore remain retryable instead of being acknowledged.
+    res.status(500).json({ error: "Webhook processing failed" });
   }
 });
 app.use(

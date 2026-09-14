@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import {
   activitiesTable,
   battleParticipantsTable,
@@ -8,6 +8,7 @@ import {
   profilesTable,
   votesTable,
   viralRewardEventsTable,
+  db,
 } from "@workspace/db";
 import { planConfigFor } from "./lib/planConfig";
 
@@ -35,13 +36,22 @@ function leagueForPoints(points: number) {
   return "Bronze";
 }
 
-async function notify(tx: any, profileId: string, kind: string, title: string, body: string) {
+async function notify(
+  tx: any,
+  profileId: string,
+  kind: string,
+  title: string,
+  body: string,
+  target?: { targetType: string; targetId: string },
+) {
   await tx.insert(notificationsTable).values({
     id: `notification-${crypto.randomUUID()}`,
     profileId,
     kind,
     title,
     body,
+    targetType: target?.targetType,
+    targetId: target?.targetId,
   });
 }
 
@@ -156,11 +166,28 @@ export async function settleBattleInTransaction(
     .from(battleParticipantsTable)
     .where(eq(battleParticipantsTable.battleId, battleId))
     .orderBy(desc(battleParticipantsTable.score), desc(battleParticipantsTable.votes), asc(battleParticipantsTable.joinedAt));
-  if (entries.length !== 2) return null;
+  if (entries.length === 0 || entries.length > 2) return null;
 
   const winner = entries[0];
   const loser = entries[1];
-  if (!winner || !loser) return null;
+  if (!winner) return null;
+  // A Battle that never received a challenger is a no-contest. Complete it
+  // without manufacturing a loser or awarding the host a win.
+  if (!loser) {
+    const [result] = await tx.insert(battleResultsTable).values({
+      id: `result-${crypto.randomUUID()}`,
+      battleId,
+      winnerParticipantId: null,
+      loserParticipantId: null,
+    }).onConflictDoNothing().returning();
+    if (!result) return null;
+    await tx.update(battlesTable).set({ status: "completed", updatedAt: new Date() }).where(eq(battlesTable.id, battleId));
+    await notify(tx, winner.profileId, "battle", "Battle ended without a contest", "No challenger joined this Battle.", {
+      targetType: "BATTLE",
+      targetId: battleId,
+    });
+    return result;
+  }
 
   if (voterProfileId) {
     const [voterEntry] = await tx
@@ -182,35 +209,44 @@ export async function settleBattleInTransaction(
     if (!vote) return null;
   }
 
+  const isDraw = entries.every((entry: { score: number }) => entry.score === winner.score)
+    || entries.every((entry: { votes: number }) => entry.votes === 0);
   const [result] = await tx
     .insert(battleResultsTable)
     .values({
       id: `result-${crypto.randomUUID()}`,
       battleId,
-      winnerParticipantId: winner.id,
-      loserParticipantId: loser.id,
+      winnerParticipantId: isDraw ? null : winner.id,
+      loserParticipantId: isDraw ? null : loser.id,
     })
     .onConflictDoNothing()
     .returning();
   if (!result) return null;
 
   await tx.update(battlesTable).set({ status: "completed", updatedAt: new Date() }).where(eq(battlesTable.id, battleId));
-  await tx.update(profilesTable).set({
-    wins: sql`${profilesTable.wins} + 1`,
-    updatedAt: new Date(),
-  }).where(eq(profilesTable.id, winner.profileId));
-  await tx.update(profilesTable).set({
-    losses: sql`${profilesTable.losses} + 1`,
-    updatedAt: new Date(),
-  }).where(eq(profilesTable.id, loser.profileId));
+  if (!isDraw) {
+    await tx.update(profilesTable).set({
+      wins: sql`${profilesTable.wins} + 1`,
+      updatedAt: new Date(),
+    }).where(eq(profilesTable.id, winner.profileId));
+    await tx.update(profilesTable).set({
+      losses: sql`${profilesTable.losses} + 1`,
+      updatedAt: new Date(),
+    }).where(eq(profilesTable.id, loser.profileId));
 
-  await addReward(tx, winner.profileId, battleId, "battle-win", 250, 25);
-  await addReward(tx, loser.profileId, battleId, "battle-loss", 50, 5);
+    await addReward(tx, winner.profileId, battleId, "battle-win", 250, 25);
+    await addReward(tx, loser.profileId, battleId, "battle-loss", 50, 5);
+  }
   if (voterProfileId && voterProfileId !== winner.profileId && voterProfileId !== loser.profileId) {
     await addReward(tx, voterProfileId, battleId, "battle-vote", 10, 1);
   }
-  await notify(tx, winner.profileId, "battle", "You won a Battle", "Your result is now part of your ZYVIO record.");
-  await notify(tx, loser.profileId, "battle", "Battle completed", "Keep going — your next Battle can move your ranking.");
+  if (isDraw) {
+    await notify(tx, winner.profileId, "battle", "Battle draw", "This Battle ended without a winner.", { targetType: "BATTLE", targetId: battleId });
+    await notify(tx, loser.profileId, "battle", "Battle draw", "This Battle ended without a winner.", { targetType: "BATTLE", targetId: battleId });
+  } else {
+    await notify(tx, winner.profileId, "battle", "You won a Battle", "Your result is now part of your ZYVIO record.", { targetType: "BATTLE", targetId: battleId });
+    await notify(tx, loser.profileId, "battle", "Battle completed", "Keep going — your next Battle can move your ranking.", { targetType: "BATTLE", targetId: battleId });
+  }
   await refreshRanksAndBadges(
     tx,
     [winner.profileId, loser.profileId, voterProfileId].filter(
@@ -218,4 +254,23 @@ export async function settleBattleInTransaction(
     ),
   );
   return result;
+}
+
+/** Best-effort idempotent expiry pass for Battles no longer being viewed. */
+export async function settleExpiredBattles() {
+  const expired = await db
+    .select({ id: battlesTable.id })
+    .from(battlesTable)
+    .where(and(
+      eq(battlesTable.contentStatus, "ACTIVE"),
+      inArray(battlesTable.status, ["open", "live"]),
+      lte(battlesTable.endsAt, new Date()),
+    ))
+    .limit(50);
+  for (const battle of expired) {
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${battle.id} for update`);
+      await settleBattleInTransaction(tx, battle.id);
+    });
+  }
 }

@@ -11,6 +11,8 @@ export interface Notification {
   kind: string;
   title: string;
   body: string;
+  targetType: string | null;
+  targetId: string | null;
   createdAt: Date;
   read: boolean;
 }
