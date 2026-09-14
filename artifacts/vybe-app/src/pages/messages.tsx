@@ -301,13 +301,13 @@ export default function MessagesPage() {
 
           {showStartForm && (
             <form className="messages-start-form" onSubmit={handleStartConversation}>
-              <label htmlFor="profile-id">Start with a profile ID</label>
+              <label htmlFor="profile-id">Start with a Player ID</label>
               <div>
                 <input
                   id="profile-id"
                   value={profileId}
                   onChange={(event) => setProfileId(event.target.value)}
-                  placeholder="Paste creator ID"
+                  placeholder="Paste Player ID"
                   autoComplete="off"
                   required
                 />
@@ -315,7 +315,7 @@ export default function MessagesPage() {
                   {createConversation.isPending ? "Opening" : "Open"}
                 </Button>
               </div>
-              <small>Use the creator’s profile ID to begin a private thread.</small>
+              <small>Paste the Player ID shown on their profile to begin a private thread.</small>
             </form>
           )}
 

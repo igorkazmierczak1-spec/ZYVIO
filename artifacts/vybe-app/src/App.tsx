@@ -47,6 +47,7 @@ import {
   CircleDollarSign,
   Clock3,
   Compass,
+  Copy,
   CreditCard,
   Crown,
   Flame,
@@ -461,6 +462,8 @@ function LeaderboardPage() {
 function ProfilePage() {
   const profile = useGetProfile({ query: { queryKey: getGetProfileQueryKey(), refetchOnWindowFocus: true } });
   const [, navigate] = useLocation();
+  const [playerIdSearch, setPlayerIdSearch] = useState("");
+  const [playerIdCopied, setPlayerIdCopied] = useState(false);
   const { data: subData } = useGetPremiumSubscription();
   const portalMut = useCreatePremiumPortal({
     mutation: {
@@ -476,6 +479,19 @@ function ProfilePage() {
   const currentPlan = (subData as any)?.plan ?? sub?.plan ?? "FREE";
   const hasActiveSub = sub && ['active', 'trialing'].includes(sub.status);
   const winRate = Math.round(data.wins / Math.max(1, data.wins + data.losses) * 100);
+  const copyPlayerId = async () => {
+    try {
+      await navigator.clipboard.writeText(data.id);
+      setPlayerIdCopied(true);
+      window.setTimeout(() => setPlayerIdCopied(false), 1800);
+    } catch {
+      toast({ title: "Nie udało się skopiować ID", description: "Zaznacz ID i skopiuj je ręcznie.", variant: "destructive" });
+    }
+  };
+  const findPlayer = () => {
+    const playerId = playerIdSearch.trim();
+    if (playerId && playerId !== data.id) navigate(`/profile/${encodeURIComponent(playerId)}`);
+  };
 
   return <div>
     <PageHeader eyebrow="Your profile" title="Build your legend" action={<div className="profile-actions"><Button variant="secondary" onClick={() => navigate("/settings")}><Settings2 /> Edit profile</Button><LogoutButton /></div>} />
@@ -499,6 +515,28 @@ function ProfilePage() {
         <strong className={data.role === "ADMIN" ? "admin-role-text" : ""}>{data.role}</strong>
         <small>{data.role === "ADMIN" ? "Pełny dostęp administracyjny" : "Konto użytkownika"}</small>
       </div>
+    </section>
+
+    <section className="player-id-panel panel">
+      <div className="player-id-own">
+        <span className="eyebrow">Twoje ID gracza</span>
+        <div>
+          <code>{data.id}</code>
+          <Button type="button" size="sm" variant="secondary" onClick={() => void copyPlayerId()}>
+            {playerIdCopied ? <Check /> : <Copy />} {playerIdCopied ? "Skopiowano" : "Kopiuj"}
+          </Button>
+        </div>
+        <small>Udostępnij to ID, aby inni mogli znaleźć Twój profil.</small>
+      </div>
+      <form className="player-id-search" onSubmit={(event) => { event.preventDefault(); findPlayer(); }}>
+        <label htmlFor="player-id-search">Znajdź gracza po ID</label>
+        <div>
+          <Search />
+          <input id="player-id-search" value={playerIdSearch} onChange={(event) => setPlayerIdSearch(event.target.value)} placeholder="Wklej ID gracza" autoComplete="off" />
+          <Button type="submit" size="sm" disabled={!playerIdSearch.trim() || playerIdSearch.trim() === data.id}>Znajdź</Button>
+        </div>
+        <small>Na profilu gracza możesz go obserwować lub wysłać wiadomość.</small>
+      </form>
     </section>
 
     {hasActiveSub ? (
