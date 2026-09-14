@@ -15,3 +15,18 @@ uri = "file://artifacts/zyvio-launch-ad-pl/public/audio/bg_music_2.mp3"
 type = "audio"
 title = "muzyka polskiej reklamy ZYVIO"
 description = "Generated music: Energetic future-pop and nu-disco instrumental background music scoring a 15-second Polish social app launch video. Punchy electronic drums, bright synth bass, playful plucks, 118 BP…"
+logical_id = "8bb08393-a9c1-4381-a57b-dfd565093d8b"
+
+[[outputs]]
+id = "Y45JI2_M1vA5XDlKU1EbB"
+uri = "file://attached_assets/generated_images/zyvio-tiktok-profile.png"
+type = "image"
+title = "ZYVIO — zdjęcie profilowe TikTok"
+description = "Kwadratowy plik PNG 1080×1080, przygotowany do okrągłego kadru profilu TikTok."
+logical_id = "1eccf1db-2cfb-4199-9ab7-2d6c2b854366"
+content_hash = "sha256:ea071033016b7ace5d540f27b66291df86219d245dac85b6a410e71c99475bf8"
+size = 650080
+mtime_ms = 1789363035306
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:fdfc2e78-6ca7-490f-9e30-6b48d1335bd9/1eccf1db-2cfb-4199-9ab7-2d6c2b854366/3967633e-52f2-46f9-8564-73572ee6af6f"
+storage_version_token = "1789363049193195"
+content_type = "image/png"
