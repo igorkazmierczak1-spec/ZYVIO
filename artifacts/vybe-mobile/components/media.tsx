@@ -273,6 +273,7 @@ export function MediaAttachmentView({ attachment }: { attachment: MediaAttachmen
   const colors = useColors();
   const { getToken } = useAuth();
   const [token, setToken] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const uri = toAbsoluteMediaUrl(attachment.url);
   useEffect(() => {
     let active = true;
@@ -280,6 +281,17 @@ export function MediaAttachmentView({ attachment }: { attachment: MediaAttachmen
     return () => { active = false; };
   }, [getToken]);
   if (!uri) return null;
+  if (failed) {
+    return (
+      <View style={[styles.mediaFallback, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+        <Ionicons name={attachment.mediaType === 'video' ? 'videocam-off-outline' : 'image-outline'} size={26} color={colors.mutedForeground} />
+        <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Nie udało się załadować pliku</Text>
+        <Pressable onPress={() => setFailed(false)} accessibilityRole="button">
+          <Text style={{ color: colors.primary, fontFamily: 'Inter_700Bold', fontSize: 12 }}>Spróbuj ponownie</Text>
+        </Pressable>
+      </View>
+    );
+  }
   if (attachment.mediaType === 'video') return <VideoAttachment uri={uri} token={token} />;
   return (
     <Image
@@ -287,6 +299,7 @@ export function MediaAttachmentView({ attachment }: { attachment: MediaAttachmen
       source={{ uri, headers: token ? { Authorization: `Bearer ${token}` } : undefined }}
       contentFit="cover"
       style={[styles.media, { backgroundColor: colors.background }]}
+      onError={() => setFailed(true)}
     />
   );
 }
@@ -296,6 +309,7 @@ const styles = StyleSheet.create({
   previewFrame: { minHeight: 130, overflow: 'hidden', borderRadius: 14, position: 'relative' },
   media: { width: '100%', height: 210 },
   videoFrame: { width: '100%', height: 210, borderRadius: 14, overflow: 'hidden' },
+  mediaFallback: { minHeight: 130, borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', gap: 7, padding: 16 },
   remove: { position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   progress: { position: 'absolute', left: 8, right: 8, bottom: 8, minHeight: 38, borderRadius: 10, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   picker: { minHeight: 42, borderWidth: 1, borderRadius: 12, borderStyle: 'dashed', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },

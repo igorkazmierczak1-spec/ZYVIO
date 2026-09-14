@@ -183,6 +183,7 @@ export default function MessagesPage() {
   const [mediaPickerKey, setMediaPickerKey] = useState(0);
   const [mediaUploading, setMediaUploading] = useState(false);
   const [showStartForm, setShowStartForm] = useState(false);
+  const autoOpenedProfile = useRef<string | null>(null);
 
   const activeConversation = useMemo(
     () => conversations.data?.find((conversation) => conversation.id === activeId) ?? null,
@@ -227,6 +228,12 @@ export default function MessagesPage() {
       },
     },
   });
+  useEffect(() => {
+    const requestedProfile = profileId.trim();
+    if (!requestedProfile || autoOpenedProfile.current === requestedProfile || createConversation.isPending) return;
+    autoOpenedProfile.current = requestedProfile;
+    createConversation.mutate({ data: { profileId: requestedProfile } });
+  }, [createConversation, profileId]);
   const sendMessage = useCreateSocialMessage({
     mutation: {
       onSuccess: (message) => {

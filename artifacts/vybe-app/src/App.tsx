@@ -322,10 +322,10 @@ function AppShell({ children }: { children: ReactNode }) {
       <main className="main-content">
         <header className="topbar">
           <div className="mobile-brand"><IconButton label="Open menu" onClick={() => setSidebarOpen(true)}><Menu /></IconButton><Logo onClick={() => navigate("/")} /></div>
-          <div className="topbar-search"><Search /><input placeholder="Search battles, creators, ideas..." aria-label="Search" /></div>
+          <div className="topbar-search" aria-hidden="true"><Search /><span className="topbar-search-placeholder">Search is coming soon</span></div>
            <div className="topbar-actions">
             <IconButton label="Toggle theme" onClick={() => document.documentElement.classList.toggle("dark")}><Moon /></IconButton>
-            <IconButton label="Notifications" active={location === "/notifications"} onClick={() => navigate("/notifications")}><Bell /><span className="icon-dot" /></IconButton>
+            <IconButton label="Notifications" active={location === "/notifications"} onClick={() => navigate("/notifications")}><Bell />{hasUnreadNotifications && <span className="icon-dot" />}</IconButton>
              <button className="topbar-avatar" onClick={() => navigate("/profile")}><Avatar name={profile?.displayName ?? "ZYVIO User"} size="sm" avatarUrl={profile?.avatarUrl} /></button>
           </div>
         </header>
