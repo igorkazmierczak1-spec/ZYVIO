@@ -15,5 +15,6 @@ export interface SocialPostInput {
   body: string;
   mediaUrl?: string | null;
   mediaType?: SocialPostInputMediaType;
+  attachmentId?: string | null;
   category?: string;
 }

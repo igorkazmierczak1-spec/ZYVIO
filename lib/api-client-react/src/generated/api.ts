@@ -44,6 +44,7 @@ import type {
   AdminUserUpdate,
   AiUsageHistoryResponse,
   Battle,
+  BattleCreationUsage,
   BattleInput,
   BlockState,
   CheckoutResponse,
@@ -65,6 +66,10 @@ import type {
   ListAdminUsersParams,
   ListBattlesParams,
   MarkAllNotificationsRead200,
+  MediaAttachment,
+  MediaUploadCompleteRequest,
+  MediaUploadRequest,
+  MediaUploadResponse,
   Notification,
   OkResponse,
   PremiumBenefitsResponse,
@@ -182,6 +187,373 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getHealthCheckQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRequestMediaUploadUrlUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/request-url`
+}
+
+/**
+ * @summary Request a presigned image or video upload URL
+ */
+export const requestMediaUploadUrl = async (mediaUploadRequest: MediaUploadRequest, options?: Parameters<typeof customFetch>[1]): Promise<MediaUploadResponse> => {
+
+  return customFetch<MediaUploadResponse>(getRequestMediaUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaUploadRequest)
+  }
+);}
+
+
+
+
+
+export const getRequestMediaUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMediaUploadUrl>>, TError,{data: BodyType<MediaUploadRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestMediaUploadUrl>>, TError,{data: BodyType<MediaUploadRequest>}, TContext> => {
+
+const mutationKey = ['requestMediaUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestMediaUploadUrl>>, {data: BodyType<MediaUploadRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestMediaUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestMediaUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestMediaUploadUrl>>>
+    export type RequestMediaUploadUrlMutationBody = BodyType<MediaUploadRequest>
+    export type RequestMediaUploadUrlMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Request a presigned image or video upload URL
+ */
+export const useRequestMediaUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMediaUploadUrl>>, TError,{data: BodyType<MediaUploadRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestMediaUploadUrl>>,
+        TError,
+        {data: BodyType<MediaUploadRequest>},
+        TContext
+      > => {
+      return useMutation(getRequestMediaUploadUrlMutationOptions(options));
+    }
+
+export const getCompleteMediaUploadUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/complete`
+}
+
+/**
+ * @summary Confirm a direct-to-storage media upload
+ */
+export const completeMediaUpload = async (mediaUploadCompleteRequest: MediaUploadCompleteRequest, options?: Parameters<typeof customFetch>[1]): Promise<MediaAttachment> => {
+
+  return customFetch<MediaAttachment>(getCompleteMediaUploadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(mediaUploadCompleteRequest)
+  }
+);}
+
+
+
+
+
+export const getCompleteMediaUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{data: BodyType<MediaUploadCompleteRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{data: BodyType<MediaUploadCompleteRequest>}, TContext> => {
+
+const mutationKey = ['completeMediaUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeMediaUpload>>, {data: BodyType<MediaUploadCompleteRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  completeMediaUpload(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteMediaUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeMediaUpload>>>
+    export type CompleteMediaUploadMutationBody = BodyType<MediaUploadCompleteRequest>
+    export type CompleteMediaUploadMutationError = ErrorType<void>
+
+    /**
+ * @summary Confirm a direct-to-storage media upload
+ */
+export const useCompleteMediaUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,{data: BodyType<MediaUploadCompleteRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeMediaUpload>>,
+        TError,
+        {data: BodyType<MediaUploadCompleteRequest>},
+        TContext
+      > => {
+      return useMutation(getCompleteMediaUploadMutationOptions(options));
+    }
+
+export const getCancelMediaUploadUrl = (attachmentId: string,) => {
+
+
+
+
+  return `/api/storage/uploads/${attachmentId}`
+}
+
+/**
+ * @summary Cancel and delete an unattached owned media upload
+ */
+export const cancelMediaUpload = async (attachmentId: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getCancelMediaUploadUrl(attachmentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getCancelMediaUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelMediaUpload>>, TError,{attachmentId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelMediaUpload>>, TError,{attachmentId: string}, TContext> => {
+
+const mutationKey = ['cancelMediaUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelMediaUpload>>, {attachmentId: string}> = (props) => {
+          const {attachmentId} = props ?? {};
+
+          return  cancelMediaUpload(attachmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelMediaUploadMutationResult = NonNullable<Awaited<ReturnType<typeof cancelMediaUpload>>>
+
+    export type CancelMediaUploadMutationError = ErrorType<void>
+
+    /**
+ * @summary Cancel and delete an unattached owned media upload
+ */
+export const useCancelMediaUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelMediaUpload>>, TError,{attachmentId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelMediaUpload>>,
+        TError,
+        {attachmentId: string},
+        TContext
+      > => {
+      return useMutation(getCancelMediaUploadMutationOptions(options));
+    }
+
+export const getGetMediaObjectUrl = (objectPath: string,) => {
+
+
+
+
+  return `/api/storage/objects/${objectPath}`
+}
+
+/**
+ * @summary Serve an owned or published media object
+ */
+export const getMediaObject = async (objectPath: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetMediaObjectUrl(objectPath),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMediaObjectQueryKey = (objectPath: string,) => {
+    return [
+    `/api/storage/objects/${objectPath}`
+    ] as const;
+    }
+
+
+export const getGetMediaObjectQueryOptions = <TData = Awaited<ReturnType<typeof getMediaObject>>, TError = ErrorType<void>>(objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMediaObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMediaObjectQueryKey(objectPath);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMediaObject>>> = ({ signal }) => getMediaObject(objectPath, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: objectPath !== null && objectPath !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMediaObject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMediaObjectQueryResult = NonNullable<Awaited<ReturnType<typeof getMediaObject>>>
+export type GetMediaObjectQueryError = ErrorType<void>
+
+
+/**
+ * @summary Serve an owned or published media object
+ */
+
+export function useGetMediaObject<TData = Awaited<ReturnType<typeof getMediaObject>>, TError = ErrorType<void>>(
+ objectPath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMediaObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMediaObjectQueryOptions(objectPath,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPublicStorageObjectUrl = (filePath: string,) => {
+
+
+
+
+  return `/api/storage/public-objects/${filePath}`
+}
+
+/**
+ * @summary Serve a public App Storage asset
+ */
+export const getPublicStorageObject = async (filePath: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetPublicStorageObjectUrl(filePath),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicStorageObjectQueryKey = (filePath: string,) => {
+    return [
+    `/api/storage/public-objects/${filePath}`
+    ] as const;
+    }
+
+
+export const getGetPublicStorageObjectQueryOptions = <TData = Awaited<ReturnType<typeof getPublicStorageObject>>, TError = ErrorType<unknown>>(filePath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicStorageObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicStorageObjectQueryKey(filePath);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicStorageObject>>> = ({ signal }) => getPublicStorageObject(filePath, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: filePath !== null && filePath !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicStorageObject>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicStorageObjectQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicStorageObject>>>
+export type GetPublicStorageObjectQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Serve a public App Storage asset
+ */
+
+export function useGetPublicStorageObject<TData = Awaited<ReturnType<typeof getPublicStorageObject>>, TError = ErrorType<unknown>>(
+ filePath: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicStorageObject>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicStorageObjectQueryOptions(filePath,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -425,6 +797,83 @@ export const useCreateBattle = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreateBattleMutationOptions(options));
     }
+
+export const getGetBattleCreationUsageUrl = () => {
+
+
+
+
+  return `/api/battles/usage`
+}
+
+/**
+ * @summary Get the authenticated user's daily Battle creation usage
+ */
+export const getBattleCreationUsage = async ( options?: Parameters<typeof customFetch>[1]): Promise<BattleCreationUsage> => {
+
+  return customFetch<BattleCreationUsage>(getGetBattleCreationUsageUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBattleCreationUsageQueryKey = () => {
+    return [
+    `/api/battles/usage`
+    ] as const;
+    }
+
+
+export const getGetBattleCreationUsageQueryOptions = <TData = Awaited<ReturnType<typeof getBattleCreationUsage>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBattleCreationUsage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBattleCreationUsageQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBattleCreationUsage>>> = ({ signal }) => getBattleCreationUsage({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBattleCreationUsage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBattleCreationUsageQueryResult = NonNullable<Awaited<ReturnType<typeof getBattleCreationUsage>>>
+export type GetBattleCreationUsageQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the authenticated user's daily Battle creation usage
+ */
+
+export function useGetBattleCreationUsage<TData = Awaited<ReturnType<typeof getBattleCreationUsage>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBattleCreationUsage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBattleCreationUsageQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetBattleUrl = (battleId: string,) => {
 

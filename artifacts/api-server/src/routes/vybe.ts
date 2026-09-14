@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
   activitiesTable,
@@ -14,6 +14,7 @@ import {
   votesTable,
   userActivityEventsTable,
   viralRewardEventsTable,
+  attachmentsTable,
   type Activity,
   type Battle,
   type Profile,
@@ -25,6 +26,8 @@ import {
   GenerateIdeasResponse,
   GetBattleParams,
   GetBattleResponse,
+  GetBattleCreationUsageResponse,
+  GetAiUsageResponse,
   GetDashboardResponse,
   GetLeaderboardQueryParams,
   GetLeaderboardResponse,
@@ -55,8 +58,9 @@ import {
   reserveAiUsage,
 } from "../lib/aiUsage";
 import { planConfigFor } from "../lib/planConfig";
-import { sendPlanQuotaError, assertDailyPlanQuota } from "../lib/planQuota";
+import { sendPlanQuotaError, assertDailyPlanQuota, getDailyPlanQuota } from "../lib/planQuota";
 import { logger } from "../lib/logger";
+import { attachmentsFor, claimAttachment, currentAttachment, mediaUrl } from "../lib/media";
 
 const router: IRouter = Router();
 
@@ -136,13 +140,14 @@ function summary(profile: Profile) {
   };
 }
 
-function profileView(profile: Profile) {
+async function profileView(profile: Profile) {
   const totalMatches = profile.wins + profile.losses;
   return {
     ...profile,
     ...summary(profile),
     winRate: totalMatches ? Math.round((profile.wins / totalMatches) * 100) : 0,
     ...xpProgress(profile.xp),
+    avatarAttachment: await currentAttachment("PROFILE", profile.id),
   };
 }
 
@@ -188,6 +193,7 @@ async function serializeBattle(battle: Battle, currentUserId: string) {
     isJoined: entries.some((entry) => entry.profileId === currentUserId),
     winnerParticipantId: result?.winnerParticipantId ?? null,
     loserParticipantId: result?.loserParticipantId ?? null,
+    attachments: await attachmentsFor("BATTLE", battle.id),
     participants,
   };
 }
@@ -296,7 +302,7 @@ router.get("/dashboard", async (_req, res, next) => {
 
     res.json(
       GetDashboardResponse.parse({
-        profile: profileView(profile),
+        profile: await profileView(profile),
         featuredBattles: battles.slice(0, 3),
         trendingBattles: battles.slice(1),
         leaderboardPreview: ranking.entries.slice(0, 5),
@@ -343,6 +349,22 @@ router.get("/battles", async (req, res, next) => {
   }
 });
 
+router.get("/battles/usage", async (_req, res, next) => {
+  try {
+    const profile = currentUserFrom(res);
+    const plan = await getUserPlan(profile.id);
+    const usage = await getDailyPlanQuota(profile.id, plan, "battleCreate");
+    res.json(GetBattleCreationUsageResponse.parse({
+      plan,
+      usedToday: usage.used,
+      limitToday: usage.limit,
+      remainingToday: usage.remaining,
+    }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
   try {
     const parsed = CreateBattleBody.safeParse(req.body);
@@ -363,6 +385,13 @@ router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
       return;
     }
     const battleId = `battle-${crypto.randomUUID()}`;
+    if (parsed.data.attachmentId) {
+      const [attachment] = await db.select().from(attachmentsTable).where(eq(attachmentsTable.id, parsed.data.attachmentId)).limit(1);
+      if (!attachment || attachment.ownerProfileId !== profile.id || attachment.uploadStatus !== "uploaded") {
+        res.status(400).json({ error: "Invalid media attachment" });
+        return;
+      }
+    }
     const battle = await db.transaction(async (tx) => {
       const [created] = await tx
         .insert(battlesTable)
@@ -386,6 +415,15 @@ router.post("/battles", battleCreateRateLimit, async (req, res, next) => {
       return created;
     });
     if (!battle) throw new Error("Battle creation failed");
+    try {
+      await claimAttachment(parsed.data.attachmentId, profile.id, "BATTLE", battle.id);
+    } catch (error) {
+      if (error instanceof Error && error.message === "MEDIA_ATTACHMENT_NOT_OWNED") {
+        res.status(400).json({ error: "Invalid media attachment" });
+        return;
+      }
+      throw error;
+    }
     res.status(201).json(
       CreateBattleResponse.parse(await serializeBattle(battle, profile.id)),
     );
@@ -434,8 +472,6 @@ router.post("/battles/:battleId", battleJoinRateLimit, async (req, res, next) =>
       return;
     }
     const profile = currentUserFrom(res);
-    const plan = await getUserPlan(profile.id);
-    await assertDailyPlanQuota(profile.id, plan, "battleJoin");
     const battle = await db.transaction(async (tx) => {
       await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${parsed.data.battleId} for update`);
       const [lockedBattle] = await tx.select().from(battlesTable).where(and(eq(battlesTable.id, parsed.data.battleId), eq(battlesTable.contentStatus, "ACTIVE")));
@@ -466,7 +502,6 @@ router.post("/battles/:battleId", battleJoinRateLimit, async (req, res, next) =>
       JoinBattleResponse.parse(await serializeBattle(battle.battle, profile.id)),
     );
   } catch (error) {
-    if (sendPlanQuotaError(error, res)) return;
     next(error);
   }
 });
@@ -484,8 +519,6 @@ router.post("/battles/:battleId/vote", battleVoteRateLimit, async (req, res, nex
       return;
     }
     const profile = currentUserFrom(res);
-    const plan = await getUserPlan(profile.id);
-    await assertDailyPlanQuota(profile.id, plan, "battleVote");
     try {
       const result = await db.transaction(async (tx) => {
         await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${params.data.battleId} for update`);
@@ -533,13 +566,16 @@ router.post("/battles/:battleId/vote", battleVoteRateLimit, async (req, res, nex
       throw error;
     }
   } catch (error) {
-    if (sendPlanQuotaError(error, res)) return;
     next(error);
   }
 });
 
-router.get("/profile", (_req, res) => {
-  res.json(GetProfileResponse.parse(profileView(currentUserFrom(res))));
+router.get("/profile", async (_req, res, next) => {
+  try {
+    res.json(GetProfileResponse.parse(await profileView(currentUserFrom(res))));
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.patch("/profile", async (req, res, next) => {
@@ -550,12 +586,35 @@ router.patch("/profile", async (req, res, next) => {
       return;
     }
     const profile = currentUserFrom(res);
+    const { avatarAttachmentId, ...profileFields } = parsed.data;
+    let avatarUrl: string | undefined;
+    if (avatarAttachmentId) {
+      let claimed;
+      try {
+        claimed = await claimAttachment(avatarAttachmentId, profile.id, "PROFILE", profile.id);
+      } catch (error) {
+        if (error instanceof Error && error.message === "MEDIA_ATTACHMENT_NOT_OWNED") {
+          res.status(400).json({ error: "Invalid avatar attachment" });
+          return;
+        }
+        throw error;
+      }
+      if (!claimed) {
+        res.status(400).json({ error: "Invalid avatar attachment" });
+        return;
+      }
+      avatarUrl = mediaUrl(claimed.objectPath);
+    }
     const [updated] = await db
       .update(profilesTable)
-      .set({ ...parsed.data, updatedAt: new Date() })
+      .set({ ...profileFields, ...(avatarUrl ? { avatarUrl } : {}), updatedAt: new Date() })
       .where(eq(profilesTable.id, profile.id))
       .returning();
-    res.json(UpdateProfileResponse.parse(profileView(updated)));
+    if (!updated) {
+      res.status(404).json({ error: "Profile not found" });
+      return;
+    }
+    res.json(UpdateProfileResponse.parse(await profileView(updated)));
   } catch (error) {
     next(error);
   }
@@ -657,6 +716,7 @@ router.post("/ai/ideas", aiRateLimit, async (req, res, next) => {
           plan: error.plan,
           used: error.used,
           limit: error.limit,
+          remaining: error.remaining,
         });
         return;
       }
@@ -741,19 +801,28 @@ router.get("/ai/usage", async (_req, res, next) => {
     const plan = await getUserPlan(profile.id);
     const since = new Date();
     since.setUTCHours(0, 0, 0, 0);
+    const until = new Date(since);
+    until.setUTCDate(until.getUTCDate() + 1);
     const [today, history] = await Promise.all([
       db.select().from(aiUsageTable)
-        .where(and(eq(aiUsageTable.profileId, profile.id), gte(aiUsageTable.createdAt, since)))
+         .where(and(
+           eq(aiUsageTable.profileId, profile.id),
+           gte(aiUsageTable.createdAt, since),
+           lt(aiUsageTable.createdAt, until),
+         ))
         .orderBy(desc(aiUsageTable.createdAt)),
       db.select().from(aiUsageTable)
         .where(eq(aiUsageTable.profileId, profile.id))
         .orderBy(desc(aiUsageTable.createdAt))
         .limit(30),
     ]);
-    res.json({
+     const usedToday = today.filter((item) => item.status === "reserved" || item.status === "success").length;
+     const limitToday = aiUsageLimitFor(plan);
+     res.json(GetAiUsageResponse.parse({
       plan,
-      usedToday: today.filter((item) => item.status === "reserved" || item.status === "success").length,
-      limitToday: aiUsageLimitFor(plan),
+       usedToday,
+       limitToday,
+       remainingToday: Math.max(0, limitToday - usedToday),
       items: history.map((item) => ({
         id: item.id,
         feature: item.feature,
@@ -761,7 +830,7 @@ router.get("/ai/usage", async (_req, res, next) => {
         promptCharacters: item.promptCharacters,
         createdAt: item.createdAt,
       })),
-    });
+    }));
   } catch (error) {
     next(error);
   }

@@ -1,14 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   useListPremiumPlans,
   useCreatePremiumCheckout,
   useGetPremiumSubscription,
   useGetPremiumBenefits,
   useCreatePremiumPortal,
+  getGetBattleCreationUsageQueryKey,
+  getGetAiUsageQueryKey,
 } from "@workspace/api-client-react";
 import { PageHeader, LoadingState, ErrorState } from "../App";
 import { Crown, Check, ArrowUpRight, Loader2, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import "../premium.css";
 
 type Plan = "PREMIUM" | "PREMIUM_PRO";
@@ -36,15 +39,20 @@ export default function PremiumPage() {
   const { data: plansData, isLoading: plansLoading, isError: plansError, refetch: plansRefetch } = useListPremiumPlans();
   const { data: subData, isLoading: subLoading, isError: subError, refetch: subRefetch } = useGetPremiumSubscription();
   const { data: benefitsData, isLoading: benefitsLoading, isError: benefitsError, refetch: benefitsRefetch } = useGetPremiumBenefits();
+  const qc = useQueryClient();
+  useEffect(() => {
+    void qc.invalidateQueries({ queryKey: getGetBattleCreationUsageQueryKey() });
+    void qc.invalidateQueries({ queryKey: getGetAiUsageQueryKey() });
+  }, [qc, subData?.plan, subData?.subscription]);
   const checkoutMut = useCreatePremiumCheckout({
     mutation: {
-      onSuccess: (res) => res.url ? window.location.assign(res.url) : toast({ title: "Błąd płatności", description: "Stripe nie zwrócił adresu Checkout.", variant: "destructive" }),
+      onSuccess: (res) => { void qc.invalidateQueries({ queryKey: getGetBattleCreationUsageQueryKey() }); void qc.invalidateQueries({ queryKey: getGetAiUsageQueryKey() }); res.url ? window.location.assign(res.url) : toast({ title: "Błąd płatności", description: "Stripe nie zwrócił adresu Checkout.", variant: "destructive" }); },
       onError: () => toast({ title: "Nie udało się rozpocząć płatności", description: "Spróbuj ponownie za chwilę.", variant: "destructive" }),
     },
   });
   const portalMut = useCreatePremiumPortal({
     mutation: {
-      onSuccess: (res) => res.url ? window.location.assign(res.url) : toast({ title: "Błąd portalu", description: "Stripe nie zwrócił adresu Customer Portal.", variant: "destructive" }),
+      onSuccess: (res) => { void qc.invalidateQueries({ queryKey: getGetBattleCreationUsageQueryKey() }); void qc.invalidateQueries({ queryKey: getGetAiUsageQueryKey() }); res.url ? window.location.assign(res.url) : toast({ title: "Błąd portalu", description: "Stripe nie zwrócił adresu Customer Portal.", variant: "destructive" }); },
       onError: () => toast({ title: "Nie udało się otworzyć portalu", description: "Sprawdź konfigurację Customer Portal w Stripe.", variant: "destructive" }),
     },
   });
@@ -101,8 +109,7 @@ export default function PremiumPage() {
           <h3>Free</h3>
           <div className="price">0 zł <small>/ zawsze</small></div>
           <ul className="premium-features">
-            <li><Check /> {freeBenefits?.limits?.battleCreateDaily ?? 1} Battle dziennie</li>
-            <li><Check /> {freeBenefits?.limits?.battleVoteDaily ?? 10} głosów dziennie</li>
+            {freeBenefits?.limits?.battleCreateDaily != null && <li><Check /> {freeBenefits.limits.battleCreateDaily} Battle dziennie</li>}
             <li><Check /> {freeBenefits?.limits?.aiDaily ?? 3} użycia AI dziennie</li>
           </ul>
           <button className="premium-checkout-btn secondary" disabled>Twój plan bez subskrypcji</button>
@@ -116,8 +123,7 @@ export default function PremiumPage() {
             <p className="plan-description">{copy.description}</p>
             <ul className="premium-features">
               {copy.features.map((feature) => <li key={feature}><Check /> {feature}</li>)}
-              <li><Check /> {benefits?.limits?.battleCreateDaily} Battle / dzień</li>
-              <li><Check /> {benefits?.limits?.battleVoteDaily} głosów / dzień</li>
+              {benefits?.limits?.battleCreateDaily != null && <li><Check /> {benefits.limits.battleCreateDaily} Battle / dzień</li>}
               <li><Check /> {benefits?.limits?.aiDaily} użyć AI / dzień</li>
               <li><Check /> {benefits?.limits?.postCreateDaily} postów i {benefits?.limits?.commentCreateDaily} komentarzy / dzień</li>
               <li><Check /> XP ×{benefits?.xpMultiplier}</li>

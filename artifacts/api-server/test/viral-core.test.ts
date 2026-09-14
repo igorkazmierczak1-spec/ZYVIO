@@ -14,6 +14,9 @@ import {
 } from "@workspace/db";
 import { levelForXp, settleBattleInTransaction, xpProgress } from "../src/viralCore.ts";
 import { clearRateLimitBucketsForTests, rateLimit } from "../src/middlewares/rateLimit.ts";
+import { uploadedMetadataMatches } from "../src/lib/mediaUpload.ts";
+import { PLAN_CONFIG } from "../src/lib/planConfig.ts";
+import { utcDayStart } from "../src/lib/planQuota.ts";
 
 const prefix = `viral-test-${crypto.randomUUID()}`;
 const ids = {
@@ -99,6 +102,50 @@ describe("Viral Core calculations", () => {
     assert.equal(nextCalls.length, 2);
     assert.equal(blockedResponse.statusCode, 429);
     assert.equal(blockedResponse.headers.has("Retry-After"), true);
+  });
+});
+
+describe("Centralized plan quota policy", () => {
+  test("keeps the Battle and AI limits in one source of truth", () => {
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(PLAN_CONFIG).map(([plan, config]) => [
+        plan,
+        { battleCreateDaily: config.limits.battleCreateDaily, aiDaily: config.limits.aiDaily },
+      ])),
+      {
+        FREE: { battleCreateDaily: 3, aiDaily: 3 },
+        PREMIUM: { battleCreateDaily: 15, aiDaily: 30 },
+        PREMIUM_PRO: { battleCreateDaily: 50, aiDaily: 100 },
+      },
+    );
+    for (const config of Object.values(PLAN_CONFIG)) {
+      assert.equal(Object.hasOwn(config.limits, "battleJoinDaily"), false);
+      assert.equal(Object.hasOwn(config.limits, "battleVoteDaily"), false);
+    }
+  });
+
+  test("uses the UTC calendar boundary for daily counting", () => {
+    const beforeMidnight = new Date("2025-01-15T23:59:59.999Z");
+    const afterMidnight = new Date("2025-01-16T00:00:00.000Z");
+    assert.equal(utcDayStart(beforeMidnight).toISOString(), "2025-01-15T00:00:00.000Z");
+    assert.equal(utcDayStart(afterMidnight).toISOString(), "2025-01-16T00:00:00.000Z");
+  });
+});
+
+describe("Media upload completion validation", () => {
+  test("requires exact declared content type and byte size", () => {
+    const expected = { mediaType: "image" as const, contentType: "image/png", size: 1024 };
+    assert.equal(uploadedMetadataMatches(expected, { contentType: "image/png", size: "1024" }), true);
+    assert.equal(uploadedMetadataMatches(expected, { contentType: "image/jpeg", size: "1024" }), false);
+    assert.equal(uploadedMetadataMatches(expected, { contentType: "image/png", size: "1023" }), false);
+  });
+
+  test("enforces the media-kind limits at completion", () => {
+    const image = { mediaType: "image" as const, contentType: "image/png", size: 10 * 1024 * 1024 };
+    const video = { mediaType: "video" as const, contentType: "video/mp4", size: 100 * 1024 * 1024 };
+    assert.equal(uploadedMetadataMatches(image, { contentType: image.contentType, size: image.size }), true);
+    assert.equal(uploadedMetadataMatches({ ...image, size: image.size + 1 }, { contentType: image.contentType, size: image.size + 1 }), false);
+    assert.equal(uploadedMetadataMatches(video, { contentType: video.contentType, size: video.size }), true);
   });
 });
 

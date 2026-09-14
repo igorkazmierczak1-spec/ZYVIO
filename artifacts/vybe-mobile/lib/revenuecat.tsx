@@ -7,7 +7,11 @@ import Purchases, {
   type PurchasesOfferings,
   type PurchasesPackage,
 } from "react-native-purchases";
-import { useSyncPremiumRevenueCat } from "@workspace/api-client-react";
+import {
+  getGetAiUsageQueryKey,
+  getGetBattleCreationUsageQueryKey,
+  useSyncPremiumRevenueCat,
+} from "@workspace/api-client-react";
 
 export const REVENUECAT_PREMIUM_ENTITLEMENT = "premium";
 export const REVENUECAT_PREMIUM_PRO_ENTITLEMENT = "premium_pro";
@@ -87,6 +91,10 @@ function useSubscriptionContext() {
     onSuccess: async ({ customerInfo }) => {
       await queryClient.invalidateQueries({ queryKey: ["revenuecat", "customer-info", userId] });
       await sync.mutateAsync();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetBattleCreationUsageQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetAiUsageQueryKey() }),
+      ]);
       return customerInfo;
     },
   });
@@ -95,6 +103,10 @@ function useSubscriptionContext() {
     onSuccess: async (customerInfo) => {
       await queryClient.setQueryData(["revenuecat", "customer-info", userId], customerInfo);
       await sync.mutateAsync();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetBattleCreationUsageQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getGetAiUsageQueryKey() }),
+      ]);
       return customerInfo;
     },
   });

@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 import { AppScreen, Avatar, Card, EmptyState, ErrorState, Header, LoadingState, Stat, formatTimeLeft, uiStyles } from '@/components/ui';
 import { useColors } from '@/hooks/useColors';
+import { MediaAttachmentView } from '@/components/media';
+import type { MediaAttachment } from '@workspace/api-client-react';
 
 function HeroButton({ onPress, children }: React.PropsWithChildren<{ onPress: () => void }>) {
   const colors = useColors();
@@ -79,7 +81,7 @@ function MomentumHero({ streak, xpForNextLevel, level, league, xp, progress, onP
   );
 }
 
-function FeaturedBattleCard({ battle }: { battle: { id: string; category: string; title: string; prompt: string; endsAt: string; rewardXp?: number; coverTone?: string } }) {
+function FeaturedBattleCard({ battle }: { battle: { id: string; category: string; title: string; prompt: string; endsAt: string; rewardXp?: number; coverTone?: string; attachments?: MediaAttachment[] } }) {
   const colors = useColors();
   const tone = battle.coverTone === 'coral'
     ? [colors.destructive, colors.heroStart]
@@ -105,6 +107,7 @@ function FeaturedBattleCard({ battle }: { battle: { id: string; category: string
         <View style={{ flex: 1, justifyContent: 'flex-end', gap: 7 }}>
           <Text style={{ color: colors.heroForeground, fontSize: 21, lineHeight: 24, letterSpacing: -0.6, fontFamily: 'Inter_700Bold' }}>{battle.title}</Text>
           <Text numberOfLines={2} style={{ color: `${colors.heroForeground}b8`, fontSize: 12, lineHeight: 17 }}>{battle.prompt}</Text>
+           {battle.attachments?.slice(0, 1).map((media) => <MediaAttachmentView key={media.id} attachment={media} />)}
         </View>
         <View style={{ borderTopWidth: 1, borderTopColor: '#ffffff28', marginTop: 15, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ color: lightTone ? colors.heroStart : colors.accent, fontSize: 11, fontFamily: 'Inter_700Bold' }}>+{battle.rewardXp ?? 250} XP</Text>
@@ -132,7 +135,7 @@ export default function HomeScreen() {
         eyebrow="ZYVIO / TODAY"
         title={`Cześć, ${profile.displayName.split(' ')[0]}.`}
         subtitle="Twój kolejny mocny ruch jest bliżej, niż myślisz."
-        right={<Avatar name={profile.displayName} size={48} />}
+         right={<Avatar name={profile.displayName} uri={profile.avatarAttachment?.url || profile.avatarUrl} size={48} />}
       />
       <MomentumHero
         streak={profile.streak}

@@ -6,6 +6,7 @@ import premiumRouter from "./premium";
 import billingAdminRouter from "./billingAdmin";
 import socialRouter from "./social";
 import messagesRouter from "./messages";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(billingAdminRouter);
 router.use(vybeRouter);
 router.use(socialRouter);
 router.use(messagesRouter);
+router.use(storageRouter);
 
 export default router;

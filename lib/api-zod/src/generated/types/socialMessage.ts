@@ -5,6 +5,7 @@
  * ZYVIO global social, Battle and AI platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { MediaAttachment } from './mediaAttachment';
 import type { SocialParticipant } from './socialParticipant';
 
 export interface SocialMessage {
@@ -12,6 +13,9 @@ export interface SocialMessage {
   conversationId: string;
   sender: SocialParticipant;
   body: string;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  attachments: MediaAttachment[];
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,9 +1,10 @@
-import { getListBattlesQueryKey, useListBattles } from '@workspace/api-client-react';
+import { getListBattlesQueryKey, useGetBattleCreationUsage, useListBattles } from '@workspace/api-client-react';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { AppScreen, Card, EmptyState, ErrorState, Header, IconButton, LoadingState, uiStyles } from '@/components/ui';
 import { useColors } from '@/hooks/useColors';
+import { MediaAttachmentView } from '@/components/media';
 
 const filters = ['All', 'Photo', 'Music', 'Creativity', 'AI'];
 export default function BattlesScreen() {
@@ -11,10 +12,14 @@ export default function BattlesScreen() {
   const [category, setCategory] = useState('All');
   const params: { category?: string } = category === 'All' ? {} : { category };
   const battles = useListBattles(params, { query: { staleTime: 15_000, queryKey: getListBattlesQueryKey(params) } });
+  const usage = useGetBattleCreationUsage();
   const list = battles.data ?? [];
+  const usageLabel = usage.data
+    ? `Pozostało ${usage.data.remainingToday}/${usage.data.limitToday} Battle`
+    : 'Pozostało —/— Battle';
   return (
-    <AppScreen refreshing={battles.isFetching} onRefresh={() => void battles.refetch()}>
-      <Header eyebrow="ZYVIO / ARENA" title="Znajdź swój Battle." subtitle="Wejdź w prompt, pokaż swój punkt widzenia i zdobądź XP." right={<IconButton icon="plus" label="Utwórz Battle" onPress={() => router.push('/battles/new')} />} />
+    <AppScreen refreshing={battles.isFetching || usage.isFetching} onRefresh={() => void Promise.all([battles.refetch(), usage.refetch()])}>
+      <Header eyebrow="ZYVIO / ARENA" title="Znajdź swój Battle." subtitle={`${usageLabel} · Wejdź w prompt, pokaż swój punkt widzenia i zdobądź XP.`} right={<IconButton icon="plus" label="Utwórz Battle" onPress={() => router.push('/battles/new')} />} />
       <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
         {filters.map((item) => <Pressable key={item} onPress={() => setCategory(item)} style={{ paddingHorizontal: 13, paddingVertical: 9, borderRadius: 11, backgroundColor: category === item ? colors.secondary : colors.card, borderWidth: 1, borderColor: category === item ? colors.primary : colors.border }}><Text style={{ color: category === item ? colors.secondaryForeground : colors.mutedForeground, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>{item}</Text></Pressable>)}
       </View>
@@ -23,6 +28,7 @@ export default function BattlesScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text style={[uiStyles.eyebrow, { color: colors.primary }]}>{battle.category} · 1V1</Text><Text style={{ color: battle.status === 'live' ? colors.destructive : colors.mutedForeground, fontSize: 12, fontFamily: 'Inter_700Bold' }}>{battle.status === 'live' ? 'LIVE' : battle.status === 'completed' ? 'CLOSED' : formatStatus(battle.endsAt)}</Text></View>
           <Text style={[uiStyles.emptyTitle, { color: colors.foreground, textAlign: 'left' }]}>{battle.title}</Text>
           <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]} numberOfLines={3}>{battle.prompt}</Text>
+           {battle.attachments?.slice(0, 1).map((media) => <MediaAttachmentView key={media.id} attachment={media} />)}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={{ color: colors.mutedForeground, fontSize: 12 }}>{battle.participantCount}/{battle.maxParticipants} uczestników · +{battle.rewardXp ?? 0} XP</Text><Text onPress={() => router.push(`/battles/${battle.id}`)} style={{ color: colors.primary, fontFamily: 'Inter_700Bold' }}>Wejdź →</Text></View>
         </Card>
       ))}

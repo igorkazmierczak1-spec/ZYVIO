@@ -8,6 +8,7 @@ import {
   notificationsTable,
   profilesTable,
 } from "@workspace/db";
+import { attachmentsFor, claimAttachment } from "../lib/media";
 import { currentUserFrom, requireAuthenticatedUser } from "../middlewares/auth";
 import { rateLimit } from "../middlewares/rateLimit";
 
@@ -20,12 +21,15 @@ function routeParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
 
-function parseMessageBody(input: unknown): { body?: string; error?: string } {
+function parseMessageBody(input: unknown): { body?: string; attachmentId?: string | null; error?: string } {
+  const attachmentId = input && typeof input === "object" && ((input as Record<string, unknown>).attachmentId === null || typeof (input as Record<string, unknown>).attachmentId === "string")
+    ? (input as Record<string, unknown>).attachmentId as string | null | undefined
+    : undefined;
   const body = input && typeof input === "object" && typeof (input as Record<string, unknown>).body === "string"
     ? ((input as Record<string, unknown>).body as string).trim()
     : "";
-  return body.length >= 1 && body.length <= 2000
-    ? { body }
+  return ((body.length >= 1 && body.length <= 2000) || (body.length === 0 && Boolean(attachmentId)))
+    ? { body, attachmentId }
     : { error: "Message must be between 1 and 2,000 characters" };
 }
 
@@ -63,6 +67,7 @@ async function participantView(profileId: string) {
 
 async function messageView(message: typeof messagesTable.$inferSelect) {
   const sender = await participantView(message.senderProfileId);
+  const attachments = await attachmentsFor("MESSAGE", message.id);
   return {
     id: message.id,
     conversationId: message.conversationId,
@@ -73,8 +78,11 @@ async function messageView(message: typeof messagesTable.$inferSelect) {
       avatarUrl: "",
     },
     body: message.body,
+    mediaUrl: attachments[0]?.url ?? null,
+    mediaType: attachments[0]?.mediaType ?? null,
     createdAt: message.createdAt,
     updatedAt: message.updatedAt,
+    attachments,
   };
 }
 
@@ -191,7 +199,7 @@ router.post("/social/conversations/:conversationId/messages", messageRateLimit, 
       return;
     }
     const parsed = parseMessageBody(req.body);
-    if (!parsed.body) {
+    if (parsed.body === undefined) {
       res.status(400).json({ error: parsed.error });
       return;
     }
@@ -217,6 +225,14 @@ router.post("/social/conversations/:conversationId/messages", messageRateLimit, 
     if (!message) {
       res.status(500).json({ error: "Message could not be created" });
       return;
+    }
+    if (parsed.attachmentId) {
+      try {
+        await claimAttachment(parsed.attachmentId, profile.id, "MESSAGE", message.id);
+      } catch {
+        res.status(400).json({ error: "Invalid media attachment" });
+        return;
+      }
     }
     res.status(201).json(await messageView(message));
   } catch (error) {

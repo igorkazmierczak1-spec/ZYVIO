@@ -5,10 +5,11 @@
  * ZYVIO global social, Battle and AI platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { MediaAttachment } from './mediaAttachment';
 import type { ProfileRole } from './profileRole';
 import type { UserSummary } from './userSummary';
 
-export type Profile = UserSummary & {
+export type Profile = UserSummary & ({
   email: string;
   role: ProfileRole;
   bio: string;
@@ -23,5 +24,6 @@ export type Profile = UserSummary & {
   activeDays: number;
   xpForNextLevel: number;
   progress: number;
+  avatarAttachment: MediaAttachment | null;
   badges: string[];
-};
+});

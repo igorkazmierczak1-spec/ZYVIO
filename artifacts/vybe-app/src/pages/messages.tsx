@@ -23,11 +23,12 @@ import {
   useListSocialConversations,
   useListSocialMessages,
 } from "@workspace/api-client-react";
-import type { SocialConversation, SocialMessage } from "@workspace/api-client-react";
+import type { MediaAttachment, SocialConversation, SocialMessage } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { MediaPicker, MediaRenderer } from "@/components/media";
 
 function initials(name: string) {
   return name
@@ -150,6 +151,7 @@ function MessageBubble({ message, own }: { message: SocialMessage; own: boolean 
       <div className="messages-bubble-wrap">
         <div className="messages-bubble">
           <p>{message.body}</p>
+          <MediaRenderer attachments={message.attachments} mediaUrl={message.mediaUrl} mediaType={message.mediaType} label={`Załącznik wiadomości od ${message.sender.displayName}`} />
         </div>
         <time dateTime={message.createdAt} title={fullTime(message.createdAt)}>{relativeTime(message.createdAt)}</time>
       </div>
@@ -177,6 +179,9 @@ export default function MessagesPage() {
   const [search, setSearch] = useState("");
   const [profileId, setProfileId] = useState(() => new URLSearchParams(window.location.search).get("profile") ?? "");
   const [messageBody, setMessageBody] = useState("");
+  const [messageAttachment, setMessageAttachment] = useState<MediaAttachment | null>(null);
+  const [mediaPickerKey, setMediaPickerKey] = useState(0);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const [showStartForm, setShowStartForm] = useState(false);
 
   const activeConversation = useMemo(
@@ -226,6 +231,8 @@ export default function MessagesPage() {
     mutation: {
       onSuccess: (message) => {
         setMessageBody("");
+        setMessageAttachment(null);
+        setMediaPickerKey((value) => value + 1);
         queryClient.setQueryData(
           getListSocialMessagesQueryKey(message.conversationId),
           (current: typeof messages.data | undefined) => current
@@ -265,8 +272,8 @@ export default function MessagesPage() {
   const handleSend = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const body = messageBody.trim();
-    if (!activeId || !body || sendMessage.isPending) return;
-    sendMessage.mutate({ conversationId: activeId, data: { body } });
+    if (!activeId || (!body && !messageAttachment) || sendMessage.isPending) return;
+    sendMessage.mutate({ conversationId: activeId, data: { body: body || undefined, attachmentId: messageAttachment?.id ?? null } });
   };
 
   return (
@@ -398,7 +405,8 @@ export default function MessagesPage() {
                 />
                 <div className="messages-composer-footer">
                   <span>{messageBody.length > 0 ? `${messageBody.length}/2000` : "Press Enter to send"}</span>
-                  <Button type="submit" className="messages-send-button" disabled={sendMessage.isPending || !messageBody.trim()}>
+                   <MediaPicker key={mediaPickerKey} label="➕ Dodaj zdjęcie lub film" onChange={setMessageAttachment} onUploadingChange={setMediaUploading} disabled={sendMessage.isPending} />
+                   <Button type="submit" className="messages-send-button" disabled={sendMessage.isPending || mediaUploading || (!messageBody.trim() && !messageAttachment)}>
                     <Send /> {sendMessage.isPending ? "Sending" : "Send"}
                   </Button>
                 </div>

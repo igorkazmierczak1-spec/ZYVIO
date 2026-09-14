@@ -43,6 +43,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { MediaPicker, MediaRenderer } from "@/components/media";
+import type { MediaAttachment } from "@workspace/api-client-react";
 
 const feedFilters = [
   { value: "for-you" as const, label: "For You" },
@@ -121,9 +123,9 @@ function CommentList({ postId, currentProfileId }: { postId: string; currentProf
   if (comments.isLoading) return <div className="social-comments-loading"><span /><span /><span /></div>;
   if (comments.isError) return <p className="social-inline-error">Comments could not be loaded.</p>;
   if (!comments.data?.length) return <p className="social-comment-empty">No comments yet. Start the conversation.</p>;
-  return <div className="social-comment-list">{comments.data.map((comment) => <div className="social-comment" key={comment.id}>
+   return <div className="social-comment-list">{comments.data.map((comment) => <div className="social-comment" key={comment.id}>
     <SocialAvatar name={comment.author.displayName} avatarUrl={comment.author.avatarUrl} size="sm" />
-    <div className="social-comment-body"><div><strong>{comment.author.displayName}</strong><span>@{comment.author.username} · {relativeTime(comment.createdAt)}</span></div><p>{comment.body}</p></div>
+     <div className="social-comment-body"><div><strong>{comment.author.displayName}</strong><span>@{comment.author.username} · {relativeTime(comment.createdAt)}</span></div>{comment.body && <p>{comment.body}</p>}<MediaRenderer attachments={comment.attachments} mediaUrl={comment.mediaUrl} mediaType={comment.mediaType} label={`Załącznik komentarza ${comment.author.displayName}`} /></div>
     {comment.author.id === currentProfileId && <button className="social-delete-comment" aria-label="Delete comment" onClick={() => remove.mutate({ commentId: comment.id })} disabled={remove.isPending}><Trash2 /></button>}
   </div>)}</div>;
 }
@@ -131,10 +133,15 @@ function CommentList({ postId, currentProfileId }: { postId: string; currentProf
 function CommentComposer({ postId }: { postId: string }) {
   const qc = useQueryClient();
   const [body, setBody] = useState("");
+  const [attachment, setAttachment] = useState<MediaAttachment | null>(null);
+  const [mediaPickerKey, setMediaPickerKey] = useState(0);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const create = useCreateSocialComment({
     mutation: {
       onSuccess: () => {
-        setBody("");
+         setBody("");
+         setAttachment(null);
+         setMediaPickerKey((value) => value + 1);
         void qc.invalidateQueries({ queryKey: getListSocialCommentsQueryKey(postId) });
         void qc.invalidateQueries({ queryKey: getGetSocialPostQueryKey(postId) });
         void qc.invalidateQueries({ queryKey: ["/api/social/feed"] });
@@ -144,11 +151,12 @@ function CommentComposer({ postId }: { postId: string }) {
   });
   return <form className="social-comment-composer" onSubmit={(event) => {
     event.preventDefault();
-    if (!body.trim()) return;
-    create.mutate({ postId, data: { body: body.trim() } });
+     if (!body.trim() && !attachment) return;
+     create.mutate({ postId, data: { body: body.trim() || undefined, attachmentId: attachment?.id ?? null } });
   }}>
     <input value={body} onChange={(event) => setBody(event.target.value)} maxLength={500} placeholder="Add a thoughtful comment..." aria-label="Comment" />
-    <button type="submit" disabled={create.isPending || !body.trim()} aria-label="Publish comment">{create.isPending ? <Loader2 className="spin" /> : <ArrowUpRight />}</button>
+     <MediaPicker key={mediaPickerKey} imageOnly={false} label="➕ Dodaj zdjęcie lub film" onChange={setAttachment} onUploadingChange={setMediaUploading} disabled={create.isPending} />
+     <button type="submit" disabled={create.isPending || mediaUploading || (!body.trim() && !attachment)} aria-label="Publish comment">{create.isPending ? <Loader2 className="spin" /> : <ArrowUpRight />}</button>
   </form>;
 }
 
@@ -205,6 +213,7 @@ function SocialPostCard({ post, currentProfileId }: { post: SocialPost; currentP
         </div>}
       </div>
     </div>
+    <MediaRenderer attachments={post.attachments} mediaUrl={post.mediaUrl} mediaType={post.mediaType} label={`Załącznik posta ${post.author.displayName}`} />
     {editing ? <form className="social-edit-form" onSubmit={saveEdit}>
       <textarea value={editBody} onChange={(event) => setEditBody(event.target.value)} rows={4} maxLength={2000} />
       <div className="social-edit-actions"><select value={editCategory} onChange={(event) => setEditCategory(event.target.value)}>{categories.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select><Button type="button" variant="ghost" size="sm" onClick={() => { setEditing(false); setEditBody(post.body); }}><X /> Cancel</Button><Button type="submit" size="sm" disabled={update.isPending}>{update.isPending ? <Loader2 className="spin" /> : <Check />} Save</Button></div>
@@ -222,10 +231,15 @@ function Composer() {
   const qc = useQueryClient();
   const [body, setBody] = useState("");
   const [category, setCategory] = useState("Creativity");
+  const [attachment, setAttachment] = useState<MediaAttachment | null>(null);
+  const [mediaPickerKey, setMediaPickerKey] = useState(0);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const create = useCreateSocialPost({
     mutation: {
       onSuccess: () => {
         setBody("");
+         setAttachment(null);
+         setMediaPickerKey((value) => value + 1);
         void qc.invalidateQueries({ queryKey: ["/api/social/feed"] });
         toast({ title: "Post published", description: "Your thought is now in the ZYVIO feed." });
       },
@@ -235,12 +249,12 @@ function Composer() {
   return <form className="social-composer panel" onSubmit={(event) => {
     event.preventDefault();
     if (!body.trim()) return;
-    const data: SocialPostInput = { body: body.trim(), category };
+     const data: SocialPostInput = { body: body.trim(), category, attachmentId: attachment?.id ?? null };
     create.mutate({ data });
   }}>
     <div className="social-composer-heading"><span className="eyebrow">Share a signal</span><span>{body.length}/2000</span></div>
     <textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={2000} rows={3} placeholder="What are you making, learning, or noticing?" />
-    <div className="social-composer-footer"><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Post category">{categories.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select><Button type="submit" disabled={create.isPending || !body.trim()}>{create.isPending ? <Loader2 className="spin" /> : <ArrowUpRight />} Publish</Button></div>
+     <div className="social-composer-footer"><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Post category">{categories.filter((item) => item !== "All").map((item) => <option key={item}>{item}</option>)}</select><MediaPicker key={mediaPickerKey} label="➕ Dodaj zdjęcie lub film" onChange={setAttachment} onUploadingChange={setMediaUploading} disabled={create.isPending} /><Button type="submit" disabled={create.isPending || mediaUploading || !body.trim()}>{create.isPending ? <Loader2 className="spin" /> : <ArrowUpRight />} Publish</Button></div>
   </form>;
 }
 

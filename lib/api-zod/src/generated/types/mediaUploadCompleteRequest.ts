@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SocialCommentInput {
-  /** @maxLength 500 */
-  body?: string;
-  attachmentId?: string | null;
+export interface MediaUploadCompleteRequest {
+  attachmentId: string;
 }

@@ -16,4 +16,5 @@ export interface BattleInput {
   prompt: string;
   endsAt: Date;
   maxParticipants?: BattleInputMaxParticipants;
+  attachmentId?: string | null;
 }

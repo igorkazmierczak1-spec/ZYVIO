@@ -9,8 +9,16 @@
 export type PlanBenefitsLimits = {
   aiDaily: number;
   battleCreateDaily: number;
-  battleJoinDaily: number;
-  battleVoteDaily: number;
+  /**
+     * Deprecated compatibility field. Joining Battles is available to all plans.
+     * @deprecated
+     */
+  battleJoinDaily?: number;
+  /**
+     * Deprecated compatibility field. Voting in Battles is available to all plans.
+     * @deprecated
+     */
+  battleVoteDaily?: number;
   postCreateDaily: number;
   commentCreateDaily: number;
 };

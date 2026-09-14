@@ -18,6 +18,80 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Request a presigned image or video upload URL
+ */
+export const requestMediaUploadUrlBodyNameMax = 255;
+
+
+
+
+export const RequestMediaUploadUrlBody = zod.object({
+  "name": zod.string().min(1).max(requestMediaUploadUrlBodyNameMax),
+  "size": zod.number().int().min(1),
+  "contentType": zod.string()
+})
+
+export const RequestMediaUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string(),
+  "attachmentId": zod.string(),
+  "metadata": zod.object({
+  "name": zod.string(),
+  "size": zod.number().int(),
+  "contentType": zod.string(),
+  "mediaType": zod.enum(['image', 'video'])
+})
+})
+
+
+/**
+ * @summary Confirm a direct-to-storage media upload
+ */
+export const CompleteMediaUploadBody = zod.object({
+  "attachmentId": zod.string()
+})
+
+export const CompleteMediaUploadResponse = zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})
+
+
+/**
+ * @summary Cancel and delete an unattached owned media upload
+ */
+export const CancelMediaUploadParams = zod.object({
+  "attachmentId": zod.coerce.string()
+})
+
+export const CancelMediaUploadResponse = zod.void()
+
+
+/**
+ * @summary Serve an owned or published media object
+ */
+export const GetMediaObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
+})
+
+export const GetMediaObjectResponse = zod.unknown()
+
+
+/**
+ * @summary Serve a public App Storage asset
+ */
+export const GetPublicStorageObjectParams = zod.object({
+  "filePath": zod.coerce.string()
+})
+
+export const GetPublicStorageObjectResponse = zod.unknown()
+
+
+/**
  * @summary Get the personalized home dashboard
  */
 export const GetDashboardResponse = zod.object({
@@ -49,6 +123,14 @@ export const GetDashboardResponse = zod.object({
   "activeDays": zod.number().int(),
   "xpForNextLevel": zod.number().int(),
   "progress": zod.number().int(),
+  "avatarAttachment": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+}).nullable(),
   "badges": zod.array(zod.string())
 })),
   "featuredBattles": zod.array(zod.object({
@@ -83,6 +165,14 @@ export const GetDashboardResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "isJoined": zod.boolean().optional(),
   "winnerParticipantId": zod.string().nullable(),
   "loserParticipantId": zod.string().nullable()
@@ -119,6 +209,14 @@ export const GetDashboardResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "isJoined": zod.boolean().optional(),
   "winnerParticipantId": zod.string().nullable(),
   "loserParticipantId": zod.string().nullable()
@@ -202,6 +300,14 @@ export const ListBattlesResponseItem = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "isJoined": zod.boolean().optional(),
   "winnerParticipantId": zod.string().nullable(),
   "loserParticipantId": zod.string().nullable()
@@ -225,7 +331,8 @@ export const CreateBattleBody = zod.object({
   "category": zod.string().min(createBattleBodyCategoryMin),
   "prompt": zod.string().min(createBattleBodyPromptMin),
   "endsAt": zod.coerce.date(),
-  "maxParticipants": zod.literal(2).default(createBattleBodyMaxParticipantsDefault)
+  "maxParticipants": zod.literal(2).default(createBattleBodyMaxParticipantsDefault),
+  "attachmentId": zod.string().nullish()
 })
 
 export const CreateBattleResponse = zod.object({
@@ -260,9 +367,28 @@ export const CreateBattleResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "isJoined": zod.boolean().optional(),
   "winnerParticipantId": zod.string().nullable(),
   "loserParticipantId": zod.string().nullable()
+})
+
+
+/**
+ * @summary Get the authenticated user's daily Battle creation usage
+ */
+export const GetBattleCreationUsageResponse = zod.object({
+  "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
+  "usedToday": zod.number().int(),
+  "limitToday": zod.number().int(),
+  "remainingToday": zod.number().int()
 })
 
 
@@ -305,6 +431,14 @@ export const GetBattleResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "isJoined": zod.boolean().optional(),
   "winnerParticipantId": zod.string().nullable(),
   "loserParticipantId": zod.string().nullable()
@@ -350,6 +484,14 @@ export const JoinBattleResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "isJoined": zod.boolean().optional(),
   "winnerParticipantId": zod.string().nullable(),
   "loserParticipantId": zod.string().nullable()
@@ -399,6 +541,14 @@ export const VoteBattleResponse = zod.object({
   "maxParticipants": zod.number().int(),
   "rewardXp": zod.number().int().optional(),
   "coverTone": zod.string().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "isJoined": zod.boolean().optional(),
   "winnerParticipantId": zod.string().nullable(),
   "loserParticipantId": zod.string().nullable()
@@ -436,6 +586,14 @@ export const GetProfileResponse = zod.object({
   "activeDays": zod.number().int(),
   "xpForNextLevel": zod.number().int(),
   "progress": zod.number().int(),
+  "avatarAttachment": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+}).nullable(),
   "badges": zod.array(zod.string())
 }))
 
@@ -461,7 +619,8 @@ export const UpdateProfileBody = zod.object({
   "displayName": zod.string().min(1).optional(),
   "bio": zod.string().max(updateProfileBodyBioMax).optional(),
   "country": zod.string().min(updateProfileBodyCountryMin).max(updateProfileBodyCountryMax).optional(),
-  "language": zod.string().min(updateProfileBodyLanguageMin).max(updateProfileBodyLanguageMax).optional()
+  "language": zod.string().min(updateProfileBodyLanguageMin).max(updateProfileBodyLanguageMax).optional(),
+  "avatarAttachmentId": zod.string().nullish()
 })
 
 export const UpdateProfileResponse = zod.object({
@@ -492,6 +651,14 @@ export const UpdateProfileResponse = zod.object({
   "activeDays": zod.number().int(),
   "xpForNextLevel": zod.number().int(),
   "progress": zod.number().int(),
+  "avatarAttachment": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+}).nullable(),
   "badges": zod.array(zod.string())
 }))
 
@@ -627,6 +794,14 @@ export const GetSocialFeedResponse = zod.object({
   "body": zod.string(),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "category": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -650,6 +825,7 @@ export const CreateSocialPostBody = zod.object({
   "body": zod.string().min(1).max(createSocialPostBodyBodyMax),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.enum(['image', 'video']).nullish(),
+  "attachmentId": zod.string().nullish(),
   "category": zod.string().default(createSocialPostBodyCategoryDefault)
 })
 
@@ -665,6 +841,14 @@ export const CreateSocialPostResponse = zod.object({
   "body": zod.string(),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "category": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -690,6 +874,14 @@ export const GetSocialPostResponse = zod.object({
   "body": zod.string(),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "category": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -711,6 +903,7 @@ export const UpdateSocialPostBody = zod.object({
   "body": zod.string().min(1).max(updateSocialPostBodyBodyMax),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.enum(['image', 'video']).nullish(),
+  "attachmentId": zod.string().nullish(),
   "category": zod.string().default(updateSocialPostBodyCategoryDefault)
 })
 
@@ -726,6 +919,14 @@ export const UpdateSocialPostResponse = zod.object({
   "body": zod.string(),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "category": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -760,6 +961,14 @@ export const LikeSocialPostResponse = zod.object({
   "body": zod.string(),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "category": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -785,6 +994,14 @@ export const UnlikeSocialPostResponse = zod.object({
   "body": zod.string(),
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "category": zod.string(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
@@ -801,6 +1018,16 @@ export const ListSocialCommentsParams = zod.object({
 export const ListSocialCommentsResponseItem = zod.object({
   "id": zod.string(),
   "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "createdAt": zod.coerce.date(),
   "author": zod.object({
   "id": zod.string(),
@@ -822,12 +1049,23 @@ export const createSocialCommentBodyBodyMax = 500;
 
 
 export const CreateSocialCommentBody = zod.object({
-  "body": zod.string().min(1).max(createSocialCommentBodyBodyMax)
+  "body": zod.string().max(createSocialCommentBodyBodyMax).optional(),
+  "attachmentId": zod.string().nullish()
 })
 
 export const CreateSocialCommentResponse = zod.object({
   "id": zod.string(),
   "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "createdAt": zod.coerce.date(),
   "author": zod.object({
   "id": zod.string(),
@@ -932,6 +1170,16 @@ export const ListSocialConversationsResponseItem = zod.object({
   "avatarUrl": zod.string()
 }),
   "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 }),zod.null()]),
@@ -968,6 +1216,16 @@ export const CreateSocialConversationResponse = zod.object({
   "avatarUrl": zod.string()
 }),
   "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 }),zod.null()]),
@@ -993,6 +1251,16 @@ export const ListSocialMessagesResponse = zod.object({
   "avatarUrl": zod.string()
 }),
   "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })),
@@ -1013,7 +1281,8 @@ export const createSocialMessageBodyBodyMax = 2000;
 
 
 export const CreateSocialMessageBody = zod.object({
-  "body": zod.string().min(1).max(createSocialMessageBodyBodyMax)
+  "body": zod.string().max(createSocialMessageBodyBodyMax).optional(),
+  "attachmentId": zod.string().nullish()
 })
 
 export const CreateSocialMessageResponse = zod.object({
@@ -1026,6 +1295,16 @@ export const CreateSocialMessageResponse = zod.object({
   "avatarUrl": zod.string()
 }),
   "body": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string().nullish(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "originalName": zod.string()
+})),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
 })
@@ -1056,6 +1335,7 @@ export const GetAiUsageResponse = zod.object({
   "plan": zod.enum(['FREE', 'PREMIUM', 'PREMIUM_PRO']),
   "usedToday": zod.number().int(),
   "limitToday": zod.number().int(),
+  "remainingToday": zod.number().int(),
   "items": zod.array(zod.object({
   "id": zod.string(),
   "feature": zod.string(),
@@ -1558,8 +1838,8 @@ export const ListPremiumPlansResponse = zod.object({
   "limits": zod.object({
   "aiDaily": zod.number().int(),
   "battleCreateDaily": zod.number().int(),
-  "battleJoinDaily": zod.number().int(),
-  "battleVoteDaily": zod.number().int(),
+  "battleJoinDaily": zod.number().int().optional().describe('Deprecated compatibility field. Joining Battles is available to all plans.'),
+  "battleVoteDaily": zod.number().int().optional().describe('Deprecated compatibility field. Voting in Battles is available to all plans.'),
   "postCreateDaily": zod.number().int(),
   "commentCreateDaily": zod.number().int()
 }),
@@ -1585,8 +1865,8 @@ export const GetPremiumBenefitsResponse = zod.object({
   "limits": zod.object({
   "aiDaily": zod.number().int(),
   "battleCreateDaily": zod.number().int(),
-  "battleJoinDaily": zod.number().int(),
-  "battleVoteDaily": zod.number().int(),
+  "battleJoinDaily": zod.number().int().optional().describe('Deprecated compatibility field. Joining Battles is available to all plans.'),
+  "battleVoteDaily": zod.number().int().optional().describe('Deprecated compatibility field. Voting in Battles is available to all plans.'),
   "postCreateDaily": zod.number().int(),
   "commentCreateDaily": zod.number().int()
 }),

@@ -23,4 +23,5 @@ export interface ProfileUpdate {
      * @maxLength 5
      */
   language?: string;
+  avatarAttachmentId?: string | null;
 }

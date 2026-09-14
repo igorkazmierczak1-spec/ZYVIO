@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BattleStatus } from './battleStatus';
+import type { MediaAttachment } from './mediaAttachment';
 import type { Participant } from './participant';
 
 export interface Battle {
@@ -21,6 +22,7 @@ export interface Battle {
   maxParticipants: number;
   rewardXp?: number;
   coverTone?: string;
+  attachments: MediaAttachment[];
   isJoined?: boolean;
   winnerParticipantId: string | null;
   loserParticipantId: string | null;

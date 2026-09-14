@@ -1,4 +1,6 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { useAuth } from '@clerk/clerk-expo';
 import { router } from 'expo-router';
 import React, { PropsWithChildren } from 'react';
 import {
@@ -12,6 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
+import { toAbsoluteMediaUrl } from '@/components/media';
 
 export function BrandMark({ size = 44 }: { size?: number }) {
   const colors = useColors();
@@ -123,10 +126,21 @@ export function formatTimeLeft(value: string) {
   return days > 0 ? `${days} d` : `${hours} h`;
 }
 
-export function Avatar({ name, size = 46 }: { name: string; size?: number }) {
+export function Avatar({ name, size = 46, uri }: { name: string; size?: number; uri?: string | null }) {
   const colors = useColors();
+  const { getToken } = useAuth();
+  const [token, setToken] = React.useState<string | null>(null);
   const initials = name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
-  return <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 3, backgroundColor: colors.secondary }]}><Text style={[styles.avatarText, { color: colors.secondaryForeground, fontSize: size * 0.3 }]}>{initials}</Text></View>;
+  React.useEffect(() => {
+    let active = true;
+    if (uri) void getToken().then((next) => { if (active) setToken(next); });
+    return () => { active = false; };
+  }, [getToken, uri]);
+  return (
+    <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 3, backgroundColor: colors.secondary, overflow: 'hidden' }]}>
+      {uri ? <Image source={{ uri: toAbsoluteMediaUrl(uri), headers: token ? { Authorization: `Bearer ${token}` } : undefined }} contentFit="cover" style={{ width: size, height: size }} /> : <Text style={[styles.avatarText, { color: colors.secondaryForeground, fontSize: size * 0.3 }]}>{initials}</Text>}
+    </View>
+  );
 }
 
 export function BackButton() {

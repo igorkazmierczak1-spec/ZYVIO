@@ -7,9 +7,7 @@
  */
 
 export interface SocialMessageInput {
-  /**
-     * @minLength 1
-     * @maxLength 2000
-     */
-  body: string;
+  /** @maxLength 2000 */
+  body?: string;
+  attachmentId?: string | null;
 }

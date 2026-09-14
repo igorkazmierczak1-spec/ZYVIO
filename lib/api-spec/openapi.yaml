@@ -20,6 +20,8 @@ tags:
   - name: reports
   - name: social
     description: Posts, comments, follows and social profiles
+  - name: storage
+    description: Authenticated media uploads and serving
 paths:
   /healthz:
     get:
@@ -34,6 +36,90 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /storage/uploads/request-url:
+    post:
+      operationId: requestMediaUploadUrl
+      tags: [storage]
+      summary: Request a presigned image or video upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MediaUploadRequest" }
+      responses:
+        "200":
+          description: Presigned upload URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaUploadResponse" }
+  /storage/uploads/complete:
+    post:
+      operationId: completeMediaUpload
+      tags: [storage]
+      summary: Confirm a direct-to-storage media upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MediaUploadCompleteRequest" }
+      responses:
+        "200":
+          description: Uploaded media
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaAttachment" }
+        "409":
+          description: Uploaded object is missing or its metadata does not match the declared upload
+  /storage/uploads/{attachmentId}:
+    delete:
+      operationId: cancelMediaUpload
+      tags: [storage]
+      summary: Cancel and delete an unattached owned media upload
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Upload and its object were deleted
+        "404":
+          description: Upload not found, not owned, or already attached
+        "409":
+          description: Upload could not be cancelled
+  /storage/objects/{objectPath}:
+    get:
+      operationId: getMediaObject
+      tags: [storage]
+      summary: Serve an owned or published media object
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Media bytes
+          content:
+            image/*: { schema: { type: string, format: binary } }
+            video/*: { schema: { type: string, format: binary } }
+        "404":
+          description: Object not found
+  /storage/public-objects/{filePath}:
+    get:
+      operationId: getPublicStorageObject
+      tags: [storage]
+      summary: Serve a public App Storage asset
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Public asset bytes
+          content:
+            application/octet-stream: { schema: { type: string, format: binary } }
   /dashboard:
     get:
       operationId: getDashboard
@@ -89,6 +175,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Battle"
+  /battles/usage:
+    get:
+      operationId: getBattleCreationUsage
+      tags: [battles]
+      summary: Get the authenticated user's daily Battle creation usage
+      responses:
+        "200":
+          description: Current daily Battle creation quota
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BattleCreationUsage" }
   /battles/{battleId}:
     get:
       operationId: getBattle
@@ -900,6 +997,43 @@ components:
       required: [ok]
       properties:
         ok: { type: boolean }
+    MediaAttachment:
+      type: object
+      required: [id, url, mediaType, contentType, size, originalName]
+      properties:
+        id: { type: string }
+        url: { type: string }
+        mediaType: { type: string, enum: [image, video] }
+        contentType: { type: string }
+        size: { type: integer }
+        originalName: { type: string }
+    MediaUploadRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 255 }
+        size: { type: integer, minimum: 1 }
+        contentType: { type: string }
+    MediaUploadResponse:
+      type: object
+      required: [uploadURL, objectPath, attachmentId, metadata]
+      properties:
+        uploadURL: { type: string, format: uri }
+        objectPath: { type: string }
+        attachmentId: { type: string }
+        metadata:
+          type: object
+          required: [name, size, contentType, mediaType]
+          properties:
+            name: { type: string }
+            size: { type: integer }
+            contentType: { type: string }
+            mediaType: { type: string, enum: [image, video] }
+    MediaUploadCompleteRequest:
+      type: object
+      required: [attachmentId]
+      properties:
+        attachmentId: { type: string }
     SocialAuthor:
       type: object
       required: [id, username, displayName, avatarUrl]
@@ -911,13 +1045,14 @@ components:
         country: { type: string }
     SocialPost:
       type: object
-      required: [id, author, body, category, createdAt, updatedAt, likeCount, commentCount, liked]
+      required: [id, author, body, category, createdAt, updatedAt, likeCount, commentCount, liked, attachments]
       properties:
         id: { type: string }
         author: { $ref: "#/components/schemas/SocialAuthor" }
         body: { type: string }
         mediaUrl: { type: string, nullable: true }
         mediaType: { type: string, nullable: true }
+        attachments: { type: array, items: { $ref: "#/components/schemas/MediaAttachment" } }
         category: { type: string }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
@@ -940,20 +1075,24 @@ components:
         body: { type: string, minLength: 1, maxLength: 2000 }
         mediaUrl: { type: string, nullable: true }
         mediaType: { type: string, enum: [image, video], nullable: true }
+        attachmentId: { type: string, nullable: true }
         category: { type: string, default: General }
     SocialComment:
       type: object
-      required: [id, body, createdAt, author]
+      required: [id, body, createdAt, author, attachments]
       properties:
         id: { type: string }
         body: { type: string }
+        mediaUrl: { type: string, nullable: true }
+        mediaType: { type: string, nullable: true }
+        attachments: { type: array, items: { $ref: "#/components/schemas/MediaAttachment" } }
         createdAt: { type: string, format: date-time }
         author: { $ref: "#/components/schemas/SocialAuthor" }
     SocialCommentInput:
       type: object
-      required: [body]
       properties:
-        body: { type: string, minLength: 1, maxLength: 500 }
+        body: { type: string, maxLength: 500 }
+        attachmentId: { type: string, nullable: true }
     SocialProfile:
       type: object
       required: [id, username, displayName, avatarUrl, bio, country, level, xp, rankingPoints, wins, losses, rank, league, streak, badges, winRate, followerCount, followingCount, isFollowing]
@@ -999,12 +1138,15 @@ components:
         avatarUrl: { type: string }
     SocialMessage:
       type: object
-      required: [id, conversationId, sender, body, createdAt, updatedAt]
+      required: [id, conversationId, sender, body, createdAt, updatedAt, attachments]
       properties:
         id: { type: string }
         conversationId: { type: string }
         sender: { $ref: "#/components/schemas/SocialParticipant" }
         body: { type: string }
+        mediaUrl: { type: string, nullable: true }
+        mediaType: { type: string, nullable: true }
+        attachments: { type: array, items: { $ref: "#/components/schemas/MediaAttachment" } }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     SocialConversation:
@@ -1025,9 +1167,9 @@ components:
         profileId: { type: string, minLength: 1 }
     SocialMessageInput:
       type: object
-      required: [body]
       properties:
-        body: { type: string, minLength: 1, maxLength: 2000 }
+        body: { type: string, maxLength: 2000 }
+        attachmentId: { type: string, nullable: true }
     SocialMessagePage:
       type: object
       required: [items, page, hasMore]
@@ -1057,7 +1199,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/UserSummary"
         - type: object
-          required: [email, role, bio, xp, wins, losses, rank, league, streak, bestStreak, activeDays, badges, rankingPoints, xpForNextLevel, progress]
+          required: [email, role, bio, xp, wins, losses, rank, league, streak, bestStreak, activeDays, badges, rankingPoints, xpForNextLevel, progress, avatarAttachment]
           properties:
             email: { type: string, format: email }
             role:
@@ -1075,6 +1217,7 @@ components:
             activeDays: { type: integer }
             xpForNextLevel: { type: integer }
             progress: { type: integer }
+            avatarAttachment: { allOf: [{ $ref: "#/components/schemas/MediaAttachment" }], nullable: true }
             badges:
               type: array
               items: { type: string }
@@ -1086,6 +1229,7 @@ components:
         bio: { type: string, maxLength: 160 }
         country: { type: string, minLength: 2, maxLength: 2 }
         language: { type: string, minLength: 2, maxLength: 5 }
+        avatarAttachmentId: { type: string, nullable: true }
     Participant:
       type: object
       required: [id, user, submissionLabel, score, votes]
@@ -1097,7 +1241,7 @@ components:
         votes: { type: integer }
     Battle:
       type: object
-      required: [id, title, category, status, prompt, createdAt, endsAt, participants, participantCount, maxParticipants, winnerParticipantId, loserParticipantId]
+      required: [id, title, category, status, prompt, createdAt, endsAt, participants, participantCount, maxParticipants, winnerParticipantId, loserParticipantId, attachments]
       properties:
         id: { type: string }
         title: { type: string }
@@ -1115,6 +1259,7 @@ components:
         maxParticipants: { type: integer }
         rewardXp: { type: integer }
         coverTone: { type: string }
+        attachments: { type: array, items: { $ref: "#/components/schemas/MediaAttachment" } }
         isJoined: { type: boolean }
         winnerParticipantId: { type: string, nullable: true }
         loserParticipantId: { type: string, nullable: true }
@@ -1127,6 +1272,7 @@ components:
         prompt: { type: string, minLength: 5 }
         endsAt: { type: string, format: date-time }
         maxParticipants: { type: integer, enum: [2], default: 2 }
+        attachmentId: { type: string, nullable: true }
     VoteInput:
       type: object
       required: [participantId]
@@ -1479,12 +1625,13 @@ components:
         badge: { type: string }
         limits:
           type: object
-          required: [aiDaily, battleCreateDaily, battleJoinDaily, battleVoteDaily, postCreateDaily, commentCreateDaily]
+          required: [aiDaily, battleCreateDaily, postCreateDaily, commentCreateDaily]
           properties:
             aiDaily: { type: integer }
             battleCreateDaily: { type: integer }
-            battleJoinDaily: { type: integer }
-            battleVoteDaily: { type: integer }
+            # Optional compatibility fields; joining and voting are available to all plans.
+            battleJoinDaily: { type: integer, deprecated: true, description: "Deprecated compatibility field. Joining Battles is available to all plans." }
+            battleVoteDaily: { type: integer, deprecated: true, description: "Deprecated compatibility field. Voting in Battles is available to all plans." }
             postCreateDaily: { type: integer }
             commentCreateDaily: { type: integer }
         xpMultiplier: { type: number }
@@ -1534,12 +1681,21 @@ components:
         createdAt: { type: string, format: date-time }
     AiUsageHistoryResponse:
       type: object
-      required: [plan, usedToday, limitToday, items]
+      required: [plan, usedToday, limitToday, remainingToday, items]
       properties:
         plan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
         usedToday: { type: integer }
         limitToday: { type: integer }
+        remainingToday: { type: integer }
         items: { type: array, items: { $ref: "#/components/schemas/AiUsageHistoryItem" } }
+    BattleCreationUsage:
+      type: object
+      required: [plan, usedToday, limitToday, remainingToday]
+      properties:
+        plan: { type: string, enum: [FREE, PREMIUM, PREMIUM_PRO] }
+        usedToday: { type: integer }
+        limitToday: { type: integer }
+        remainingToday: { type: integer }
     AdminBillingOverview:
       type: object
       required: [connected, range, subscriptions, revenue, payments, totalRevenue, revenue30d, mrr, arr, activeSubscriptions, newSubscriptions, cancelledSubscriptions, successfulPayments, failedPayments, premiumCount, conversion, trend]

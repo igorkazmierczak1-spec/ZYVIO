@@ -104,7 +104,7 @@ export default function PremiumScreen() {
       <Text style={[uiStyles.eyebrow, { color: colors.primary }]}>{benefit.badge}</Text>
       <Text style={[uiStyles.title, { color: colors.foreground, fontSize: 18 }]}>{benefit.title}</Text>
       <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>
-        Battle: {benefit.limits.battleCreateDaily} utworzysz / {benefit.limits.battleJoinDaily} dołączysz · Głosy: {benefit.limits.battleVoteDaily}
+        Battle: {benefit.limits.battleCreateDaily} utworzysz
       </Text>
       <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>
         AI: {benefit.limits.aiDaily}/dzień · Posty: {benefit.limits.postCreateDaily} · Komentarze: {benefit.limits.commentCreateDaily}

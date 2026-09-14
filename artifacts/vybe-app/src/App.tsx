@@ -18,10 +18,14 @@ import {
   useCreatePremiumCheckout,
   useCreatePremiumPortal,
   getGetBattleQueryKey,
+  getGetBattleCreationUsageQueryKey,
   getGetDashboardQueryKey,
   getGetLeaderboardQueryKey,
   getGetProfileQueryKey,
+  getGetAiUsageQueryKey,
   getListBattlesQueryKey,
+  useGetBattleCreationUsage,
+  useGetAiUsage,
   getListNotificationsQueryKey,
   getGetPremiumSubscriptionQueryKey,
   setAuthTokenGetter,
@@ -96,6 +100,8 @@ import { AdminDashboardPage } from "@/pages/admin-dashboard";
 import PremiumPage from "@/pages/premium";
 import { SocialFeedPage, SocialPostPage, SocialProfilePage } from "@/pages/social";
 import MessagesPage from "@/pages/messages";
+import { MediaPicker, MediaRenderer } from "@/components/media";
+import type { MediaAttachment } from "@workspace/api-client-react";
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -214,7 +220,9 @@ function formatTimeLeft(endsAt: string | null | undefined) {
   return `${Math.round(hours / 24)}d left`;
 }
 
-export function Avatar({ name, size = "md", accent = "violet" }: { name: string; size?: "sm" | "md" | "lg"; accent?: string }) {
+export function Avatar({ name, size = "md", accent = "violet", avatarUrl }: { name: string; size?: "sm" | "md" | "lg"; accent?: string; avatarUrl?: string }) {
+  const [failed, setFailed] = useState(false);
+  if (avatarUrl && !failed) return <img className={`avatar avatar-${size} avatar-image`} src={avatarUrl} alt={`${name} avatar`} onError={() => setFailed(true)} />;
   return <div className={`avatar avatar-${size} avatar-${accent}`}>{initials(name)}</div>;
 }
 
@@ -304,7 +312,7 @@ function AppShell({ children }: { children: ReactNode }) {
            <div className="season-progress"><span style={{ width: `${Math.max(0, Math.min(100, safeNumber(profile?.progress)))}%` }} /></div>
         </div>
         <button className="sidebar-profile" onClick={() => navigate("/profile")}>
-          <Avatar name={profile?.displayName ?? "ZYVIO User"} size="sm" />
+           <Avatar name={profile?.displayName ?? "ZYVIO User"} size="sm" avatarUrl={profile?.avatarUrl} />
           <span><strong>{profile?.displayName ?? "ZYVIO User"}{profile?.role === "ADMIN" && <span className="sidebar-admin-badge">ADMIN</span>}</strong><small>@{profile?.username ?? "account"}</small></span>
           <ChevronRight />
         </button>
@@ -315,10 +323,10 @@ function AppShell({ children }: { children: ReactNode }) {
         <header className="topbar">
           <div className="mobile-brand"><IconButton label="Open menu" onClick={() => setSidebarOpen(true)}><Menu /></IconButton><Logo onClick={() => navigate("/")} /></div>
           <div className="topbar-search"><Search /><input placeholder="Search battles, creators, ideas..." aria-label="Search" /></div>
-          <div className="topbar-actions">
+           <div className="topbar-actions">
             <IconButton label="Toggle theme" onClick={() => document.documentElement.classList.toggle("dark")}><Moon /></IconButton>
             <IconButton label="Notifications" active={location === "/notifications"} onClick={() => navigate("/notifications")}><Bell /><span className="icon-dot" /></IconButton>
-            <button className="topbar-avatar" onClick={() => navigate("/profile")}><Avatar name={profile?.displayName ?? "ZYVIO User"} size="sm" /></button>
+             <button className="topbar-avatar" onClick={() => navigate("/profile")}><Avatar name={profile?.displayName ?? "ZYVIO User"} size="sm" avatarUrl={profile?.avatarUrl} /></button>
           </div>
         </header>
         <div className="page-wrap">{children}</div>
@@ -351,7 +359,39 @@ function safeNumber(value: unknown, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function BattleCard({ battle, compact = false }: { battle: Battle; compact?: boolean }) {
+function getApiErrorData(error: unknown): Record<string, unknown> | null {
+  if (!error || typeof error !== "object" || !("data" in error)) return null;
+  const data = (error as { data?: unknown }).data;
+  return data && typeof data === "object" ? data as Record<string, unknown> : null;
+}
+
+function getBattleQuotaErrorMessage(error: unknown): string | null {
+  const data = getApiErrorData(error);
+  return data?.code === "PLAN_DAILY_LIMIT" && data.resource === "battleCreate" && typeof data.error === "string"
+    ? data.error
+    : null;
+}
+
+function getAiQuotaErrorMessage(error: unknown): string | null {
+  const data = getApiErrorData(error);
+  return data?.code === "AI_USAGE_LIMIT"
+    ? "Wykorzystałeś dzisiejszy limit AI. Przejdź na Premium, aby korzystać z AI częściej."
+    : null;
+}
+
+function BattleCreationUsage({ className = "" }: { className?: string }) {
+  const usage = useGetBattleCreationUsage({
+    query: {
+      queryKey: getGetBattleCreationUsageQueryKey(),
+      refetchOnMount: "always",
+      staleTime: 0,
+    },
+  });
+  if (!usage.data) return usage.isLoading ? <span className={`quota-text ${className}`}>Ładowanie limitu Battle…</span> : null;
+  return <span className={`quota-text ${className}`}>Pozostało {Math.max(0, usage.data.remainingToday)}/{Math.max(0, usage.data.limitToday)} Battle</span>;
+}
+
+ function BattleCard({ battle, compact = false }: { battle: Battle; compact?: boolean }) {
   const [, navigate] = useLocation();
   const qc = useQueryClient();
   const join = useJoinBattle({ mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getListBattlesQueryKey() }); void qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); toast({ title: "Battle joined", description: "Your spot is locked in." }); } } });
@@ -359,7 +399,7 @@ function BattleCard({ battle, compact = false }: { battle: Battle; compact?: boo
   return <article className={`battle-card tone-${battle.coverTone ?? "violet"} ${compact ? "battle-card-compact" : ""}`} onClick={() => navigate(`/battles/${battle.id}`)}>
     <div className="battle-card-glow" />
     <div className="battle-card-top"><span className="category-pill">{battle.category}</span><span className={`status-pill status-${battle.status}`}>{battle.status === "live" ? "Live now" : battle.status}</span></div>
-    <div className="battle-card-copy"><h3>{battle.title}</h3><p>{battle.prompt}</p></div>
+     <div className="battle-card-copy"><h3>{battle.title}</h3><p>{battle.prompt}</p><MediaRenderer attachments={battle.attachments} label={`Załącznik bitwy ${battle.title}`} /></div>
     <div className="battle-card-bottom"><div className="stacked-avatars">{(battle.participants ?? []).slice(0, 3).map((participant, index) => <Avatar key={participant.id} name={participant.user?.displayName ?? "Creator"} size="sm" accent={index === 1 ? "coral" : index === 2 ? "cyan" : "violet"} />)}<span className="participant-count">{safeNumber(battle.participantCount)}/{safeNumber(battle.maxParticipants, 2)}</span></div><span className="battle-time"><Clock3 /> {formatTimeLeft(battle.endsAt)}</span></div>
     <div className="battle-card-footer"><span><Zap /> +{battle.rewardXp ?? 250} XP</span>{!compact && <Button size="sm" variant={battle.isJoined ? "secondary" : "default"} disabled={battle.isJoined || isBusy} onClick={(event) => { event.stopPropagation(); if (!battle.isJoined) join.mutate({ battleId: battle.id }); }}>{isBusy ? <Loader2 className="spin" /> : battle.isJoined ? <><Check /> Joined</> : <>Join battle <ArrowUpRight /></>}</Button>}</div>
   </article>;
@@ -409,16 +449,18 @@ function DiscoverPage() {
   const filters = category === "All" ? {} : { category };
   const battles = useListBattles(filters, { query: { queryKey: getListBattlesQueryKey(filters) } });
   const list = battles.data ?? [];
-  return <div><PageHeader eyebrow="Discover" title="Find your next edge" description="Step into a live prompt, meet your match, and leave a mark." action={<Button onClick={() => navigate("/battles/new")}><Plus /> Create battle</Button>} /><div className="filter-row">{categoryFilters.map((item) => <button key={item} className={`filter-chip ${category === item ? "is-selected" : ""}`} onClick={() => setCategory(item)}>{item}</button>)}</div>{battles.isLoading ? <LoadingState /> : battles.isError ? <ErrorState onRetry={() => void battles.refetch()} /> : list.length === 0 ? <div className="empty-state"><div className="empty-icon"><Compass /></div><h2>No battles in this lane yet</h2><p>Start the next one and make the category yours.</p></div> : <div className="battle-grid discover-grid">{list.map((battle) => <BattleCard key={battle.id} battle={battle} />)}</div>}</div>;
+  return <div><PageHeader eyebrow="Discover" title="Find your next edge" description="Step into a live prompt, meet your match, and leave a mark." action={<div className="quota-action"><BattleCreationUsage /><Button onClick={() => navigate("/battles/new")}><Plus /> Create battle</Button></div>} /><div className="filter-row">{categoryFilters.map((item) => <button key={item} className={`filter-chip ${category === item ? "is-selected" : ""}`} onClick={() => setCategory(item)}>{item}</button>)}</div>{battles.isLoading ? <LoadingState /> : battles.isError ? <ErrorState onRetry={() => void battles.refetch()} /> : list.length === 0 ? <div className="empty-state"><div className="empty-icon"><Compass /></div><h2>No battles in this lane yet</h2><p>Start the next one and make the category yours.</p></div> : <div className="battle-grid discover-grid">{list.map((battle) => <BattleCard key={battle.id} battle={battle} />)}</div>}</div>;
 }
 
 function CreateBattlePage() {
   const [, navigate] = useLocation();
   const [form, setForm] = useState<BattleInput>({ title: "", category: "Creativity", prompt: "", endsAt: new Date(Date.now() + 48 * 3600000).toISOString(), maxParticipants: 2 });
+  const [attachment, setAttachment] = useState<MediaAttachment | null>(null);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const qc = useQueryClient();
-  const create = useCreateBattle({ mutation: { onSuccess: (battle) => { void qc.invalidateQueries({ queryKey: getListBattlesQueryKey() }); void qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); toast({ title: "Battle created", description: "Your 1v1 arena is ready for a challenger." }); navigate(`/battles/${battle.id}`); }, onError: () => toast({ title: "Could not create battle", description: "Check the fields and try again.", variant: "destructive" }) } });
+   const create = useCreateBattle({ mutation: { onSuccess: (battle) => { void qc.invalidateQueries({ queryKey: getListBattlesQueryKey() }); void qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() }); void qc.invalidateQueries({ queryKey: getGetBattleCreationUsageQueryKey() }); toast({ title: "Battle created", description: "Your 1v1 arena is ready for a challenger." }); navigate(`/battles/${battle.id}`); }, onError: (error) => { const quotaMessage = getBattleQuotaErrorMessage(error); toast({ title: quotaMessage ? "Limit Battle" : "Could not create battle", description: quotaMessage ?? "Check the fields and try again.", variant: "destructive" }); } } });
   const setField = (field: keyof BattleInput, value: string | number) => setForm((current) => ({ ...current, [field]: value }));
-  return <div className="form-page"><PageHeader eyebrow="Create" title="Start a new 1v1 battle" description="Set one clear challenge. One challenger. One winner." /><form className="create-form" onSubmit={(event) => { event.preventDefault(); create.mutate({ data: { ...form, maxParticipants: 2 } }); }}><div className="form-main"><div className="one-v-one-note"><Swords /> 1v1 format · two creator slots</div><label>Battle title<input value={form.title} onChange={(event) => setField("title", event.target.value)} placeholder="Give it a name people remember" required minLength={3} /></label><label>Category<div className="category-select-grid">{["Photo", "Music", "Creativity", "Text", "AI", "Quiz"].map((item) => <button type="button" key={item} className={form.category === item ? "selected" : ""} onClick={() => setField("category", item)}>{item}</button>)}</div></label><label>Challenge prompt<textarea value={form.prompt} onChange={(event) => setField("prompt", event.target.value)} placeholder="What will the two creators make, answer, or prove?" rows={5} required minLength={5} /></label></div><aside className="form-aside panel"><span className="eyebrow">1v1 battle settings</span><label>Closes on<input type="datetime-local" value={form.endsAt.slice(0, 16)} onChange={(event) => setField("endsAt", new Date(event.target.value).toISOString())} /></label><div className="one-v-one-note"><Users /> Exactly 2 participants</div><div className="form-tip"><Sparkles /><div><strong>Make it specific</strong><p>A focused prompt gives both creators a fair lane to stand out.</p></div></div><Button className="form-submit" type="submit" disabled={create.isPending}>{create.isPending ? <><Loader2 className="spin" /> Creating...</> : <>Publish battle <ArrowUpRight /></>}</Button></aside></form></div>;
+    return <div className="form-page"><PageHeader eyebrow="Create" title="Start a new 1v1 battle" description="Set one clear challenge. One challenger. One winner." action={<BattleCreationUsage />} /><form className="create-form" onSubmit={(event) => { event.preventDefault(); create.mutate({ data: { ...form, maxParticipants: 2, attachmentId: attachment?.id ?? null } }); }}><div className="form-main"><div className="one-v-one-note"><Swords /> 1v1 format · two creator slots</div><label>Battle title<input value={form.title} onChange={(event) => setField("title", event.target.value)} placeholder="Give it a name people remember" required minLength={3} /></label><label>Category<div className="category-select-grid">{["Photo", "Music", "Creativity", "Text", "AI", "Quiz"].map((item) => <button type="button" key={item} className={form.category === item ? "selected" : ""} onClick={() => setField("category", item)}>{item}</button>)}</div></label><label>Challenge prompt<textarea value={form.prompt} onChange={(event) => setField("prompt", event.target.value)} placeholder="What will the two creators make, answer, or prove?" rows={5} required minLength={5} /></label><MediaPicker label="➕ Dodaj zdjęcie lub film" onChange={setAttachment} onUploadingChange={setMediaUploading} disabled={create.isPending} /></div><aside className="form-aside panel"><span className="eyebrow">1v1 battle settings</span><label>Closes on<input type="datetime-local" value={form.endsAt.slice(0, 16)} onChange={(event) => setField("endsAt", new Date(event.target.value).toISOString())} /></label><div className="one-v-one-note"><Users /> Exactly 2 participants</div><div className="form-tip"><Sparkles /><div><strong>Make it specific</strong><p>A focused prompt gives both creators a fair lane to stand out.</p></div></div><Button className="form-submit" type="submit" disabled={create.isPending || mediaUploading}>{create.isPending ? <><Loader2 className="spin" /> Creating...</> : <>Publish battle <ArrowUpRight /></>}</Button></aside></form></div>;
 }
 
 function BattleDetailPage() {
@@ -446,7 +488,7 @@ function BattleDetailPage() {
       toast({ title: "Could not share", description: "Copy the URL from your browser and send it to your challenger.", variant: "destructive" });
     }
   };
-  return <div><PageHeader eyebrow={`${data.category} · 1v1 battle`} title={data.title} description={data.prompt} action={<Button variant="secondary" onClick={() => void shareBattle()}><Share2 /> Share</Button>} />{data.status === "completed" && <section className="battle-result"><strong>{winner ? `${winner.user.displayName} takes the win.` : "This battle is complete."}</strong><p>{winner ? "The final result has been recorded by ZYVIO." : "The final result will appear when the backend provides a winner."}</p><div className="result-meta"><span><Trophy /> {winner ? `${winner.score} score` : "Result recorded"}</span><span><Zap /> +{data.rewardXp ?? 0} XP reward</span></div></section>}<div className="battle-detail-grid"><section className={`battle-stage tone-${data.coverTone ?? "violet"}`}><div className="battle-stage-pattern" /><div className="stage-top"><span className={`status-pill status-${data.status}`}>{data.status === "live" ? "Live now" : data.status}</span><span className="stage-time"><Clock3 /> {data.status === "completed" ? "Closed" : formatTimeLeft(data.endsAt)}</span></div><div className="stage-center"><div className="stage-orb"><Swords /></div><span className="eyebrow">The prompt</span><h2>{data.prompt}</h2><p>Two creators enter. One point of view wins the room.</p></div><div className="stage-bottom"><span><Users /> {data.participantCount} / {data.maxParticipants} challengers</span><span><Zap /> +{data.rewardXp ?? 0} XP</span></div></section><section className="panel participants-panel"><div className="panel-heading"><div><span className="eyebrow">The arena</span><h2>Entries</h2></div>{canJoin && <Button size="sm" onClick={() => join.mutate({ battleId: id })}>{join.isPending ? <Loader2 className="spin" /> : <><Swords /> Join</>}</Button>}</div>{data.participants.map((participant, index) => <div className={`participant-row ${participant.id === data.winnerParticipantId ? "participant-winner" : ""}`} key={participant.id}><Avatar name={participant.user.displayName} size="md" accent={index % 2 === 0 ? "violet" : "coral"} /><div className="participant-copy"><strong>{participant.user.displayName}{participant.id === data.winnerParticipantId ? " · Winner" : ""}</strong><small>{participant.submissionLabel}</small></div><div className="participant-score"><strong>{participant.score}</strong><small>{participant.votes} votes</small></div><Button size="sm" variant="ghost" disabled={vote.isPending || data.status === "completed"} onClick={() => vote.mutate({ battleId: id, data: { participantId: participant.id } })}><Heart /> Vote</Button></div>)}{data.participants.length === 0 && <div className="mini-empty">Be the first one in.</div>}{data.status !== "completed" && data.participants.length === 1 && <div className="mini-empty">Waiting for one challenger before voting opens.</div>}</section></div></div>;
+   return <div><PageHeader eyebrow={`${data.category} · 1v1 battle`} title={data.title} description={data.prompt} action={<Button variant="secondary" onClick={() => void shareBattle()}><Share2 /> Share</Button>} />{data.status === "completed" && <section className="battle-result"><strong>{winner ? `${winner.user.displayName} takes the win.` : "This battle is complete."}</strong><p>{winner ? "The final result has been recorded by ZYVIO." : "The final result will appear when the backend provides a winner."}</p><div className="result-meta"><span><Trophy /> {winner ? `${winner.score} score` : "Result recorded"}</span><span><Zap /> +{data.rewardXp ?? 0} XP reward</span></div></section>}<MediaRenderer attachments={data.attachments} label={`Załącznik bitwy ${data.title}`} /><div className="battle-detail-grid"><section className={`battle-stage tone-${data.coverTone ?? "violet"}`}><div className="battle-stage-pattern" /><div className="stage-top"><span className={`status-pill status-${data.status}`}>{data.status === "live" ? "Live now" : data.status}</span><span className="stage-time"><Clock3 /> {data.status === "completed" ? "Closed" : formatTimeLeft(data.endsAt)}</span></div><div className="stage-center"><div className="stage-orb"><Swords /></div><span className="eyebrow">The prompt</span><h2>{data.prompt}</h2><p>Two creators enter. One point of view wins the room.</p></div><div className="stage-bottom"><span><Users /> {data.participantCount} / {data.maxParticipants} challengers</span><span><Zap /> +{data.rewardXp ?? 0} XP</span></div></section><section className="panel participants-panel"><div className="panel-heading"><div><span className="eyebrow">The arena</span><h2>Entries</h2></div>{canJoin && <Button size="sm" onClick={() => join.mutate({ battleId: id })}>{join.isPending ? <Loader2 className="spin" /> : <><Swords /> Join</>}</Button>}</div>{data.participants.map((participant, index) => <div className={`participant-row ${participant.id === data.winnerParticipantId ? "participant-winner" : ""}`} key={participant.id}><Avatar name={participant.user.displayName} size="md" accent={index % 2 === 0 ? "violet" : "coral"} /><div className="participant-copy"><strong>{participant.user.displayName}{participant.id === data.winnerParticipantId ? " · Winner" : ""}</strong><small>{participant.submissionLabel}</small></div><div className="participant-score"><strong>{participant.score}</strong><small>{participant.votes} votes</small></div><Button size="sm" variant="ghost" disabled={vote.isPending || data.status === "completed"} onClick={() => vote.mutate({ battleId: id, data: { participantId: participant.id } })}><Heart /> Vote</Button></div>)}{data.participants.length === 0 && <div className="mini-empty">Be the first one in.</div>}{data.status !== "completed" && data.participants.length === 1 && <div className="mini-empty">Waiting for one challenger before voting opens.</div>}</section></div></div>;
 }
 
 function LeaderboardPage() {
@@ -461,6 +503,26 @@ function LeaderboardPage() {
 
 function ProfilePage() {
   const profile = useGetProfile({ query: { queryKey: getGetProfileQueryKey(), refetchOnWindowFocus: true } });
+  const qc = useQueryClient();
+  const [claimedAvatarAttachmentId, setClaimedAvatarAttachmentId] = useState<string | null>(null);
+  const pendingAvatarAttachment = useRef<string | null>(null);
+  const update = useUpdateProfile({
+    mutation: {
+      onSuccess: () => {
+        if (pendingAvatarAttachment.current) {
+          setClaimedAvatarAttachmentId(pendingAvatarAttachment.current);
+          pendingAvatarAttachment.current = null;
+        }
+        void qc.invalidateQueries({ queryKey: getGetProfileQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+        toast({ title: "Zdjęcie profilowe zaktualizowane" });
+      },
+      onError: () => {
+        pendingAvatarAttachment.current = null;
+        toast({ title: "Nie udało się zaktualizować zdjęcia", variant: "destructive" });
+      },
+    },
+  });
   const [, navigate] = useLocation();
   const [playerIdSearch, setPlayerIdSearch] = useState("");
   const [playerIdCopied, setPlayerIdCopied] = useState(false);
@@ -497,8 +559,22 @@ function ProfilePage() {
     <PageHeader eyebrow="Your profile" title="Build your legend" action={<div className="profile-actions"><Button variant="secondary" onClick={() => navigate("/settings")}><Settings2 /> Edit profile</Button><LogoutButton /></div>} />
 
     <section className="profile-hero panel">
-      <div className="profile-identity">
-        <Avatar name={data.displayName} size="lg" />
+       <div className="profile-identity">
+         <div className="profile-avatar-upload">
+           <Avatar name={data.displayName} size="lg" avatarUrl={data.avatarUrl} />
+           <MediaPicker
+             imageOnly
+             label="📷 Dodaj zdjęcie"
+              disabled={update.isPending}
+              claimedAttachmentId={claimedAvatarAttachmentId}
+             onChange={(attachment) => {
+                if (attachment) {
+                  pendingAvatarAttachment.current = attachment.id;
+                  update.mutate({ data: { avatarAttachmentId: attachment.id } });
+                }
+             }}
+           />
+         </div>
         <div>
           <span className="eyebrow">@{data.username}</span>
           <h2>{data.displayName}</h2>
@@ -587,8 +663,26 @@ function NotificationsPage() {
 function AiPage() {
   const [topic, setTopic] = useState("");
   const [category, setCategory] = useState("Creativity");
-  const ideas = useGenerateIdeas();
-  return <div><PageHeader eyebrow="ZYVIO AI" title="Turn sparks into battles" description="Give the studio a direction. ZYVIO AI will shape it into something people want to enter." /><section className="ai-workspace"><div className="ai-intro"><div className="ai-symbol"><Bot /></div><span className="eyebrow">Creative studio</span><h2>What are you curious about?</h2><p>Describe a mood, theme, or weird idea. Your battle concepts stay yours until you publish.</p><div className="ai-example-row"><button onClick={() => setTopic("a rainy city at midnight")}>Rainy city at midnight</button><button onClick={() => setTopic("objects with secret lives")}>Objects with secret lives</button><button onClick={() => setTopic("the future of friendship")}>Future of friendship</button></div></div><form className="ai-form" onSubmit={(event) => { event.preventDefault(); if (topic.trim()) ideas.mutate({ data: { topic, category } }); }}><label>Theme or starting point<textarea value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="Try: a battle for people who notice the small things" rows={4} /></label><label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}>{categoryFilters.slice(1).map((item) => <option key={item}>{item}</option>)}</select></label><Button type="submit" disabled={ideas.isPending || !topic.trim()}>{ideas.isPending ? <><Loader2 className="spin" /> Thinking...</> : <><Sparkles /> Generate ideas</>}</Button></form></section>{ideas.data?.ideas && <section className="panel idea-results"><div className="panel-heading"><div><span className="eyebrow">Five directions</span><h2>Pick the one that pulls you in</h2></div><IconButton label="Clear ideas" onClick={() => ideas.reset()}><X /></IconButton></div>{ideas.data.ideas.map((idea, index) => <button className="idea-row" key={idea} onClick={() => setTopic(idea)}><span>{String(index + 1).padStart(2, "0")}</span><strong>{idea}</strong><ArrowUpRight /></button>)}</section>}{ideas.isError && <div className="inline-error">ZYVIO AI is configured, but the provider has no remaining credits. Add provider credits to generate ideas.</div>}</div>;
+  const qc = useQueryClient();
+  const usage = useGetAiUsage({
+    query: {
+      queryKey: getGetAiUsageQueryKey(),
+      refetchOnMount: "always",
+      staleTime: 0,
+    },
+  });
+  const ideas = useGenerateIdeas({
+    mutation: {
+      onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetAiUsageQueryKey() }); },
+      onError: () => { void qc.invalidateQueries({ queryKey: getGetAiUsageQueryKey() }); },
+    },
+  });
+  const usageText = usage.data
+    ? `Pozostało ${Math.max(0, usage.data.remainingToday)}/${Math.max(0, usage.data.limitToday)} użyć AI dzisiaj`
+    : "Ładowanie limitu AI…";
+  const errorMessage = getAiQuotaErrorMessage(ideas.error)
+    ?? "ZYVIO AI is configured, but the provider has no remaining credits. Add provider credits to generate ideas.";
+  return <div><PageHeader eyebrow="ZYVIO AI" title="Turn sparks into battles" description="Give the studio a direction. ZYVIO AI will shape it into something people want to enter." action={<div className="ai-usage"><Bot /> <span>{usageText}</span></div>} /><section className="ai-workspace"><div className="ai-intro"><div className="ai-symbol"><Bot /></div><span className="eyebrow">Creative studio</span><h2>What are you curious about?</h2><p>Describe a mood, theme, or weird idea. Your battle concepts stay yours until you publish.</p><div className="ai-example-row"><button onClick={() => setTopic("a rainy city at midnight")}>Rainy city at midnight</button><button onClick={() => setTopic("objects with secret lives")}>Objects with secret lives</button><button onClick={() => setTopic("the future of friendship")}>Future of friendship</button></div></div><form className="ai-form" onSubmit={(event) => { event.preventDefault(); if (topic.trim()) ideas.mutate({ data: { topic, category } }); }}><label>Theme or starting point<textarea value={topic} onChange={(event) => setTopic(event.target.value)} placeholder="Try: a battle for people who notice the small things" rows={4} /></label><label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}>{categoryFilters.slice(1).map((item) => <option key={item}>{item}</option>)}</select></label><Button type="submit" disabled={ideas.isPending || !topic.trim()}>{ideas.isPending ? <><Loader2 className="spin" /> Thinking...</> : <><Sparkles /> Generate ideas</>}</Button></form></section>{ideas.data?.ideas && <section className="panel idea-results"><div className="panel-heading"><div><span className="eyebrow">Five directions</span><h2>Pick the one that pulls you in</h2></div><IconButton label="Clear ideas" onClick={() => ideas.reset()}><X /></IconButton></div>{ideas.data.ideas.map((idea, index) => <button className="idea-row" key={idea} onClick={() => setTopic(idea)}><span>{String(index + 1).padStart(2, "0")}</span><strong>{idea}</strong><ArrowUpRight /></button>)}</section>}{ideas.isError && <div className="inline-error">{errorMessage}</div>}</div>;
 }
 
 function SettingsPage() {

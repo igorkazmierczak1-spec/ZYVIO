@@ -7,6 +7,33 @@ export const accountStatusEnum = pgEnum("vybe_account_status", ["ACTIVE", "BLOCK
 export const moderationStatusEnum = pgEnum("vybe_moderation_status", ["NEW", "IN_PROGRESS", "RESOLVED", "REJECTED"]);
 export const moderationPriorityEnum = pgEnum("vybe_moderation_priority", ["LOW", "MEDIUM", "HIGH", "CRITICAL"]);
 export const contentStatusEnum = pgEnum("vybe_content_status", ["ACTIVE", "HIDDEN", "REMOVED"]);
+export const mediaKindEnum = pgEnum("vybe_media_kind", ["image", "video"]);
+
+/**
+ * A single reusable object-storage entity. The target is assigned after the
+ * direct upload is confirmed and a content record is created.
+ */
+export const attachmentsTable = pgTable(
+  "vybe_attachments",
+  {
+    id: text("id").primaryKey(),
+    ownerProfileId: text("owner_profile_id").notNull(),
+    objectPath: text("object_path").notNull().unique(),
+    originalName: text("original_name").notNull(),
+    contentType: text("content_type").notNull(),
+    mediaType: mediaKindEnum("media_type").notNull(),
+    size: integer("size").notNull(),
+    targetType: text("target_type"),
+    targetId: text("target_id"),
+    uploadStatus: text("upload_status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    ownerIndex: index("vybe_attachments_owner_idx").on(table.ownerProfileId, table.createdAt),
+    targetIndex: index("vybe_attachments_target_idx").on(table.targetType, table.targetId),
+  }),
+);
 
 export const profilesTable = pgTable("vybe_profiles", {
   id: text("id").primaryKey(),
@@ -390,6 +417,7 @@ export const viralRewardEventsTable = pgTable(
 );
 
 export const insertProfileSchema = createInsertSchema(profilesTable);
+export const insertAttachmentSchema = createInsertSchema(attachmentsTable);
 export const insertBattleSchema = createInsertSchema(battlesTable);
 export const insertParticipantSchema = createInsertSchema(battleParticipantsTable);
 export const insertVoteSchema = createInsertSchema(votesTable);
@@ -414,6 +442,7 @@ export const insertBattleResultSchema = createInsertSchema(battleResultsTable);
 export const insertViralRewardEventSchema = createInsertSchema(viralRewardEventsTable);
 
 export type Profile = typeof profilesTable.$inferSelect;
+export type Attachment = typeof attachmentsTable.$inferSelect;
 export type Battle = typeof battlesTable.$inferSelect;
 export type BattleParticipant = typeof battleParticipantsTable.$inferSelect;
 export type Vote = typeof votesTable.$inferSelect;
@@ -437,4 +466,5 @@ export type AiUsage = typeof aiUsageTable.$inferSelect;
 export type BattleResult = typeof battleResultsTable.$inferSelect;
 export type ViralRewardEvent = typeof viralRewardEventsTable.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
+export type InsertAttachment = z.infer<typeof insertAttachmentSchema>;
 export type InsertBattle = z.infer<typeof insertBattleSchema>;

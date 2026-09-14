@@ -11,6 +11,7 @@ import {
   postsTable,
   profilesTable,
 } from "@workspace/db";
+import { attachmentsFor, claimAttachment, mediaUrl } from "../lib/media";
 import { currentUserFrom, requireAuthenticatedUser } from "../middlewares/auth";
 import { rateLimit } from "../middlewares/rateLimit";
 import { getUserPlan } from "../lib/premium";
@@ -29,6 +30,7 @@ type PostInput = {
   body: string;
   mediaUrl?: string | null;
   mediaType?: "image" | "video" | null;
+  attachmentId?: string | null;
   category: string;
 };
 
@@ -65,18 +67,24 @@ function parsePostBody(input: unknown): { data?: PostInput; error?: string } {
   const mediaType = value.mediaType === null || value.mediaType === undefined
     ? null
     : value.mediaType === "image" || value.mediaType === "video" ? value.mediaType : undefined;
-  if (body.length < 1 || body.length > 2000 || category.length > 40 || mediaUrl === undefined || mediaType === undefined) {
+  const attachmentId = value.attachmentId === null || value.attachmentId === undefined
+    ? null
+    : typeof value.attachmentId === "string" ? value.attachmentId : undefined;
+  if (body.length < 1 || body.length > 2000 || category.length > 40 || mediaUrl === undefined || mediaType === undefined || attachmentId === undefined) {
     return { error: "Invalid post body" };
   }
-  return { data: { body, category, mediaUrl, mediaType } };
+  return { data: { body, category, mediaUrl, mediaType, attachmentId } };
 }
 
-function parseCommentBody(input: unknown): { data?: { body: string }; error?: string } {
+function parseCommentBody(input: unknown): { data?: { body: string; attachmentId?: string | null }; error?: string } {
+  const attachmentId = input && typeof input === "object" && ((input as Record<string, unknown>).attachmentId === null || typeof (input as Record<string, unknown>).attachmentId === "string")
+    ? (input as Record<string, unknown>).attachmentId as string | null | undefined
+    : undefined;
   const body = input && typeof input === "object" && typeof (input as Record<string, unknown>).body === "string"
     ? ((input as Record<string, unknown>).body as string).trim()
     : "";
-  return body.length >= 1 && body.length <= 500
-    ? { data: { body } }
+  return (body.length >= 1 && body.length <= 500) || (body.length === 0 && Boolean(attachmentId))
+    ? { data: { body, attachmentId } }
     : { error: "Invalid comment body" };
 }
 
@@ -134,6 +142,7 @@ async function postView(post: typeof postsTable.$inferSelect, currentProfileId: 
     likeCount: Number(likes?.count ?? 0),
     commentCount: Number(comments?.count ?? 0),
     liked: Boolean(liked),
+    attachments: await attachmentsFor("POST", post.id),
   };
 }
 
@@ -210,11 +219,28 @@ router.post("/social/posts", createPostRateLimit, async (req, res, next) => {
       res.status(400).json({ error: parsed.error });
       return;
     }
-    const [post] = await db.insert(postsTable).values({
+    const { attachmentId, ...postFields } = parsed.data;
+    let [post] = await db.insert(postsTable).values({
       id: `post-${crypto.randomUUID()}`,
       authorProfileId: profile.id,
-      ...parsed.data,
+      ...postFields,
     }).returning();
+    if (post && attachmentId) {
+      try {
+        const attachment = await claimAttachment(attachmentId, profile.id, "POST", post.id);
+        if (attachment) {
+          const [updated] = await db.update(postsTable).set({
+            mediaUrl: mediaUrl(attachment.objectPath),
+            mediaType: attachment.mediaType,
+            updatedAt: new Date(),
+          }).where(eq(postsTable.id, post.id)).returning();
+          if (updated) post = updated;
+        }
+      } catch {
+        res.status(400).json({ error: "Invalid media attachment" });
+        return;
+      }
+    }
     res.status(201).json(await postView(post, profile.id));
   } catch (error) {
     if (sendPlanQuotaError(error, res)) return;
@@ -230,13 +256,30 @@ router.patch("/social/posts/:postId", createPostRateLimit, async (req, res, next
       res.status(400).json({ error: parsed.error });
       return;
     }
-    const [post] = await db.update(postsTable).set({
-      ...parsed.data,
+    const { attachmentId, ...postFields } = parsed.data;
+    let [post] = await db.update(postsTable).set({
+      ...postFields,
       updatedAt: new Date(),
     }).where(and(eq(postsTable.id, routeParam(req.params.postId)), eq(postsTable.authorProfileId, profile.id), eq(postsTable.contentStatus, "ACTIVE"))).returning();
     if (!post) {
       res.status(404).json({ error: "Post not found or not owned by you" });
       return;
+    }
+    if (attachmentId) {
+      try {
+        const attachment = await claimAttachment(attachmentId, profile.id, "POST", post.id);
+        if (attachment) {
+          const [updated] = await db.update(postsTable).set({
+            mediaUrl: mediaUrl(attachment.objectPath),
+            mediaType: attachment.mediaType,
+            updatedAt: new Date(),
+          }).where(eq(postsTable.id, post.id)).returning();
+          if (updated) post = updated;
+        }
+      } catch {
+        res.status(400).json({ error: "Invalid media attachment" });
+        return;
+      }
     }
     res.json(await postView(post, profile.id));
   } catch (error) {
@@ -322,7 +365,15 @@ router.get("/social/posts/:postId/comments", async (req, res, next) => {
         ...(blocked.length ? [notInArray(commentsTable.authorProfileId, blocked)] : []),
       ))
       .orderBy(asc(commentsTable.createdAt));
-    res.json(rows);
+    res.json(await Promise.all(rows.map(async (row) => {
+      const attachments = await attachmentsFor("COMMENT", row.id);
+      return {
+        ...row,
+        mediaUrl: attachments[0]?.url ?? null,
+        mediaType: attachments[0]?.mediaType ?? null,
+        attachments,
+      };
+    })));
   } catch (error) {
     next(error);
   }
@@ -349,10 +400,36 @@ router.post("/social/posts/:postId/comments", commentRateLimit, async (req, res,
       authorProfileId: profile.id,
       body: parsed.data.body,
     }).returning();
+    if (!comment) {
+      res.status(500).json({ error: "Comment could not be created" });
+      return;
+    }
+    if (parsed.data.attachmentId) {
+      try {
+        await claimAttachment(parsed.data.attachmentId, profile.id, "COMMENT", comment.id);
+      } catch {
+        res.status(400).json({ error: "Invalid media attachment" });
+        return;
+      }
+    }
     if (post.authorProfileId !== profile.id) {
       await notify(post.authorProfileId, "comment", "New comment on your post", `${profile.displayName} commented on your post.`);
     }
-    res.status(201).json(comment);
+    const attachments = await attachmentsFor("COMMENT", comment.id);
+    res.status(201).json({
+      id: comment.id,
+      body: comment.body,
+      mediaUrl: attachments[0]?.url ?? null,
+      mediaType: attachments[0]?.mediaType ?? null,
+      createdAt: comment.createdAt,
+      author: {
+        id: profile.id,
+        username: profile.username,
+        displayName: profile.displayName,
+        avatarUrl: profile.avatarUrl,
+      },
+      attachments,
+    });
   } catch (error) {
     if (sendPlanQuotaError(error, res)) return;
     next(error);

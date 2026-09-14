@@ -1,4 +1,4 @@
-import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, count, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import { aiUsageTable, db } from "@workspace/db";
 import type { VybePlan } from "./premium";
 import { planConfigFor } from "./planConfig";
@@ -7,6 +7,7 @@ export class AiUsageLimitError extends Error {
   readonly plan: VybePlan;
   readonly used: number;
   readonly limit: number;
+  readonly remaining: number;
 
   constructor(plan: VybePlan, used: number) {
     const limit = planConfigFor(plan).limits.aiDaily;
@@ -15,6 +16,7 @@ export class AiUsageLimitError extends Error {
     this.plan = plan;
     this.used = used;
     this.limit = limit;
+    this.remaining = Math.max(0, limit - used);
   }
 }
 
@@ -33,6 +35,8 @@ export async function reserveAiUsage(input: {
   promptCharacters: number;
 }) {
   const dayStart = utcDayStart();
+  const nextDayStart = new Date(dayStart);
+  nextDayStart.setUTCDate(nextDayStart.getUTCDate() + 1);
   return db.transaction(async (tx) => {
     // Serialize reservations for one profile/feature/day so concurrent requests
     // cannot both pass the count check.
@@ -47,6 +51,7 @@ export async function reserveAiUsage(input: {
           eq(aiUsageTable.profileId, input.profileId),
           eq(aiUsageTable.feature, input.feature),
           gte(aiUsageTable.createdAt, dayStart),
+          lt(aiUsageTable.createdAt, nextDayStart),
             inArray(aiUsageTable.status, ["reserved", "success"]),
         ),
       );

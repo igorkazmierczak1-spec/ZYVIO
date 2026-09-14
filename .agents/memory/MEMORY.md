@@ -12,3 +12,5 @@
 - [Clerk profile reprovisioning](clerk-profile-reprovisioning.md) — recreated Clerk users must reclaim an existing profile by verified email instead of failing uniqueness checks.
 - [React Query singleton](react-query-singleton.md) — Vite apps consuming the workspace API client must dedupe React Query so hooks and providers share one context.
 - [Scoped router authorization](scoped-router-authorization.md) — role middleware in globally mounted Express routers must be scoped to that router’s actual URL prefix.
+- [Media access by plan](media-access-by-plan.md) — basic image and video use is available to every ZYVIO user; paid plans differentiate through limits and enhancements.
+- [Battle plan boundaries](battle-plan-boundaries.md) — plans limit only Battle creation and AI generation; joining and voting in others’ Battles remain unrestricted.

@@ -13,6 +13,60 @@ export interface OkResponse {
   ok: boolean;
 }
 
+export type MediaAttachmentMediaType = typeof MediaAttachmentMediaType[keyof typeof MediaAttachmentMediaType];
+
+
+export const MediaAttachmentMediaType = {
+  image: 'image',
+  video: 'video',
+} as const;
+
+export interface MediaAttachment {
+  id: string;
+  url: string;
+  mediaType: MediaAttachmentMediaType;
+  contentType: string;
+  size: number;
+  originalName: string;
+}
+
+export interface MediaUploadRequest {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  contentType: string;
+}
+
+export type MediaUploadResponseMetadataMediaType = typeof MediaUploadResponseMetadataMediaType[keyof typeof MediaUploadResponseMetadataMediaType];
+
+
+export const MediaUploadResponseMetadataMediaType = {
+  image: 'image',
+  video: 'video',
+} as const;
+
+export type MediaUploadResponseMetadata = {
+  name: string;
+  size: number;
+  contentType: string;
+  mediaType: MediaUploadResponseMetadataMediaType;
+};
+
+export interface MediaUploadResponse {
+  uploadURL: string;
+  objectPath: string;
+  attachmentId: string;
+  metadata: MediaUploadResponseMetadata;
+}
+
+export interface MediaUploadCompleteRequest {
+  attachmentId: string;
+}
+
 export interface SocialAuthor {
   id: string;
   username: string;
@@ -27,6 +81,7 @@ export interface SocialPost {
   body: string;
   mediaUrl?: string | null;
   mediaType?: string | null;
+  attachments: MediaAttachment[];
   category: string;
   createdAt: string;
   updatedAt: string;
@@ -57,22 +112,24 @@ export interface SocialPostInput {
   body: string;
   mediaUrl?: string | null;
   mediaType?: SocialPostInputMediaType;
+  attachmentId?: string | null;
   category?: string;
 }
 
 export interface SocialComment {
   id: string;
   body: string;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  attachments: MediaAttachment[];
   createdAt: string;
   author: SocialAuthor;
 }
 
 export interface SocialCommentInput {
-  /**
-     * @minLength 1
-     * @maxLength 500
-     */
-  body: string;
+  /** @maxLength 500 */
+  body?: string;
+  attachmentId?: string | null;
 }
 
 export interface SocialProfile {
@@ -117,6 +174,9 @@ export interface SocialMessage {
   conversationId: string;
   sender: SocialParticipant;
   body: string;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+  attachments: MediaAttachment[];
   createdAt: string;
   updatedAt: string;
 }
@@ -134,11 +194,9 @@ export interface SocialConversationInput {
 }
 
 export interface SocialMessageInput {
-  /**
-     * @minLength 1
-     * @maxLength 2000
-     */
-  body: string;
+  /** @maxLength 2000 */
+  body?: string;
+  attachmentId?: string | null;
 }
 
 export interface SocialMessagePage {
@@ -179,7 +237,7 @@ export const ProfileRole = {
   ADMIN: 'ADMIN',
 } as const;
 
-export type Profile = UserSummary & {
+export type Profile = UserSummary & ({
   email: string;
   role: ProfileRole;
   bio: string;
@@ -194,8 +252,9 @@ export type Profile = UserSummary & {
   activeDays: number;
   xpForNextLevel: number;
   progress: number;
+  avatarAttachment: MediaAttachment | null;
   badges: string[];
-};
+});
 
 export interface ProfileUpdate {
   /** @minLength 3 */
@@ -214,6 +273,7 @@ export interface ProfileUpdate {
      * @maxLength 5
      */
   language?: string;
+  avatarAttachmentId?: string | null;
 }
 
 export interface Participant {
@@ -246,6 +306,7 @@ export interface Battle {
   maxParticipants: number;
   rewardXp?: number;
   coverTone?: string;
+  attachments: MediaAttachment[];
   isJoined?: boolean;
   winnerParticipantId: string | null;
   loserParticipantId: string | null;
@@ -267,6 +328,7 @@ export interface BattleInput {
   prompt: string;
   endsAt: string;
   maxParticipants?: BattleInputMaxParticipants;
+  attachmentId?: string | null;
 }
 
 export interface VoteInput {
@@ -724,8 +786,16 @@ export const PlanBenefitsStatsTier = {
 export type PlanBenefitsLimits = {
   aiDaily: number;
   battleCreateDaily: number;
-  battleJoinDaily: number;
-  battleVoteDaily: number;
+  /**
+     * Deprecated compatibility field. Joining Battles is available to all plans.
+     * @deprecated
+     */
+  battleJoinDaily?: number;
+  /**
+     * Deprecated compatibility field. Voting in Battles is available to all plans.
+     * @deprecated
+     */
+  battleVoteDaily?: number;
   postCreateDaily: number;
   commentCreateDaily: number;
 };
@@ -850,7 +920,24 @@ export interface AiUsageHistoryResponse {
   plan: AiUsageHistoryResponsePlan;
   usedToday: number;
   limitToday: number;
+  remainingToday: number;
   items: AiUsageHistoryItem[];
+}
+
+export type BattleCreationUsagePlan = typeof BattleCreationUsagePlan[keyof typeof BattleCreationUsagePlan];
+
+
+export const BattleCreationUsagePlan = {
+  FREE: 'FREE',
+  PREMIUM: 'PREMIUM',
+  PREMIUM_PRO: 'PREMIUM_PRO',
+} as const;
+
+export interface BattleCreationUsage {
+  plan: BattleCreationUsagePlan;
+  usedToday: number;
+  limitToday: number;
+  remainingToday: number;
 }
 
 export type AdminBillingOverviewSubscriptionsItem = { [key: string]: unknown };
