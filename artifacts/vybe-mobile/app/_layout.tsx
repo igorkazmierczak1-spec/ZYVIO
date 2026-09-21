@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ClerkLoaded, ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
@@ -65,22 +64,20 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache} proxyUrl={proxyUrl}>
-      <ClerkLoaded>
-        <SafeAreaProvider>
-          <ErrorBoundary>
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache} proxyUrl={proxyUrl}>
+          <ClerkLoaded>
             <QueryClientProvider client={queryClient}>
               <GestureHandlerRootView style={{ flex: 1 }}>
-                <KeyboardProvider>
-                  <SubscriptionProvider>
-                    <RootLayoutNav />
-                  </SubscriptionProvider>
-                </KeyboardProvider>
+                <SubscriptionProvider>
+                  <RootLayoutNav />
+                </SubscriptionProvider>
               </GestureHandlerRootView>
             </QueryClientProvider>
-          </ErrorBoundary>
-        </SafeAreaProvider>
-      </ClerkLoaded>
-    </ClerkProvider>
+          </ClerkLoaded>
+        </ClerkProvider>
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
