@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 type AnyRecord = Record<string, any>;
-type QueryOptions = { query?: AnyRecord };
+type QueryOptions = { query?: AnyRecord; [key: string]: any };
 type MutationOptions = { mutation?: AnyRecord };
 
 export type MediaAttachment = AnyRecord;
@@ -117,7 +117,7 @@ const adminKey = (name: string, params?: AnyRecord) => key(`admin-${name}`, para
 export const getGetAdminSettingsQueryKey = () => adminKey("settings");
 export const useGetAdminSettings = (options?: QueryOptions) => query(getGetAdminSettingsQueryKey(), () => request("/api/admin/settings"), options);
 export const useUpdateAdminSettings = (options?: MutationOptions) => mutation((variables) => request("/api/admin/settings", "PATCH", body(variables)), options);
-export const useGetAdminOverview = (options?: QueryOptions) => query(adminKey("overview"), () => request("/api/admin/overview"), options);
+export const useGetAdminOverview = (params?: AnyRecord, options?: QueryOptions) => query(adminKey("overview", params), () => request("/api/admin/overview", "GET", undefined, params), options);
 export const useGetAdminAnalytics = (params?: AnyRecord, options?: QueryOptions) => query(adminKey("analytics", params), () => request("/api/admin/analytics", "GET", undefined, params), options);
 export const useGetAdminBillingConfig = (options?: QueryOptions) => query(adminKey("billing-config"), () => request("/api/admin/billing/config"), options);
 export const useGetAdminBillingOverview = (params?: AnyRecord, options?: QueryOptions) => query(adminKey("billing-overview", params), () => request("/api/admin/billing/overview", "GET", undefined, params), options);
