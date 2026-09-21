@@ -33,6 +33,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "da811ed8-bda2-44dc-90f6-aa3f7309b16e"
+      }
+    },
+    "owner": "cykacz420"
   }
 }
