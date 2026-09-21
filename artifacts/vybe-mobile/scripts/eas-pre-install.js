@@ -42,7 +42,7 @@ if (sectionIndex === -1) {
   lines.push("", "onlyBuiltDependencies:", ...allowedBuildDependencies.map((name) => `  - '${name}'`));
 } else {
   let sectionEnd = sectionIndex + 1;
-  while (sectionEnd < lines.length && (/^\s/.test(lines[sectionEnd]) || lines[sectionEnd].trim() === "")) {
+  while (sectionEnd < lines.length && /^\s/.test(lines[sectionEnd]) && lines[sectionEnd].trim() !== "") {
     sectionEnd += 1;
   }
 
