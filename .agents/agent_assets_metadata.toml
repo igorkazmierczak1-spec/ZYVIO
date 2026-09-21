@@ -30,3 +30,17 @@ mtime_ms = 1789363035306
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:fdfc2e78-6ca7-490f-9e30-6b48d1335bd9/1eccf1db-2cfb-4199-9ab7-2d6c2b854366/3967633e-52f2-46f9-8564-73572ee6af6f"
 storage_version_token = "1789363049193195"
 content_type = "image/png"
+
+[[outputs]]
+id = "h9mDTRfj3_Hf9CvyOE-84"
+uri = "file://artifacts/vybe-mobile/builds/zyvio-v9-release.aab"
+type = "unspecified"
+title = "ZYVIO Android App Bundle v9"
+description = "Signed production Android App Bundle for com.zyvio.app, versionCode 9. EAS build 4ba95041-ea74-464f-8a17-9695c03f62bd finished successfully."
+logical_id = "58c5a5f5-270b-40a1-a1af-91969b9df478"
+content_hash = "sha256:c921d46751a2653a8f35ad417cc5b679d433842fc810813c304e658fd260201f"
+size = 88478219
+mtime_ms = 1790024151698
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:fdfc2e78-6ca7-490f-9e30-6b48d1335bd9/58c5a5f5-270b-40a1-a1af-91969b9df478/7082ddb7-38ef-422f-91a4-dae9a274648a"
+storage_version_token = "1790024158562260"
+content_type = "application/octet-stream"
