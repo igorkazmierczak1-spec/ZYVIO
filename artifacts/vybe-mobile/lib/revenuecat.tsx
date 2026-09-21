@@ -90,7 +90,7 @@ function useSubscriptionContext() {
     mutationFn: async (packageToPurchase: PurchasesPackage) => Purchases.purchasePackage(packageToPurchase),
     onSuccess: async ({ customerInfo }) => {
       await queryClient.invalidateQueries({ queryKey: ["revenuecat", "customer-info", userId] });
-      await sync.mutateAsync();
+        await sync.mutateAsync(undefined);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: getGetBattleCreationUsageQueryKey() }),
         queryClient.invalidateQueries({ queryKey: getGetAiUsageQueryKey() }),
@@ -102,7 +102,7 @@ function useSubscriptionContext() {
     mutationFn: () => Purchases.restorePurchases(),
     onSuccess: async (customerInfo) => {
       await queryClient.setQueryData(["revenuecat", "customer-info", userId], customerInfo);
-      await sync.mutateAsync();
+        await sync.mutateAsync(undefined);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: getGetBattleCreationUsageQueryKey() }),
         queryClient.invalidateQueries({ queryKey: getGetAiUsageQueryKey() }),
