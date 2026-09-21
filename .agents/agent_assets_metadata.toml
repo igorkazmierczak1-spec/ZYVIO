@@ -44,3 +44,17 @@ mtime_ms = 1790024190205
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:fdfc2e78-6ca7-490f-9e30-6b48d1335bd9/58c5a5f5-270b-40a1-a1af-91969b9df478/b8613eb7-c164-4fa4-b71c-590dd55d3f33"
 storage_version_token = "1790025460833911"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "CCCyGRGyoOxMtyOZNpvfd"
+uri = "file://artifacts/vybe-mobile/builds/zyvio-v10-release.aab"
+type = "unspecified"
+title = "Pobierz ZYVIO AAB — v1.0.0 (10)"
+description = "Poprawiony podpisany Android App Bundle. Klucz Clerk jest dołączony do konfiguracji EAS, aby aplikacja nie zamykała się przy starcie. Build EAS 66494379-0c46-42dc-8d83-276c4972d79b zakończył się statusem FINISHED."
+logical_id = "82aebb9a-8035-4f90-bee8-f6a0dff19aff"
+content_hash = "sha256:2441c7707ff721bd536cbce4ebea9307b39f6bfd9f1d537bd07d474e200f521d"
+size = 88477996
+mtime_ms = 1790029128932
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:fdfc2e78-6ca7-490f-9e30-6b48d1335bd9/82aebb9a-8035-4f90-bee8-f6a0dff19aff/9892837e-708e-4c4f-80d4-0bafa0a923d5"
+storage_version_token = "1790029136049267"
+content_type = "application/octet-stream"
