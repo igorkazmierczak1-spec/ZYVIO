@@ -7,4 +7,4 @@ EAS may archive a monorepo from its repository root even when the app and `eas.j
 
 **Why:** Archive inspection showed the full repository was uploaded, and the cloud install ran against the root pnpm workspace. A hook assuming the mobile directory was current failed before dependency installation.
 
-**How to apply:** Keep runtime workspace clients vendored inside the mobile artifact, use explicit dependency versions, generate the mobile lockfile independently, and make `eas-build-*` scripts detect the nearest workspace root rather than assuming `cwd`.
+**How to apply:** Keep runtime workspace clients vendored inside the mobile artifact, use explicit dependency versions, generate the mobile lockfile independently, and make `eas-build-*` scripts detect the nearest workspace root rather than assuming `cwd`. When pnpm's workspace YAML defines `onlyBuiltDependencies`, update that ephemeral list for EAS; `.npmrc` additions alone may be ignored.
