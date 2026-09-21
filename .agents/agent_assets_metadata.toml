@@ -58,3 +58,17 @@ mtime_ms = 1790029128932
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:fdfc2e78-6ca7-490f-9e30-6b48d1335bd9/82aebb9a-8035-4f90-bee8-f6a0dff19aff/9892837e-708e-4c4f-80d4-0bafa0a923d5"
 storage_version_token = "1790029136049267"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "_XfdQRdopc0mu88BvCDCm"
+uri = "file://artifacts/vybe-mobile/builds/zyvio-v11-release.aab"
+type = "unspecified"
+title = "Pobierz ZYVIO AAB — v1.0.0 (11)"
+description = "Finalny podpisany Android App Bundle po poprawkach startu aplikacji, zgodności Expo SDK 57 i natywnego modułu klawiatury. EAS build 97e7a57a-5ed4-4c59-8034-2671efb8921c zakończył się statusem FINISHED."
+logical_id = "e8c65e5c-2aad-4b0e-a13a-ea965b7d728a"
+content_hash = "sha256:b14b973e0728fcfdee449a87ff9ac425887df9959bda2e52fe06aee047e3fe74"
+size = 88599487
+mtime_ms = 1790032533439
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:fdfc2e78-6ca7-490f-9e30-6b48d1335bd9/e8c65e5c-2aad-4b0e-a13a-ea965b7d728a/61831a82-f2a9-497a-a703-de0e66f5da09"
+storage_version_token = "1790032549152173"
+content_type = "application/octet-stream"
