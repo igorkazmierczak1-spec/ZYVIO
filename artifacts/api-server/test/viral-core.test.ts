@@ -1,6 +1,6 @@
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, like } from "drizzle-orm";
 import {
   battleParticipantsTable,
   battleResultsTable,
@@ -9,6 +9,7 @@ import {
   notificationsTable,
   pool,
   profilesTable,
+  rateLimitBucketsTable,
   viralRewardEventsTable,
   votesTable,
 } from "@workspace/db";
@@ -49,6 +50,9 @@ after(async () => {
   await db.delete(profilesTable).where(
     inArray(profilesTable.id, [ids.winner, ids.loser, ids.voter]),
   );
+  await db.delete(rateLimitBucketsTable).where(
+    like(rateLimitBucketsTable.key, `${prefix}%`),
+  );
   await pool.end();
 });
 
@@ -69,13 +73,13 @@ describe("Viral Core calculations", () => {
     });
   });
 
-  test("rate limits repeated requests and exposes retry timing", () => {
-    clearRateLimitBucketsForTests();
-    const limiter = rateLimit({ name: prefix, windowMs: 60_000, max: 2 });
+  test("rate limits repeated requests and exposes retry timing", async () => {
+    await clearRateLimitBucketsForTests();
+    const limiter = rateLimit({ name: prefix, windowMs: 60_000, max: 2, ipMax: 2 });
     const nextCalls: number[] = [];
-    const makeRequest = () => ({
+    const makeRequest = (profileId = `${prefix}-profile`) => ({
       ip: "127.0.0.1",
-      res: { locals: { currentUser: { id: `${prefix}-profile` } } },
+      res: { locals: { currentUser: { id: profileId } } },
     });
     const makeResponse = () => ({
       headers: new Map<string, number>(),
@@ -93,10 +97,12 @@ describe("Viral Core calculations", () => {
     });
 
     const firstResponse = makeResponse();
-    limiter(makeRequest() as never, firstResponse as never, () => nextCalls.push(1));
+    await limiter(makeRequest() as never, firstResponse as never, () => nextCalls.push(1));
     const secondResponse = makeResponse();
-    limiter(makeRequest() as never, secondResponse as never, () => nextCalls.push(1));
+    await limiter(makeRequest() as never, secondResponse as never, () => nextCalls.push(1));
     const blockedResponse = makeResponse();
+
+    const otherProfileResponse = makeResponse();
     limiter(makeRequest() as never, blockedResponse as never, () => nextCalls.push(1));
 
     assert.equal(nextCalls.length, 2);

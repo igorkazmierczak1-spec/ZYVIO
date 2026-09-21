@@ -118,6 +118,7 @@ export const votesTable = pgTable(
     battleId: text("battle_id").notNull(),
     participantId: text("participant_id").notNull(),
     voterProfileId: text("voter_profile_id").notNull(),
+    sourceIp: text("source_ip"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
@@ -126,9 +127,25 @@ export const votesTable = pgTable(
       table.voterProfileId,
     ),
     battleIndex: index("vybe_votes_battle_idx").on(table.battleId),
+    battleSourceCreatedIndex: index("vybe_votes_battle_source_created_idx").on(
+      table.battleId,
+      table.sourceIp,
+      table.createdAt,
+    ),
   }),
 );
 
+export const rateLimitBucketsTable = pgTable(
+  "vybe_rate_limit_buckets",
+  {
+    key: text("key").primaryKey(),
+    count: integer("count").notNull().default(0),
+    resetAt: timestamp("reset_at", { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    resetIndex: index("vybe_rate_limit_buckets_reset_idx").on(table.resetAt),
+  }),
+);
 export const notificationsTable = pgTable(
   "vybe_notifications",
   {
@@ -433,6 +450,8 @@ export const insertAttachmentSchema = createInsertSchema(attachmentsTable);
 export const insertBattleSchema = createInsertSchema(battlesTable);
 export const insertParticipantSchema = createInsertSchema(battleParticipantsTable);
 export const insertVoteSchema = createInsertSchema(votesTable);
+
+export const insertRateLimitBucketSchema = createInsertSchema(rateLimitBucketsTable);
 export const insertNotificationSchema = createInsertSchema(notificationsTable);
 export const insertActivitySchema = createInsertSchema(activitiesTable);
 export const insertUserActivityEventSchema = createInsertSchema(userActivityEventsTable);
@@ -458,6 +477,8 @@ export type Attachment = typeof attachmentsTable.$inferSelect;
 export type Battle = typeof battlesTable.$inferSelect;
 export type BattleParticipant = typeof battleParticipantsTable.$inferSelect;
 export type Vote = typeof votesTable.$inferSelect;
+
+export type RateLimitBucket = typeof rateLimitBucketsTable.$inferSelect;
 export type Notification = typeof notificationsTable.$inferSelect;
 export type Activity = typeof activitiesTable.$inferSelect;
 export type UserActivityEvent = typeof userActivityEventsTable.$inferSelect;

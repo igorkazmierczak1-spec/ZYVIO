@@ -48,7 +48,7 @@ import {
   currentUserFrom,
   requireAuthenticatedUser,
 } from "../middlewares/auth";
-import { rateLimit } from "../middlewares/rateLimit";
+import { clientIp, rateLimit } from "../middlewares/rateLimit";
 import { settleBattleInTransaction, xpProgress } from "../viralCore";
 import { getUserPlan } from "../lib/premium";
 import {
@@ -66,11 +66,11 @@ const router: IRouter = Router();
 
 router.use(requireAuthenticatedUser);
 
-const reportRateLimit = rateLimit({ name: "reports", windowMs: 10 * 60_000, max: 5 });
-const battleCreateRateLimit = rateLimit({ name: "battle-create", windowMs: 10 * 60_000, max: 5 });
-const battleJoinRateLimit = rateLimit({ name: "battle-join", windowMs: 5 * 60_000, max: 10 });
-const battleVoteRateLimit = rateLimit({ name: "battle-vote", windowMs: 60_000, max: 10 });
-const aiRateLimit = rateLimit({ name: "ai-ideas", windowMs: 10 * 60_000, max: 5 });
+const reportRateLimit = rateLimit({ name: "reports", windowMs: 10 * 60_000, max: 5, ipMax: 30 });
+const battleCreateRateLimit = rateLimit({ name: "battle-create", windowMs: 10 * 60_000, max: 5, ipMax: 20 });
+const battleJoinRateLimit = rateLimit({ name: "battle-join", windowMs: 5 * 60_000, max: 10, ipMax: 40 });
+const battleVoteRateLimit = rateLimit({ name: "battle-vote", windowMs: 60_000, max: 10, ipMax: 50 });
+const aiRateLimit = rateLimit({ name: "ai-ideas", windowMs: 10 * 60_000, max: 5, ipMax: 20 });
 const clientErrorRateLimit = rateLimit({ name: "client-errors", windowMs: 10 * 60_000, max: 10 });
 
 router.post("/client-errors", clientErrorRateLimit, (req, res) => {
@@ -90,6 +90,9 @@ router.post("/client-errors", clientErrorRateLimit, (req, res) => {
   }, "Web client render error");
   res.status(204).end();
 });
+
+const SUSPICIOUS_VOTE_WINDOW_MS = 10 * 60_000;
+const SUSPICIOUS_VOTES_FROM_SOURCE = 8;
 
 router.post("/reports", reportRateLimit, async (req, res, next) => {
   try {
@@ -519,6 +522,7 @@ router.post("/battles/:battleId/vote", battleVoteRateLimit, async (req, res, nex
       return;
     }
     const profile = currentUserFrom(res);
+    const sourceIp = clientIp(req);
     try {
       const result = await db.transaction(async (tx) => {
         await tx.execute(sql`select id from ${battlesTable} where ${battlesTable.id} = ${params.data.battleId} for update`);
@@ -541,11 +545,48 @@ router.post("/battles/:battleId/vote", battleVoteRateLimit, async (req, res, nex
           .where(and(eq(battleParticipantsTable.id, body.data.participantId), eq(battleParticipantsTable.battleId, params.data.battleId)));
         if (!participant) return { error: "Participant not found", status: 404 as const };
         if (participant.profileId === profile.id) return { error: "You cannot vote for your own entry", status: 400 as const };
+        const recentVotes = await tx
+          .select({ sourceIp: votesTable.sourceIp })
+          .from(votesTable)
+          .where(and(
+            eq(votesTable.battleId, params.data.battleId),
+            gte(votesTable.createdAt, new Date(Date.now() - SUSPICIOUS_VOTE_WINDOW_MS)),
+          ));
+        const votesFromSource = recentVotes.filter((vote) => vote.sourceIp === sourceIp).length;
+        if (votesFromSource >= SUSPICIOUS_VOTES_FROM_SOURCE) {
+          const reason = "Suspicious Battle vote activity";
+          const [existingFlag] = await tx
+            .select({ id: moderationReportsTable.id })
+            .from(moderationReportsTable)
+            .where(and(
+              eq(moderationReportsTable.targetType, "BATTLE"),
+              eq(moderationReportsTable.targetId, activeBattle.id),
+              eq(moderationReportsTable.reason, reason),
+              inArray(moderationReportsTable.status, ["NEW", "IN_PROGRESS"]),
+            ))
+            .limit(1);
+          if (!existingFlag) {
+            await tx.insert(moderationReportsTable).values({
+              id: `report-${crypto.randomUUID()}`,
+              reporterProfileId: profile.id,
+              targetType: "BATTLE",
+              targetId: activeBattle.id,
+              reason,
+              description: "Automated protection detected repeated votes from one network source in this Battle.",
+              priority: "HIGH",
+            });
+          }
+          return {
+            error: "Vote activity for this Battle is temporarily limited",
+            status: 429 as const,
+          };
+        }
         await tx.insert(votesTable).values({
           id: `vote-${crypto.randomUUID()}`,
           battleId: params.data.battleId,
           participantId: participant.id,
           voterProfileId: profile.id,
+          sourceIp,
         });
         await tx.update(battleParticipantsTable).set({
           votes: sql`${battleParticipantsTable.votes} + 1`,
