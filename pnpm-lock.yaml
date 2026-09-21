@@ -670,7 +670,7 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2
       '@tanstack/react-query':
-        specifier: 'catalog:'
+        specifier: ^5.90.21
         version: 5.101.4(react@19.2.3)
       '@types/react':
         specifier: ~19.2.2
@@ -682,8 +682,8 @@ importers:
         specifier: ^1.3.0
         version: 1.4.0
       '@workspace/api-client-react':
-        specifier: workspace:*
-        version: link:../../lib/api-client-react
+        specifier: file:./packages/api-client-react
+        version: file:artifacts/vybe-mobile/packages/api-client-react(react@19.2.3)
       babel-plugin-react-compiler:
         specifier: ^19.0.0-beta-e993439-20250117
         version: 19.0.0-beta-ebf51a3-20250411
@@ -781,7 +781,7 @@ importers:
         specifier: ~6.0.3
         version: 6.0.3
       zod:
-        specifier: 'catalog:'
+        specifier: ^3.25.76
         version: 3.25.76
       zod-validation-error:
         specifier: ^3.4.0
@@ -3478,6 +3478,11 @@ packages:
   '@wallet-standard/wallet@1.1.1':
     resolution: {integrity: sha512-8WiRPaKk/wNNRZhB2eVhpR/JW7/aqTCMoZhgVUCujuzDmxxmGvsosMxdCG4NAdYkoyozAHCX8/xLtlWUn5mNdQ==}
     engines: {node: '>=22'}
+
+  '@workspace/api-client-react@file:artifacts/vybe-mobile/packages/api-client-react':
+    resolution: {directory: artifacts/vybe-mobile/packages/api-client-react, type: directory}
+    peerDependencies:
+      react: '>=18'
 
   '@xmldom/xmldom@0.8.15':
     resolution: {integrity: sha512-/5NV/vDALVFDXgLmfsy9TRCBlKwO2LNBFzpzvb9iIj+jR+eSc6DLYYvVOdivT/jm7MtU6TebYuRmzEOI7w40UA==}
@@ -10830,6 +10835,11 @@ snapshots:
   '@wallet-standard/wallet@1.1.1':
     dependencies:
       '@wallet-standard/base': 1.1.1
+
+  '@workspace/api-client-react@file:artifacts/vybe-mobile/packages/api-client-react(react@19.2.3)':
+    dependencies:
+      '@tanstack/react-query': 5.101.4(react@19.2.3)
+      react: 19.2.3
 
   '@xmldom/xmldom@0.8.15': {}
 
