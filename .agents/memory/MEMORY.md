@@ -15,3 +15,4 @@
 - [Media access by plan](media-access-by-plan.md) — basic image and video use is available to every ZYVIO user; paid plans differentiate through limits and enhancements.
 - [Battle plan boundaries](battle-plan-boundaries.md) — plans limit only Battle creation and AI generation; joining and voting in others’ Battles remain unrestricted.
 - [Database schema build artifacts](db-schema-build-artifacts.md) — rebuild shared database declarations before typechecking API consumers after schema changes.
+- [EAS mobile archive](eas-mobile-archive.md) — the cloud build archive must be self-contained; parent workspace packages and catalogs are not available during dependency installation.
