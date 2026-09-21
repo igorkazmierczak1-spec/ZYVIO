@@ -23,7 +23,6 @@ if (!workspaceRoot) {
   process.exit(0);
 }
 
-const npmrcPath = path.join(workspaceRoot, ".npmrc");
 const allowedBuildDependencies = [
   "@swc/core",
   "@clerk/shared",
@@ -33,12 +32,25 @@ const allowedBuildDependencies = [
   "msw",
   "unrs-resolver",
 ];
-const existing = fs.existsSync(npmrcPath) ? fs.readFileSync(npmrcPath, "utf8") : "";
-const additions = allowedBuildDependencies
-  .filter((name) => !existing.split(/\r?\n/).some((line) => line.trim() === `only-built-dependencies[]=${name}`))
-  .map((name) => `only-built-dependencies[]=${name}`)
-  .join("\n");
 
-if (additions) {
-  fs.writeFileSync(npmrcPath, `${existing.replace(/\s*$/, "")}\n${additions}\n`);
+const workspaceConfigPath = path.join(workspaceRoot, "pnpm-workspace.yaml");
+const existing = fs.readFileSync(workspaceConfigPath, "utf8");
+const lines = existing.split(/\r?\n/);
+const sectionIndex = lines.findIndex((line) => /^onlyBuiltDependencies:\s*$/.test(line));
+
+if (sectionIndex === -1) {
+  lines.push("", "onlyBuiltDependencies:", ...allowedBuildDependencies.map((name) => `  - '${name}'`));
+} else {
+  let sectionEnd = sectionIndex + 1;
+  while (sectionEnd < lines.length && (/^\s/.test(lines[sectionEnd]) || lines[sectionEnd].trim() === "")) {
+    sectionEnd += 1;
+  }
+
+  const section = lines.slice(sectionIndex + 1, sectionEnd).join("\n");
+  const additions = allowedBuildDependencies
+    .filter((name) => !new RegExp(`^\\s*-\\s*['"]?${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}['"]?\\s*$`, "m").test(section))
+    .map((name) => `  - '${name}'`);
+  lines.splice(sectionEnd, 0, ...additions);
 }
+
+fs.writeFileSync(workspaceConfigPath, `${lines.join("\n").replace(/\s*$/, "")}\n`);
