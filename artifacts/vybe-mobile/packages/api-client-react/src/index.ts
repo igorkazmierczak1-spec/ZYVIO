@@ -18,7 +18,7 @@ export function setAuthTokenGetter(getter: AuthTokenGetter | null) {
   authTokenGetter = getter;
 }
 
-async function request<T>(path: string, method = "GET", body?: unknown, query?: AnyRecord): Promise<T> {
+async function request<T = any>(path: string, method = "GET", body?: unknown, query?: AnyRecord): Promise<T> {
   const search = query
     ? Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== "").map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`).join("&")
     : "";
@@ -40,12 +40,12 @@ async function request<T>(path: string, method = "GET", body?: unknown, query?: 
   return data as T;
 }
 
-function query<T>(key: unknown[], fn: () => Promise<T>, options?: QueryOptions) {
+function query<T = any>(key: unknown[], fn: () => Promise<T>, options?: QueryOptions) {
   const config = options?.query ?? {};
   return useQuery({ queryKey: config.queryKey ?? key, queryFn: fn, ...config });
 }
 
-function mutation<T>(fn: (variables: any) => Promise<T>, options?: MutationOptions) {
+function mutation<T = any>(fn: (variables: any) => Promise<T>, options?: MutationOptions) {
   return useMutation({ mutationFn: fn, ...(options?.mutation ?? {}) });
 }
 
