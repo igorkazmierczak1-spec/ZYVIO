@@ -18,17 +18,20 @@
         "backgroundColor": "#16131f"
       }
     },
-    "splash": {
-      "image": "./assets/images/zyvio-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#f6f5f8"
-    },
     "web": {
       "favicon": "./assets/images/zyvio-icon.png"
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/zyvio-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#f6f5f8"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
