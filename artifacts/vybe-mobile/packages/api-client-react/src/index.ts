@@ -42,11 +42,11 @@ async function request<T = any>(path: string, method = "GET", body?: unknown, qu
 
 function query<T = any>(key: unknown[], fn: () => Promise<T>, options?: QueryOptions) {
   const config = options?.query ?? {};
-  return useQuery({ queryKey: config.queryKey ?? key, queryFn: fn, ...config });
+  return useQuery<any, any, any>({ queryKey: config.queryKey ?? key, queryFn: fn, ...config });
 }
 
 function mutation<T = any>(fn: (variables: any) => Promise<T>, options?: MutationOptions) {
-  return useMutation({ mutationFn: fn, ...(options?.mutation ?? {}) });
+  return useMutation<any, any, any, any>({ mutationFn: fn, ...(options?.mutation ?? {}) });
 }
 
 const key = (name: string, value?: unknown) => value === undefined ? [name] : [name, value];
