@@ -72,3 +72,17 @@ mtime_ms = 1790032533439
 storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:fdfc2e78-6ca7-490f-9e30-6b48d1335bd9/e8c65e5c-2aad-4b0e-a13a-ea965b7d728a/61831a82-f2a9-497a-a703-de0e66f5da09"
 storage_version_token = "1790032549152173"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "BorUnohmRlrBQJuqfdN2L"
+uri = "file://artifacts/vybe-mobile/builds/zyvio-v12-release.aab"
+type = "unspecified"
+title = "Pobierz ZYVIO AAB — v1.0.0 (12)"
+description = "Podpisany Android App Bundle z poprawionym otwieraniem całych kart Battle, profili rankingu i tras z profilu. EAS build 080373cc-b3af-472e-b080-6edb170eb6a4 zakończył się statusem FINISHED."
+logical_id = "6b0a47ee-27fa-4a5d-96c3-473c2e642c68"
+content_hash = "sha256:5ebf2300a3729b7afcc8c65928c2f0be50ba5049d85ae4f4a8a9b9fddaffdf3b"
+size = 88599806
+mtime_ms = 1790054846310
+storage_uri = "gcs://replit-rams-assets-archer/rams/assets/repl:fdfc2e78-6ca7-490f-9e30-6b48d1335bd9/6b0a47ee-27fa-4a5d-96c3-473c2e642c68/d4fc15e6-89a0-4be2-8fe9-d0be4cf23629"
+storage_version_token = "1790054854082435"
+content_type = "application/octet-stream"
