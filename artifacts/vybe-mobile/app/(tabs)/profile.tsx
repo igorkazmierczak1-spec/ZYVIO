@@ -29,10 +29,10 @@ export default function ProfileScreen() {
     <Card><Text style={[uiStyles.eyebrow, { color: colors.primary }]}>PLAN</Text><Text style={[uiStyles.title, { color: colors.foreground, fontSize: 23 }]}>{plan === 'PREMIUM_PRO' ? 'Premium Pro' : plan === 'PREMIUM' ? 'Premium' : 'Free'}</Text><Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>Status konta i możliwości ZYVIO.</Text></Card>
      <Card><Text style={[uiStyles.eyebrow, { color: colors.primary }]}>CENTRUM ZYVIO</Text>
        {link('Wiadomości prywatne', '✉', () => router.push('/messages'))}
-       {link('Powiadomienia', '◉', () => router.push('/notifications'))}
+        {link('Powiadomienia', '◉', () => router.push('/(tabs)/notifications'))}
         {link('ZYVIO AI', '✦', () => router.push('/ai'))}
        {link('Utwórz Battle', '+', () => router.push('/battles/new'))}
-       {link('Premium', '★', () => router.push('/premium'))}
+        {link('Premium', '★', () => router.push('/(tabs)/premium'))}
        {link('Ustawienia', '⚙', () => router.push('/settings'))}
        {data.role === 'ADMIN' ? link('Panel administratora', '◆', () => router.push('/admin')) : null}
      </Card>

@@ -1,4 +1,5 @@
 import { getGetLeaderboardQueryKey, useGetLeaderboard } from '@workspace/api-client-react';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { AppScreen, Avatar, Card, EmptyState, ErrorState, Header, LoadingState, uiStyles } from '@/components/ui';
@@ -22,15 +23,17 @@ export default function LeaderboardScreen() {
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {(['weekly', 'monthly', 'all-time'] as Period[]).map((item) => <Pressable key={item} onPress={() => setPeriod(item)} style={{ flex: 1, paddingVertical: 9 }}><Text style={{ textAlign: 'center', color: period === item ? colors.primary : colors.mutedForeground, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>{item === 'weekly' ? 'Tydzień' : item === 'monthly' ? 'Miesiąc' : 'All-time'}</Text></Pressable>)}
       </View>
-      {leaderboard.isLoading ? <LoadingState /> : leaderboard.isError ? <ErrorState onRetry={() => void leaderboard.refetch()} /> : entries.length === 0 ? <EmptyState title="Ranking jest jeszcze pusty" body="Weź udział w Battle, żeby pojawić się w tabeli." icon="podium-outline" /> : entries.map((entry) => (
-        <Card key={entry.user.id} accent={entry.position <= 3 ? colors.accent : undefined}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Text style={{ width: 26, color: entry.position <= 3 ? colors.primary : colors.mutedForeground, fontFamily: 'Inter_700Bold', fontSize: 16 }}>#{entry.position}</Text>
-            <Avatar name={entry.user.displayName} size={42} />
-            <View style={{ flex: 1 }}><Text style={[uiStyles.emptyTitle, { color: colors.foreground, textAlign: 'left', fontSize: 16 }]}>{entry.user.displayName}</Text><Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>Poziom {entry.user.level} · {entry.league}</Text></View>
-            <View><Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold', textAlign: 'right' }}>{entry.rankingPoints}</Text><Text style={{ color: colors.mutedForeground, fontSize: 11 }}>punktów</Text></View>
-          </View>
-        </Card>
+       {leaderboard.isLoading ? <LoadingState /> : leaderboard.isError ? <ErrorState onRetry={() => void leaderboard.refetch()} /> : entries.length === 0 ? <EmptyState title="Ranking jest jeszcze pusty" body="Weź udział w Battle, żeby pojawić się w tabeli." icon="podium-outline" /> : entries.map((entry) => (
+         <Pressable key={entry.user.id} accessibilityRole="button" accessibilityLabel={`Otwórz profil ${entry.user.displayName}`} onPress={() => router.push(`/profile/${entry.user.id}`)} style={({ pressed }) => ({ opacity: pressed ? 0.86 : 1 })}>
+           <Card accent={entry.position <= 3 ? colors.accent : undefined}>
+             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+               <Text style={{ width: 26, color: entry.position <= 3 ? colors.primary : colors.mutedForeground, fontFamily: 'Inter_700Bold', fontSize: 16 }}>#{entry.position}</Text>
+               <Avatar name={entry.user.displayName} size={42} />
+               <View style={{ flex: 1 }}><Text style={[uiStyles.emptyTitle, { color: colors.foreground, textAlign: 'left', fontSize: 16 }]}>{entry.user.displayName}</Text><Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]}>Poziom {entry.user.level} · {entry.league}</Text></View>
+               <View><Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold', textAlign: 'right' }}>{entry.rankingPoints}</Text><Text style={{ color: colors.mutedForeground, fontSize: 11 }}>punktów</Text></View>
+             </View>
+           </Card>
+         </Pressable>
       ))}
       {leaderboard.data?.currentUser ? <Card accent={colors.primary}><Text style={[uiStyles.eyebrow, { color: colors.primary }]}>TWÓJ WYNIK</Text><Text style={{ color: colors.foreground, fontFamily: 'Inter_700Bold' }}>#{leaderboard.data.currentUser.position} · {leaderboard.data.currentUser.xp} XP</Text></Card> : null}
     </AppScreen>

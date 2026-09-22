@@ -23,14 +23,16 @@ export default function BattlesScreen() {
       <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
         {filters.map((item) => <Pressable key={item} onPress={() => setCategory(item)} style={{ paddingHorizontal: 13, paddingVertical: 9, borderRadius: 11, backgroundColor: category === item ? colors.secondary : colors.card, borderWidth: 1, borderColor: category === item ? colors.primary : colors.border }}><Text style={{ color: category === item ? colors.secondaryForeground : colors.mutedForeground, fontFamily: 'Inter_600SemiBold', fontSize: 12 }}>{item}</Text></Pressable>)}
       </View>
-      {battles.isLoading ? <LoadingState /> : battles.isError ? <ErrorState onRetry={() => void battles.refetch()} /> : list.length === 0 ? <EmptyState title="Brak Battle w tej kategorii" body="Zacznij kolejną rywalizację i otwórz nowy kierunek." icon="flash-off-outline" /> : list.map((battle) => (
-        <Card key={battle.id} accent={battle.status === 'live' ? colors.destructive : colors.primary}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text style={[uiStyles.eyebrow, { color: colors.primary }]}>{battle.category} · 1V1</Text><Text style={{ color: battle.status === 'live' ? colors.destructive : colors.mutedForeground, fontSize: 12, fontFamily: 'Inter_700Bold' }}>{battle.status === 'live' ? 'LIVE' : battle.status === 'completed' ? 'CLOSED' : formatStatus(battle.endsAt)}</Text></View>
-          <Text style={[uiStyles.emptyTitle, { color: colors.foreground, textAlign: 'left' }]}>{battle.title}</Text>
-          <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]} numberOfLines={3}>{battle.prompt}</Text>
-           {battle.attachments?.slice(0, 1).map((media) => <MediaAttachmentView key={media.id} attachment={media} />)}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={{ color: colors.mutedForeground, fontSize: 12 }}>{battle.participantCount}/{battle.maxParticipants} uczestników · +{battle.rewardXp ?? 0} XP</Text><Text onPress={() => router.push(`/battles/${battle.id}`)} style={{ color: colors.primary, fontFamily: 'Inter_700Bold' }}>Wejdź →</Text></View>
-        </Card>
+       {battles.isLoading ? <LoadingState /> : battles.isError ? <ErrorState onRetry={() => void battles.refetch()} /> : list.length === 0 ? <EmptyState title="Brak Battle w tej kategorii" body="Zacznij kolejną rywalizację i otwórz nowy kierunek." icon="flash-off-outline" /> : list.map((battle) => (
+         <Pressable key={battle.id} accessibilityRole="button" accessibilityLabel={`Otwórz Battle ${battle.title}`} onPress={() => router.push(`/battles/${battle.id}`)} style={({ pressed }) => ({ opacity: pressed ? 0.86 : 1 })}>
+           <Card accent={battle.status === 'live' ? colors.destructive : colors.primary}>
+             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text style={[uiStyles.eyebrow, { color: colors.primary }]}>{battle.category} · 1V1</Text><Text style={{ color: battle.status === 'live' ? colors.destructive : colors.mutedForeground, fontSize: 12, fontFamily: 'Inter_700Bold' }}>{battle.status === 'live' ? 'LIVE' : battle.status === 'completed' ? 'CLOSED' : formatStatus(battle.endsAt)}</Text></View>
+             <Text style={[uiStyles.emptyTitle, { color: colors.foreground, textAlign: 'left' }]}>{battle.title}</Text>
+             <Text style={[uiStyles.subtitle, { color: colors.mutedForeground }]} numberOfLines={3}>{battle.prompt}</Text>
+             {battle.attachments?.slice(0, 1).map((media) => <MediaAttachmentView key={media.id} attachment={media} />)}
+             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={{ color: colors.mutedForeground, fontSize: 12 }}>{battle.participantCount}/{battle.maxParticipants} uczestników · +{battle.rewardXp ?? 0} XP</Text><Text style={{ color: colors.primary, fontFamily: 'Inter_700Bold' }}>Wejdź →</Text></View>
+           </Card>
+         </Pressable>
       ))}
     </AppScreen>
   );
