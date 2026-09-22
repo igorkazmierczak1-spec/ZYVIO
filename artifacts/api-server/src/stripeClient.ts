@@ -38,7 +38,12 @@ export async function getStripeSync(): Promise<StripeSync> {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
   const credentials = await getStripeCredentials();
   return new StripeSync({
-    poolConfig: { connectionString: process.env.DATABASE_URL },
+    poolConfig: {
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false }
+        : undefined,
+    },
     stripeSecretKey: credentials.secretKey,
     stripeWebhookSecret: credentials.webhookSecret ?? "",
   });
