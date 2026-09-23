@@ -13,6 +13,8 @@ import {
 import { WebhookHandlers, WebhookSignatureError } from "./webhookHandlers";
 
 const app: Express = express();
+const clerkSecretKey = process.env.CLERK_SECRET_KEY?.trim();
+const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY?.trim();
 
 function originCandidates() {
   const configured = (process.env.CORS_ALLOWED_ORIGINS ?? "")
@@ -103,9 +105,10 @@ app.use(express.json({ limit: "1mb", strict: true }));
 app.use(express.urlencoded({ extended: true, limit: "100kb", parameterLimit: 100 }));
 app.use(
   clerkMiddleware((req) => ({
+    secretKey: clerkSecretKey,
     publishableKey: publishableKeyFromHost(
       getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
+      clerkPublishableKey,
     ),
   })),
 );
