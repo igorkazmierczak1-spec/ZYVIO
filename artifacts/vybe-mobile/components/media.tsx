@@ -25,8 +25,9 @@ const VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime', 'vide
 export function toAbsoluteMediaUrl(url?: string | null) {
   if (!url) return '';
   if (/^https?:\/\//i.test(url)) return url;
-  const domain = process.env.EXPO_PUBLIC_DOMAIN;
-  return domain ? `https://${domain}${url.startsWith('/') ? url : `/${url}`}` : url;
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL
+    ?? (process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : undefined);
+  return apiUrl ? `${apiUrl.replace(/\/+$/, '')}${url.startsWith('/') ? url : `/${url}`}` : url;
 }
 
 function labelForMode(mode: MediaPickerMode) {

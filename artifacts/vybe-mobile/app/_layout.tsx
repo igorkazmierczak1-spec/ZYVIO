@@ -20,8 +20,9 @@ import { SubscriptionProvider } from '@/lib/revenuecat';
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
-const domain = process.env.EXPO_PUBLIC_DOMAIN;
-if (domain) setBaseUrl(`https://${domain}`);
+const apiUrl = process.env.EXPO_PUBLIC_API_URL
+  ?? (process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : undefined);
+if (apiUrl) setBaseUrl(apiUrl);
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 const proxyUrl = process.env.EXPO_PUBLIC_CLERK_PROXY_URL || undefined;
