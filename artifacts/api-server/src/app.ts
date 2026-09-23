@@ -16,6 +16,11 @@ const app: Express = express();
 const clerkSecretKey = process.env.CLERK_SECRET_KEY?.trim();
 const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY?.trim();
 
+logger.info({
+  clerkSecretKeyConfigured: Boolean(clerkSecretKey),
+  clerkPublishableKeyConfigured: Boolean(clerkPublishableKey),
+}, "Clerk runtime configuration");
+
 function originCandidates() {
   const configured = (process.env.CORS_ALLOWED_ORIGINS ?? "")
     .split(",")
