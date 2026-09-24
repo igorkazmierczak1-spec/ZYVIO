@@ -33,3 +33,23 @@ REVENUECAT_TEST_STORE_APP_ID = "app789c85cda1"
 
 [userenv.production]
 PUBLIC_APP_URL = "https://zyvios.site"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 21367
+externalPort = 3000
+
+[[ports]]
+localPort = 25508
+externalPort = 3001
+
+[[ports]]
+localPort = 25915
+externalPort = 80
