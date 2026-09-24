@@ -18,3 +18,4 @@
 - [EAS mobile archive](eas-mobile-archive.md) — the cloud build archive must be self-contained; parent workspace packages and catalogs are not available during dependency installation.
 - [pnpm build approvals](pnpm-build-approvals.md) — EAS may use pnpm 11, where `allowBuilds` supersedes `onlyBuiltDependencies`; keep both for mixed local/remote versions.
 - [Render portability](render-portability.md) — external API hosting also needs a portable database and media storage; Replit’s Object Storage sidecar is not available on Render.
+- [Android free builds and signing](android-free-build-signing.md) — public GitHub Actions can build without EAS, but Play updates still need the app’s accepted upload signature.
